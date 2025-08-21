@@ -1,0 +1,87 @@
+// SCSS variables that map to CSS custom properties for semantic theming.
+
+// Core colors.
+$color-primary: var(--color-primary);
+$color-primary-hover: var(--color-primary-hover);
+$color-secondary: var(--color-secondary);
+$color-accent: var(--color-accent);
+$color-success: var(--color-success);
+$color-warning: var(--color-warning);
+$color-error: var(--color-error);
+
+// Semantic background colors.
+$color-bg-primary: var(--color-bg-primary);
+$color-bg-secondary: var(--color-bg-secondary);
+$color-bg-tertiary: var(--color-bg-tertiary);
+$color-bg-inverse: var(--color-bg-inverse);
+$color-bg-overlay: var(--color-bg-overlay);
+
+// Semantic text colors.
+$color-text-primary: var(--color-text-primary);
+$color-text-secondary: var(--color-text-secondary);
+$color-text-tertiary: var(--color-text-tertiary);
+$color-text-inverse: var(--color-text-inverse);
+$color-text-muted: var(--color-text-muted);
+
+// Border colors.
+$color-border-primary: var(--color-border-primary);
+$color-border-secondary: var(--color-border-secondary);
+$color-border-focus: var(--color-border-focus);
+
+// Surface colors.
+$color-surface-raised: var(--color-surface-raised);
+$color-surface-sunken: var(--color-surface-sunken);
+
+// Layout.
+$max-width: var(--max-width);
+$border-radius: var(--border-radius);
+$border-radius-sm: var(--border-radius-sm);
+$border-radius-lg: var(--border-radius-lg);
+$spacing-xs: var(--spacing-xs);
+$spacing-sm: var(--spacing-sm);
+$spacing-md: var(--spacing-md);
+$spacing-lg: var(--spacing-lg);
+$spacing-xl: var(--spacing-xl);
+
+// Typography.
+$font-family-base: var(--font-family-base);
+$font-family-mono: var(--font-family-mono);
+$font-size-xs: var(--font-size-xs);
+$font-size-sm: var(--font-size-sm);
+$font-size-base: var(--font-size-base);
+$font-size-lg: var(--font-size-lg);
+$font-size-xl: var(--font-size-xl);
+$font-size-2xl: var(--font-size-2xl);
+$font-size-3xl: var(--font-size-3xl);
+$font-size-4xl: var(--font-size-4xl);
+$line-height-tight: var(--line-height-tight);
+$line-height-base: var(--line-height-base);
+$line-height-relaxed: var(--line-height-relaxed);
+$font-weight-light: var(--font-weight-light);
+$font-weight-normal: var(--font-weight-normal);
+$font-weight-medium: var(--font-weight-medium);
+$font-weight-semibold: var(--font-weight-semibold);
+$font-weight-bold: var(--font-weight-bold);
+
+// Animations.
+$transition-fast: var(--transition-fast);
+$transition-normal: var(--transition-normal);
+$transition-slow: var(--transition-slow);
+$ease-in-out: var(--ease-in-out);
+$ease-out: var(--ease-out);
+$ease-in: var(--ease-in);
+
+// Shadows.
+$shadow-sm: var(--shadow-sm);
+$shadow-md: var(--shadow-md);
+$shadow-lg: var(--shadow-lg);
+$shadow-xl: var(--shadow-xl);
+
+// Z-index.
+$z-dropdown: var(--z-dropdown);
+$z-sticky: var(--z-sticky);
+$z-fixed: var(--z-fixed);
+$z-modal-backdrop: var(--z-modal-backdrop);
+$z-modal: var(--z-modal);
+$z-popover: var(--z-popover);
+$z-tooltip: var(--z-tooltip);

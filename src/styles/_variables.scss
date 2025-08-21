@@ -1,0 +1,34 @@
+// Color palette.
+$color-primary: #646cff;
+$color-primary-hover: #535bf2;
+$color-secondary: #f9f9f9;
+
+// Dark theme colors.
+$color-bg-dark: #242424;
+$color-text-dark: #ffffff;
+$color-text-muted-dark: rgba(255, 255, 255, 0.87);
+
+// Light theme colors.
+$color-bg-light: #ffffff;
+$color-text-light: #213547;
+$color-text-muted-light: #888;
+
+// Layout.
+$max-width: 1280px;
+$border-radius: 8px;
+$spacing-xs: 0.5rem;
+$spacing-sm: 1rem;
+$spacing-md: 1.5rem;
+$spacing-lg: 2rem;
+$spacing-xl: 3rem;
+
+// Typography.
+$font-family-base: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+$font-size-base: 16px;
+$line-height-base: 1.5;
+$font-weight-normal: 400;
+$font-weight-medium: 500;
+
+// Transitions.
+$transition-fast: 0.15s ease;
+$transition-normal: 0.3s ease;

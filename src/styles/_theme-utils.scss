@@ -1,0 +1,139 @@
+// Theme utilities and mixins
+
+// Mixin for smooth theme transitions.
+@mixin theme-transition($properties: all, $duration: var(--transition-normal)) {
+  transition: #{$properties} #{$duration};
+}
+
+// Mixin for theme-aware focus states.
+@mixin focus-ring($color: var(--color-border-focus), $width: 2px, $offset: 2px) {
+  outline: #{$width} solid #{$color};
+  outline-offset: #{$offset};
+}
+
+// Mixin for elevated surfaces.
+@mixin surface-elevation($level: 1) {
+  @if $level == 1 {
+    background-color: var(--color-surface-raised);
+    box-shadow: var(--shadow-sm);
+  } @else if $level == 2 {
+    background-color: var(--color-surface-raised);
+    box-shadow: var(--shadow-md);
+  } @else if $level == 3 {
+    background-color: var(--color-surface-raised);
+    box-shadow: var(--shadow-lg);
+  } @else if $level == 4 {
+    background-color: var(--color-surface-raised);
+    box-shadow: var(--shadow-xl);
+  }
+}
+
+// Mixin for interactive states.
+@mixin interactive-states(
+  $base-bg: var(--color-primary),
+  $hover-bg: var(--color-primary-hover),
+  $focus-color: var(--color-border-focus)
+) {
+  background-color: #{$base-bg};
+  @include theme-transition('background-color, box-shadow');
+
+  &:hover {
+    background-color: #{$hover-bg};
+  }
+
+  &:focus,
+  &:focus-visible {
+    @include focus-ring($focus-color);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+
+    &:hover {
+      background-color: #{$base-bg};
+    }
+  }
+}
+
+// Utility class for theme transitions.
+.theme-transition {
+  @include theme-transition();
+}
+
+// Utility classes for different surface elevations.
+.surface-flat {
+  background-color: var(--color-bg-primary);
+}
+
+.surface-raised {
+  @include surface-elevation(1);
+}
+
+.surface-elevated {
+  @include surface-elevation(2);
+}
+
+.surface-floating {
+  @include surface-elevation(3);
+}
+
+.surface-modal {
+  @include surface-elevation(4);
+}
+
+// Text color utilities.
+.text-primary {
+  color: var(--color-text-primary);
+}
+
+.text-secondary {
+  color: var(--color-text-secondary);
+}
+
+.text-tertiary {
+  color: var(--color-text-tertiary);
+}
+
+.text-muted {
+  color: var(--color-text-muted);
+}
+
+.text-inverse {
+  color: var(--color-text-inverse);
+}
+
+// Background color utilities.
+.bg-primary {
+  background-color: var(--color-bg-primary);
+}
+
+.bg-secondary {
+  background-color: var(--color-bg-secondary);
+}
+
+.bg-tertiary {
+  background-color: var(--color-bg-tertiary);
+}
+
+.bg-surface-raised {
+  background-color: var(--color-surface-raised);
+}
+
+.bg-surface-sunken {
+  background-color: var(--color-surface-sunken);
+}
+
+// Border utilities.
+.border-primary {
+  border: 1px solid var(--color-border-primary);
+}
+
+.border-secondary {
+  border: 1px solid var(--color-border-secondary);
+}
+
+.border-focus {
+  border: 1px solid var(--color-border-focus);
+}

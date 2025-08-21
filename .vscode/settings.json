@@ -1,0 +1,16 @@
+{
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.organizeImports": "explicit"
+  },
+  "typescript.preferences.importModuleSpecifier": "relative",
+  "typescript.suggest.autoImports": true,
+  "files.associations": {
+    "*.css": "css",
+    "*.scss": "scss"
+  },
+  "emmet.includeLanguages": {
+    "typescript": "html"
+  }
+}

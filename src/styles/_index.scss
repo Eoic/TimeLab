@@ -1,0 +1,52 @@
+// Main theme system export.
+// Import this file to get access to all theme functionality.
+
+@forward 'tokens';
+@forward 'semantic';
+@forward 'theme-utils';
+@forward 'theme-variants';
+
+// Theme system documentation:
+//
+// 1. Base Design Tokens (_tokens.scss):
+//    - Core color palette, typography, spacing, etc.
+//    - Theme-specific semantic color mappings.
+//    - Auto-detects system dark mode preference.
+//
+// 2. Semantic Variables (_semantic.scss):
+//    - SCSS variables that map to CSS custom properties.
+//    - Provides backwards compatibility and easier usage in SCSS.
+//
+// 3. Theme Utilities (_theme-utils.scss):
+//    - Mixins for common theme patterns.
+//    - Utility classes for quick theme application.
+//    - Interactive state management.
+//
+// 4. Theme Variants (_theme-variants.scss):
+//    - Additional theme options (blue, green, purple, etc.).
+//    - Accessibility themes (high-contrast, sepia).
+//    - OLED theme for power efficiency.
+//
+// Usage examples:
+//
+// 1. Basic usage:
+//    @use "path/to/theme" as *;
+//
+//    .my-component {
+//      background-color: $color-bg-primary;
+//      color: $color-text-primary;
+//    }
+//
+// 2. Using mixins:
+//    .my-button {
+//      @include interactive-states();
+//    }
+//
+// 3. Theme switching via data attributes:
+//    <html data-theme="dark">
+//    <html data-theme="blue">
+//    <html data-theme="high-contrast">
+//
+// 4. System preference (automatic):
+//    <html> (no data-theme attribute)
+//    Will automatically switch based on prefers-color-scheme.
