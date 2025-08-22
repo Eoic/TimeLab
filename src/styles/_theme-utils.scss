@@ -29,16 +29,53 @@
 }
 
 // Mixin for interactive states.
+// Adds hover and active support, plus optional border-color transitions.
 @mixin interactive-states(
   $base-bg: var(--color-primary),
   $hover-bg: var(--color-primary-hover),
-  $focus-color: var(--color-border-focus)
+  $focus-color: var(--color-border-focus),
+  $base-color: null,
+  $hover-color: null,
+  $active-bg: null,
+  $active-color: null,
+  $base-border: null,
+  $hover-border: null,
+  $active-border: null
 ) {
   background-color: #{$base-bg};
-  @include theme-transition('background-color, box-shadow');
+  @if $base-color {
+    color: #{$base-color};
+  }
+  @if $base-border {
+    border-color: #{$base-border};
+  }
+  @include theme-transition('background-color, color, border-color, box-shadow');
 
   &:hover {
     background-color: #{$hover-bg};
+    @if $hover-color {
+      color: #{$hover-color};
+    }
+    @if $hover-border {
+      border-color: #{$hover-border};
+    }
+  }
+
+  // Active/pressed states
+  &:active,
+  &.is-active,
+  &[aria-pressed='true'],
+  &[data-state='on'],
+  &[data-pressed='true'] {
+    @if $active-bg {
+      background-color: #{$active-bg};
+    }
+    @if $active-color {
+      color: #{$active-color};
+    }
+    @if $active-border {
+      border-color: #{$active-border};
+    }
   }
 
   &:focus,
@@ -46,13 +83,20 @@
     @include focus-ring($focus-color);
   }
 
-  &:disabled {
+  &:disabled,
+  &[aria-disabled='true'] {
     opacity: 0.6;
     cursor: not-allowed;
     transform: none;
 
     &:hover {
       background-color: #{$base-bg};
+      @if $base-color {
+        color: #{$base-color};
+      }
+      @if $base-border {
+        border-color: #{$base-border};
+      }
     }
   }
 }

@@ -1,16 +1,111 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="en" data-theme="light">
 
 <head>
-  <meta charset="UTF-8" />
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="A modern TypeScript & Vite starter template." />
-  <title>TypeScript & Vite starter template</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TimeLab - time series data labeling tool</title>
 </head>
 
 <body>
-  <div id="app"></div>
+  <div class="container">
+    <div class="header">
+      <div class="float-left">
+        <div class="brand"></div>
+        <span>TimeLab</span> |
+        Time series data labeling tool
+      </div>
+      <div class="float-right">
+        <button> Settings </button>
+      </div>
+      <div class="clearfix"></div>
+    </div>
+
+    <div class="card toolbar">
+      <div class="left" role="group" aria-label="File actions">
+        <button aria-label="Upload data">Upload data</button>
+        <button aria-label="Export labels">Export labels</button>
+      </div>
+      <div class="right" role="group" aria-label="Edit actions">
+        <button class="btn-outline" aria-label="Undo">Undo</button>
+        <button class="btn-outline" aria-label="Redo">Redo</button>
+      </div>
+    </div>
+
+    <!-- Collapsible Chart Configuration -->
+    <div class="card config">
+      <span class="tag">Chart configuration</span>
+      <!-- <details class="config-accordion" open>
+        <summary>Configuration (accordion)</summary>
+        <div class="config-groups">
+          <div class="group">Axes</div>
+          <div class="group">Rendering (smoothing/decimation)</div>
+          <div class="group">Snapping</div>
+          <div class="group">Overlays</div>
+          <div class="group">Appearance</div>
+          <div class="group">Advanced…</div>
+        </div>
+      </details> -->
+    </div>
+
+    <!-- Chart with floating micro-toolbar -->
+    <div class="card chart">
+      <span class="tag">Chart Area (with minimap)</span>
+      <div class="tools" role="toolbar" aria-label="Chart quick tools">
+        <div class="pill" aria-label="Zoom out">−</div>
+        <div class="pill" aria-label="Zoom in">+</div>
+        <div class="pill" aria-label="Fit to view">Fit</div>
+        <div class="pill" aria-label="Snap toggle">Snap</div>
+        <div class="pill" aria-label="Label type switcher">Type</div>
+      </div>
+    </div>
+
+    <!-- Right sidebar: label controls strip -->
+    <div class="card labctrl">
+      <span class="tag">Label Controls</span>
+      <div class="labctrl-inner">
+        <div class="row" style="display: flex; flex-wrap: wrap; margin-top: 8px;">
+          <div class="pill">New</div>
+          <div class="pill">Merge</div>
+          <div class="pill">Delete</div>
+          <div class="pill">Filter</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right sidebar: tabs (Labels / History) -->
+    <div class="card labels">
+      <span class="tag">Labels & History</span>
+      <div class="tabs" style="height: 100%">
+        <div class="tab-head">
+          <input type="radio" name="tabs" id="tab-labels" checked>
+          <label for="tab-labels">Labels</label>
+          <input type="radio" name="tabs" id="tab-history">
+          <label for="tab-history">History</label>
+        </div>
+        <div class="panels">
+          <div class="tab-body panels">
+            <div class="panel labels-panel">
+              <!-- Placeholder list -->
+              <div class="group" style="height:40px;">Label search / filters</div>
+              <div class="group" style="height:40px;">Label item</div>
+              <div class="group" style="height:40px;">Label item</div>
+              <div class="group" style="height:40px;">Label item</div>
+              <div class="group" style="height:40px;">Label item</div>
+            </div>
+            <div class="panel history-panel">
+              <div class="group" style="height:40px;">Action #1</div>
+              <div class="group" style="height:40px;">Action #2</div>
+              <div class="group" style="height:40px;">Action #3</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Optional stats strip aligned to chart width -->
+    <div class="card stats"><span class="tag">Statistics (compact)</span></div>
+  </div>
   <script type="module" src="/src/main.ts"></script>
 </body>
 

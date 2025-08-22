@@ -1,0 +1,18 @@
+@use '@/styles/tokens' as *;
+@use '@/styles/semantic' as *;
+@use '@/styles/theme-utils' as *;
+
+a {
+  color: $color-primary;
+  text-decoration: none;
+  @include theme-transition('color');
+
+  &:hover {
+    color: $color-primary-hover;
+    text-decoration: underline;
+  }
+
+  &:focus {
+    @include focus-ring();
+  }
+}

@@ -1,0 +1,120 @@
+@use '@/styles/tokens' as *;
+@use '@/styles/semantic' as *;
+
+.container {
+  gap: $spacing-md;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  padding: $spacing-sm;
+  max-width: 100%;
+  display: grid;
+  min-block-size: 100vh;
+  min-block-size: 100svh;
+  min-block-size: 100dvh;
+  align-self: flex-start;
+  grid-template-columns: repeat(12, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas:
+    'header header header header header header header header header header header header'
+    'toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar'
+    'config config config chart  chart  chart  chart  chart  chart  chart  labctrl labctrl'
+    'config config config chart  chart  chart  chart  chart  chart  chart  labels  labels'
+    'config config config stats  stats  stats  stats  stats  stats  stats  labels  labels';
+
+  .header {
+    grid-area: header;
+  }
+
+  .toolbar {
+    grid-area: toolbar;
+  }
+
+  .config {
+    grid-area: config;
+  }
+
+  .chart {
+    grid-area: chart;
+  }
+
+  .stats {
+    grid-area: stats;
+  }
+
+  .labels {
+    grid-area: labels;
+  }
+
+  .labctrl {
+    grid-area: labctrl;
+  }
+
+  .config,
+  .chart,
+  .stats,
+  .labels,
+  .labctrl {
+    overflow: auto;
+    min-block-size: 0;
+  }
+}
+
+@media (max-width: 1199px) {
+  .container {
+    grid-template-columns: repeat(6, 1fr);
+    grid-template-areas:
+      'header header header header header header'
+      'toolbar toolbar toolbar toolbar toolbar toolbar'
+      'chart  chart  chart  chart  chart  chart'
+      'labctrl labctrl labctrl labctrl labctrl labctrl'
+      'labels labels labels labels labels labels'
+      'config config config config config config'
+      'stats  stats  stats  stats  stats  stats';
+  }
+
+  .header {
+    flex-wrap: wrap;
+  }
+
+  .header .center {
+    order: -1;
+    width: 100%;
+    text-align: left;
+  }
+
+  .chart .tools {
+    top: $spacing-xs;
+    right: $spacing-xs;
+  }
+}
+
+@media (max-width: 680px) {
+  .container {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      'header'
+      'toolbar'
+      'chart'
+      'labctrl'
+      'labels'
+      'config'
+      'stats';
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: $spacing-sm;
+  }
+
+  .header .center {
+    text-align: left;
+  }
+
+  .labctrl {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+  }
+}

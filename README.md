@@ -1,19 +1,6 @@
-# TypeScript & Vite starter template
+# TimeLab
 
-A modern, production-ready TypeScript & Vite starter template with comprehensive tooling for front-end development.
-
-<img src="./public/preview.gif" alt="Preview of the template page" style="max-width: 800px; margin: 0 auto;" />
-
-## Features
-
-- **Vite** - build tool with HMR.
-- **TypeScript** - strict type checking with modern ES features.
-- **Vitest** - unit testing with coverage reports.
-- **SCSS** - modern CSS with variables, mixins and a functioning theming system.
-- **ESLint + Prettier** - code formatting and linting.
-- **Husky & lint-staged** - pre-commit hooks.
-- **VS Code** - optimized workspace settings.
-- **Path aliases** - clean import statements with `@/` prefix.
+A simple time series data labeling tool.
 
 ## Quick start
 
@@ -65,56 +52,4 @@ styles/
 tests/
 ├── app.test.ts          # Example test file.
 └── setup.ts             # Test environment setup.
-```
-
-## Development guidelines
-
-### Code style
-
-- Use **TypeScript strict mode** with additional safety checks.
-- **ESLint + Prettier** enforced via pre-commit hooks.
-- **Path aliases** for clean imports: `@/utils/app` instead of `../utils/app`.
-- **SCSS variables** defined in `src/styles/_variables.scss`.
-
-### Testing
-
-- **Vitest** with jsdom environment for DOM testing.
-- **Coverage reporting** with v8 provider.
-- Tests located in `tests/` directory.
-
-### VS Code integration
-
-- Recommended extensions auto-suggested.
-- Format on save enabled.
-- ESLint auto-fix on save.
-- TypeScript import suggestions optimized.
-
-## Production considerations
-
-- **Build optimization** with automatic code splitting.
-- **TypeScript compilation** before Vite bundling.
-- **Source maps** enabled for debugging.
-- **Modern target** (ESNext) for optimal bundle size.
-- **Asset type definitions** for static imports.
-
-## Extending the template
-
-### Adding UI libraries
-
-```bash
-npm install some-ui-library
-npm install -D @types/some-ui-library
-```
-
-### Adding CSS frameworks
-
-```bash
-npm install -D tailwindcss postcss autoprefixer
-npx tailwindcss init -p
-```
-
-### Adding state management
-
-```bash
-npm install zustand
 ```

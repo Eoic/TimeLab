@@ -1,0 +1,63 @@
+@use '@/styles/tokens' as *;
+@use '@/styles/semantic' as *;
+@use '@/styles/theme-utils' as *;
+
+.tabs {
+  width: 100%;
+}
+
+.tab-head {
+  gap: $spacing-xs;
+  display: flex;
+  margin-bottom: $spacing-xs;
+  padding-bottom: $spacing-xs;
+  border-bottom: 1px dashed $color-border-secondary;
+}
+
+.tab-head label {
+  cursor: pointer;
+  font-size: $font-size-sm;
+  padding: $spacing-xs $spacing-sm;
+  border-bottom: none;
+  border-radius: $border-radius $border-radius 0 0;
+  border: 1px dashed $color-border-primary;
+  color: $color-text-secondary;
+  background-color: $color-bg-secondary;
+  @include theme-transition();
+  @include interactive-states(
+    $base-bg: $color-bg-secondary,
+    $hover-bg: $color-bg-tertiary,
+    $base-color: $color-text-secondary,
+    $hover-color: $color-text-primary
+  );
+}
+
+.tab-body {
+  padding: $spacing-sm;
+  min-height: 200px;
+  border-radius: 0 $border-radius $border-radius $border-radius;
+  border: 1px dashed $color-border-primary;
+  background-color: $color-bg-primary;
+}
+
+.panel {
+  display: none;
+}
+
+input#tab-labels:checked ~ .panels .panel.labels-panel {
+  display: block;
+}
+
+input#tab-history:checked ~ .panels .panel.history-panel {
+  display: block;
+}
+
+.tabs input[type='radio'] {
+  position: absolute;
+  left: -9999px;
+}
+
+input#tab-labels:checked + label[for='tab-labels'],
+input#tab-history:checked + label[for='tab-history'] {
+  background: rgba(255, 255, 255, 0.85);
+}

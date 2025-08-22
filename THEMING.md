@@ -14,7 +14,7 @@ Template includes theme switching system built with modern SCSS and CSS custom p
 - **Accessibility themes**: high contrast, sepia.
 - **OLED theme** (pure black for power efficiency).
 
-### ♿ **Accessibility features**
+### **Accessibility features**
 
 - High contrast theme for better visibility.
 - Sepia theme for reduced eye strain.

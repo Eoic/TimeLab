@@ -1,0 +1,10 @@
+@use '@/styles/tokens' as *;
+@use '@/styles/semantic' as *;
+
+.chart .tools {
+  gap: $spacing-xs;
+  top: $spacing-sm;
+  right: $spacing-sm;
+  display: flex;
+  position: absolute;
+}

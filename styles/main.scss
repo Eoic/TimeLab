@@ -1,24 +1,46 @@
-@use '../src/styles/tokens' as *;
-@use '../src/styles/semantic' as *;
-@use '../src/styles/theme-utils' as *;
-@use '../src/styles/theme-variants' as *;
-@use '_reset';
+@use '@/styles/tokens' as *;
+@use '@/styles/semantic' as *;
+@use '@/styles/theme-utils' as *;
+@use '@/styles/theme-variants' as *;
+@use '@/styles/reset' as *;
+
+// Base components
+@use './components/container';
+@use './components/header';
+
+// Navigation components
+@use './components/tabs';
+@use './components/pills';
+
+// UI components
+@use './components/button';
+@use './components/card';
+@use './components/chart';
+@use './components/forms';
+@use './components/toolbar';
+
+// Content components
+@use './components/headings';
+@use './components/links';
+@use './components/lists';
+@use './components/dividers';
+
+// Utility classes
+@use './formatting';
 
 :root {
+  color-scheme: light dark;
   font-family: $font-family-base;
   line-height: $line-height-base;
   font-weight: $font-weight-normal;
   font-size: $font-size-base;
-
-  color-scheme: light dark;
   color: $color-text-primary;
   background-color: $color-bg-primary;
-
-  font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
+  font-synthesis: none;
 }
 
 * {
@@ -26,237 +48,6 @@
 }
 
 body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  color: $color-text-primary;
   background-color: $color-bg-primary;
-  color: $color-text-primary;
-}
-
-#app {
-  max-width: $max-width;
-  margin: 0 auto;
-  padding: $spacing-lg;
-  width: 100%;
-}
-
-h1 {
-  font-size: $font-size-4xl;
-  line-height: $line-height-tight;
-  margin-bottom: $spacing-lg;
-  color: $color-text-primary;
-  font-weight: $font-weight-bold;
-}
-
-.card {
-  @include surface-elevation(2);
-  padding: $spacing-lg;
-  border-radius: $border-radius;
-  margin: $spacing-md 0;
-  color: $color-text-primary;
-  border: 1px solid $color-border-primary;
-  width: fit-content;
-}
-
-button {
-  @include interactive-states();
-  border-radius: $border-radius;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: $font-size-base;
-  font-weight: $font-weight-medium;
-  font-family: inherit;
-  color: $color-text-inverse;
-  cursor: pointer;
-}
-
-// Additional button variants for theme demo.
-.button-secondary {
-  @include interactive-states(
-    $base-bg: $color-bg-secondary,
-    $hover-bg: $color-bg-tertiary,
-    $focus-color: $color-border-focus
-  );
-
-  color: $color-text-primary;
-  border: 1px solid $color-border-primary;
-}
-
-.button-outline {
-  @include interactive-states($base-bg: transparent, $hover-bg: $color-bg-secondary, $focus-color: $color-border-focus);
-  color: $color-primary;
-  border: 1px solid $color-primary;
-
-  &:hover {
-    color: $color-text-primary;
-  }
-}
-
-// Theme-aware form elements.
-input,
-textarea,
-select {
-  background-color: $color-bg-primary;
-  color: $color-text-primary;
-  border: 1px solid $color-border-primary;
-  border-radius: $border-radius;
-  padding: $spacing-sm;
-  font-family: inherit;
-  @include theme-transition();
-
-  &:focus {
-    @include focus-ring();
-    border-color: $color-border-focus;
-  }
-
-  &::placeholder {
-    color: $color-text-muted;
-  }
-}
-
-// Theme-aware code blocks.
-code,
-pre {
-  background-color: $color-bg-secondary;
-  color: $color-text-primary;
-  border: 1px solid $color-border-secondary;
-  border-radius: $border-radius-sm;
-  font-family: $font-family-mono;
-}
-
-code {
-  padding: 0.125em 0.25em;
-  font-size: 0.875em;
-}
-
-pre {
-  padding: $spacing-sm;
-  overflow-x: auto;
-
-  code {
-    background: none;
-    border: none;
-    padding: 0;
-  }
-}
-
-// Links with theme support.
-a {
-  color: $color-primary;
-  text-decoration: none;
-  @include theme-transition('color');
-
-  &:hover {
-    color: $color-primary-hover;
-    text-decoration: underline;
-  }
-
-  &:focus {
-    @include focus-ring();
-  }
-}
-
-// Dividers.
-hr {
-  border: none;
-  border-top: 1px solid $color-border-primary;
-  margin: $spacing-lg 0;
-}
-
-// Positioning.
-.center {
-  margin: 0 auto;
-}
-
-.text-center {
-  text-align: center;
-}
-
-.text-left {
-  text-align: left;
-}
-
-// List styling.
-ul {
-  list-style: disc;
-  padding-left: $spacing-lg;
-  margin: $spacing-sm 0;
-
-  ul {
-    list-style: circle;
-    margin: $spacing-xs 0;
-
-    ul {
-      list-style: square;
-    }
-  }
-}
-
-ol {
-  list-style: decimal;
-  padding-left: $spacing-lg;
-  margin: $spacing-sm 0;
-
-  ol {
-    list-style: lower-alpha;
-    margin: $spacing-xs 0;
-
-    ol {
-      list-style: lower-roman;
-    }
-  }
-}
-
-li {
-  margin: $spacing-xs 0;
-  color: $color-text-primary;
-  line-height: $line-height-base;
-
-  &::marker {
-    color: $color-text-secondary;
-  }
-}
-
-.list-unstyled {
-  list-style: none;
-  padding-left: 0;
-
-  li {
-    margin: 0;
-  }
-}
-
-.list-inline {
-  list-style: none;
-  padding-left: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: $spacing-sm;
-
-  li {
-    margin: 0;
-  }
-}
-
-.list-spaced {
-  li {
-    margin: $spacing-sm 0;
-  }
-}
-
-.list-compact {
-  li {
-    margin: 0;
-  }
-}
-
-// Spacing.
-.mt-xs {
-  margin-top: $spacing-xs;
-}
-
-.mt-sm {
-  margin-top: $spacing-sm;
 }

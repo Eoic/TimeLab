@@ -1,0 +1,25 @@
+@use '@/styles/tokens' as *;
+@use '@/styles/semantic' as *;
+
+.card {
+  position: relative;
+  padding: $spacing-lg;
+  color: $color-text-primary;
+  border-radius: $border-radius;
+  border: 1px solid $color-border-primary;
+}
+
+.card > .tag {
+  position: absolute;
+  top: $spacing-xs;
+  left: $spacing-sm;
+  font-size: $font-size-sm;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: $color-text-secondary;
+  background: $color-bg-secondary;
+  padding: calc($spacing-xs / 2) $spacing-xs;
+  border-radius: $border-radius-pill;
+  border: 1px solid $color-border-primary;
+  pointer-events: none;
+}

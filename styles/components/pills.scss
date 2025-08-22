@@ -1,0 +1,14 @@
+@use '@/styles/tokens' as *;
+@use '@/styles/semantic' as *;
+@use '@/styles/theme-utils' as *;
+
+.pill {
+  font-size: $font-size-sm;
+  padding: $spacing-xs $spacing-sm;
+  white-space: nowrap;
+  border-radius: $border-radius-pill;
+  border: 1px dashed $color-border-primary;
+  color: $color-text-secondary;
+  background-color: $color-bg-secondary;
+  @include theme-transition();
+}

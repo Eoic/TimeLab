@@ -1,0 +1,24 @@
+@use '@/styles/tokens' as *;
+@use '@/styles/semantic' as *;
+@use '@/styles/theme-utils' as *;
+
+input,
+textarea,
+select {
+  padding: $spacing-sm;
+  font-family: inherit;
+  color: $color-text-primary;
+  border-radius: $border-radius;
+  background-color: $color-bg-primary;
+  border: 1px solid $color-border-primary;
+  @include theme-transition();
+
+  &:focus {
+    @include focus-ring();
+    border-color: $color-border-focus;
+  }
+
+  &::placeholder {
+    color: $color-text-muted;
+  }
+}

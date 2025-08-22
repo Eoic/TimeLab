@@ -1,0 +1,10 @@
+@use '@/styles/tokens' as *;
+@use '@/styles/semantic' as *;
+
+h1 {
+  font-size: $font-size-4xl;
+  color: $color-text-primary;
+  margin-bottom: $spacing-lg;
+  font-weight: $font-weight-bold;
+  line-height: $line-height-tight;
+}
