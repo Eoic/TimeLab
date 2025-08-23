@@ -3,7 +3,7 @@
 
 .card {
   position: relative;
-  padding: $spacing-lg;
+  padding: $spacing-sm;
   color: $color-text-primary;
   border-radius: $border-radius;
   border: 1px solid $color-border-primary;
@@ -23,3 +23,302 @@
   border: 1px solid $color-border-primary;
   pointer-events: none;
 }
+
+.card-title {
+  display: flex;
+  gap: $spacing-xs;
+  align-items: center;
+  margin-bottom: $spacing-md;
+  color: $color-text-primary;
+
+  h3 {
+    margin: 0;
+    font-size: $font-size-xl;
+    line-height: $line-height-tight;
+    font-weight: $font-weight-semibold;
+  }
+
+  .material-symbols-outlined {
+    font-size: 20px;
+    color: $color-text-secondary;
+  }
+}
+
+/* Labels panel layout: make content fill and only inner panels scroll */
+.card.labctrl {
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* allow children to define scroll areas */
+}
+
+/* Config panel: allow internal scroll to prevent html overflow */
+.card.config {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.card.config .form-grid {
+  overflow: auto;
+  min-height: 0;
+  flex: 1 1 auto; /* grow to consume space and allow internal scrolling */
+  /* Scrollbar edge alignment: keep content away from scrollbar while placing it at card edge */
+  padding-right: $spacing-sm;
+  margin-right: -$spacing-sm;
+}
+
+.card.labctrl .toolbar.mini {
+  display: flex;
+  gap: $spacing-sm;
+  justify-content: flex-start;
+  width: 100%;
+  padding: 0;
+  min-height: auto;
+  margin-bottom: $spacing-sm;
+}
+
+.card.labctrl .toolbar.mini .btn-icon {
+  border: 1px solid $color-border-primary;
+}
+
+/* Active label block below toolbar */
+.card.labctrl .active-label {
+  display: block;
+  margin-bottom: $spacing-sm;
+}
+
+.card.labctrl .active-label tl-dropdown {
+  width: 100%;
+  display: block;
+}
+
+/* No additional responsive rules needed; dropdown already spans full width */
+
+/* Extra safety: space between toolbar and tabs */
+.card.labctrl .toolbar.mini + .tabs {
+  margin-top: $spacing-sm;
+}
+
+.card.labctrl .tabs {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.card.labctrl .tab-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  /* Scrollbar edge alignment */
+  padding-right: $spacing-sm;
+  margin-right: -$spacing-sm;
+}
+
+/* Collapsible panels: gracefully hide in desktop collapsed modes */
+.container.collapse-left #panel-config,
+.container.collapse-right #panel-labctrl {
+  display: none;
+}
+.container.collapse-bottom #panel-stats {
+  display: none;
+}
+
+/* Labels list styling */
+.card.labctrl .labels-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: calc($spacing-xs / 2);
+}
+
+.card.labctrl .labels-list > li {
+  margin: 0; /* override global li margins to rely on gap only */
+}
+
+.card.labctrl .label-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: calc($spacing-xs * 0.75) calc($spacing-sm * 0.75);
+  border: 1px solid $color-border-secondary;
+  border-radius: $border-radius;
+  background: $color-bg-secondary;
+}
+
+.card.labctrl .label-item:hover {
+  border-color: $color-border-primary;
+  background: $color-bg-tertiary;
+}
+
+.card.labctrl .label-item .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--dot, $color-primary);
+  border: 1px solid $color-border-primary;
+}
+
+.card.labctrl .label-item .meta {
+  min-width: 0;
+}
+.card.labctrl .label-item .title {
+  font-weight: $font-weight-medium;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.card.labctrl .label-item .range {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.card.labctrl .label-item .delete {
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+.card.labctrl .label-item .delete.btn-icon {
+  padding: calc($spacing-xs * 0.5);
+}
+.card.labctrl .label-item .delete .material-symbols-outlined {
+  font-size: 18px;
+}
+
+/* Statistics panel styling */
+.card.stats {
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* allow internal content to scroll instead of the page */
+}
+.card.stats .card-title {
+  margin-bottom: $spacing-sm;
+}
+.card.stats .stats-content {
+  display: grid;
+  gap: $spacing-xs;
+  overflow: auto;
+  min-height: 0;
+  /* Scrollbar edge alignment */
+  padding-right: $spacing-sm;
+  margin-right: -$spacing-sm;
+}
+.card.stats .stats-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: $spacing-xs;
+}
+.card.stats .stat {
+  padding: $spacing-xs;
+  border: 1px solid $color-border-secondary;
+  border-radius: $border-radius;
+  background: $color-bg-secondary;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-sm;
+}
+.card.stats .stat .label {
+  display: inline-block;
+}
+.card.stats .stat .value {
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+}
+.card.stats .stats-list-wrap {
+  display: grid;
+  gap: calc($spacing-xs * 0.75);
+}
+.card.stats .stats-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: calc($spacing-xs / 4);
+}
+.card.stats .stats-list li {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: calc($spacing-xs * 0.375) calc($spacing-sm * 0.75);
+  border: 1px solid $color-border-secondary;
+  border-radius: $border-radius;
+  background: $color-bg-secondary;
+}
+.card.stats .stats-list .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--dot, $color-primary);
+  border: 1px solid $color-border-primary;
+}
+.card.stats .stats-list .name {
+  min-width: 0;
+  font-size: $font-size-sm;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.card.stats .stats-list .count {
+  font-variant-numeric: tabular-nums;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+.card.labctrl .label-item:hover .delete,
+.card.labctrl .label-item:focus-within .delete {
+  opacity: 1;
+}
+
+/* History list styling */
+.card.labctrl .history-list {
+  list-style: none;
+  padding: 0;
+  margin: $spacing-xs 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: calc($spacing-xs / 2);
+}
+.card.labctrl .history-list > li {
+  margin: 0;
+}
+
+.card.labctrl .history-item {
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: center;
+  gap: calc($spacing-xs * 0.25);
+  padding: calc($spacing-xs * 0.75) calc($spacing-sm * 0.75);
+  border: 1px solid $color-border-secondary;
+  border-radius: $border-radius;
+  background: $color-bg-secondary;
+  cursor: pointer;
+}
+.card.labctrl .history-item:hover,
+.card.labctrl .history-item:focus-visible {
+  border-color: $color-border-primary;
+  background: $color-bg-tertiary;
+}
+.card.labctrl .history-item[aria-selected='true'] {
+  border-color: $color-primary;
+  box-shadow: 0 0 0 1px rgba($color-primary, 0.2) inset;
+  background: color-mix(in oklab, $color-primary 6%, $color-bg-secondary);
+}
+.card.labctrl .history-item .meta {
+  min-width: 0;
+}
+.card.labctrl .history-item .title {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.card.labctrl .history-item .time {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+/* Buttonless, clickable rows — no extra actions shown */

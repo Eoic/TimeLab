@@ -1,3 +1,5 @@
+// Load in the trace types for pie, and choropleth
+
 export function setupApp(): void {
   const app = document.querySelector<HTMLDivElement>('#app');
 

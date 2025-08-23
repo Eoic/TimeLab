@@ -2,7 +2,6 @@
 @use '@/styles/semantic' as *;
 
 .toolbar {
-  grid-area: header;
   min-height: 56px;
   display: flex;
   align-items: center;

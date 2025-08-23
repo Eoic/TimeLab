@@ -2,7 +2,7 @@
 @use '@/styles/semantic' as *;
 @use '@/styles/theme-utils' as *;
 
-input,
+input:not([type='checkbox']):not([type='range']),
 textarea,
 select {
   padding: $spacing-sm;
@@ -11,6 +11,7 @@ select {
   border-radius: $border-radius;
   background-color: $color-bg-primary;
   border: 1px solid $color-border-primary;
+  box-sizing: border-box;
   @include theme-transition();
 
   &:focus {
@@ -21,4 +22,105 @@ select {
   &::placeholder {
     color: $color-text-muted;
   }
+}
+
+/* Checkbox styling (compact, filled when checked) */
+input[type='checkbox'] {
+  appearance: none;
+  inline-size: 16px;
+  block-size: 16px;
+  padding: 0;
+  margin-right: $spacing-xs;
+  border: 1px solid $color-border-primary;
+  border-radius: $border-radius-sm;
+  background: $color-bg-primary;
+  display: inline-block;
+  vertical-align: middle;
+  box-sizing: border-box;
+}
+input[type='checkbox']:checked {
+  background: $color-primary;
+  border-color: $color-primary;
+}
+input[type='checkbox']:focus-visible {
+  @include focus-ring();
+}
+
+/* Range slider styling */
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  inline-size: 100%;
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+}
+input[type='range']::-webkit-slider-runnable-track {
+  height: 4px;
+  background: $color-border-secondary;
+  border-radius: $border-radius-pill;
+}
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: $color-primary;
+  border: 1px solid $color-border-primary;
+  margin-top: -5px; /* center the thumb */
+}
+input[type='range']::-moz-range-track {
+  height: 4px;
+  background: $color-border-secondary;
+  border-radius: $border-radius-pill;
+}
+input[type='range']::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: $color-primary;
+  border: 1px solid $color-border-primary;
+}
+input[type='range']:focus-visible::-webkit-slider-thumb,
+input[type='range']:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 3px rgba($color-primary, 0.25);
+}
+
+.form-grid {
+  display: grid;
+  gap: $spacing-sm;
+}
+
+.form-field {
+  display: grid;
+  gap: $spacing-xs;
+
+  label {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+  }
+}
+
+/* Lightweight form sections inside cards */
+.section {
+  display: grid;
+  gap: $spacing-sm;
+}
+.section + .section {
+  margin-top: $spacing-sm;
+}
+.section h5 {
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+}
+
+/* Compact <hr> dividers in forms */
+form hr {
+  margin: 0;
+  border: 0;
+  border-top: 1px solid $color-border-primary;
 }

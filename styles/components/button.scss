@@ -22,7 +22,7 @@ button,
   border: 1px solid transparent;
   color: $color-text-primary;
   background: transparent;
-  @include theme-transition('color, background-color, border-color, box-shadow');
+  @include focusable-transition();
 
   &:disabled,
   &[aria-disabled='true'] {
@@ -54,8 +54,8 @@ button:not(.btn-sm):not(.btn-lg),
 
 // Icon button — square, minimal padding; combine with size modifiers
 .btn-icon {
-  padding: calc(#{$spacing-xs} * 0.5);
   aspect-ratio: 1 / 1;
+  padding: calc(#{$spacing-xs} * 0.5);
 }
 .btn-icon.btn-md {
   padding: calc(#{$spacing-xs} * 0.75);
@@ -65,9 +65,9 @@ button:not(.btn-sm):not(.btn-lg),
 }
 .btn .icon,
 button .icon {
-  display: inline-flex;
   width: 1em;
   height: 1em;
+  display: inline-flex;
 }
 
 // Variants
@@ -199,7 +199,7 @@ button.btn-link {
   border-color: transparent;
   color: $color-primary;
   padding: 0;
-  @include theme-transition('color');
+  @include focusable-transition();
 
   &:hover {
     color: $color-primary-hover;

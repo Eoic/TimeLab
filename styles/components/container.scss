@@ -2,25 +2,30 @@
 @use '@/styles/semantic' as *;
 
 .container {
-  gap: $spacing-md;
+  gap: $spacing-sm;
   margin: 0;
   padding: 0;
   width: 100%;
   padding: $spacing-sm;
   max-width: 100%;
   display: grid;
+  /* Constrain to viewport height and let inner panels scroll */
   min-block-size: 100vh;
   min-block-size: 100svh;
   min-block-size: 100dvh;
+  block-size: 100vh;
+  block-size: 100svh;
+  block-size: 100dvh;
+  overflow: hidden;
   align-self: flex-start;
   grid-template-columns: repeat(12, 1fr);
   grid-template-rows: auto auto minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
   grid-template-areas:
     'header header header header header header header header header header header header'
     'toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar'
-    'config config config chart  chart  chart  chart  chart  chart  chart  labctrl labctrl'
-    'config config config chart  chart  chart  chart  chart  chart  chart  labels  labels'
-    'config config config stats  stats  stats  stats  stats  stats  stats  labels  labels';
+    'config config config chart  chart  chart  chart  chart  chart  labctrl labctrl labctrl'
+    'config config config chart  chart  chart  chart  chart  chart  labctrl labctrl labctrl'
+    'config config config stats  stats  stats  stats  stats  stats  labctrl labctrl labctrl';
 
   .header {
     grid-area: header;
@@ -42,10 +47,6 @@
     grid-area: stats;
   }
 
-  .labels {
-    grid-area: labels;
-  }
-
   .labctrl {
     grid-area: labctrl;
   }
@@ -53,10 +54,56 @@
   .config,
   .chart,
   .stats,
-  .labels,
   .labctrl {
     overflow: auto;
     min-block-size: 0;
+  }
+
+  /* Collapsed layout variants (desktop) */
+  &.collapse-left {
+    grid-template-areas:
+      'header header header header header header header header header header header header'
+      'toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar'
+      'chart  chart  chart  chart  chart  chart  chart  chart  chart  labctrl labctrl labctrl'
+      'chart  chart  chart  chart  chart  chart  chart  chart  chart  labctrl labctrl labctrl'
+      'stats  stats  stats  stats  stats  stats  stats  stats  stats  labctrl labctrl labctrl';
+  }
+
+  &.collapse-right {
+    grid-template-areas:
+      'header header header header header header header header header header header header'
+      'toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar'
+      'config config config chart  chart  chart  chart  chart  chart  chart  chart  chart'
+      'config config config chart  chart  chart  chart  chart  chart  chart  chart  chart'
+      'config config config stats  stats  stats  stats  stats  stats  stats  stats  stats';
+  }
+
+  &.collapse-left.collapse-right {
+    grid-template-areas:
+      'header header header header header header header header header header header header'
+      'toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar'
+      'chart  chart  chart  chart  chart  chart  chart  chart  chart  chart  chart  chart'
+      'chart  chart  chart  chart  chart  chart  chart  chart  chart  chart  chart  chart'
+      'stats  stats  stats  stats  stats  stats  stats  stats  stats  stats  stats  stats';
+  }
+
+  /* All panels collapsed: maximize chart area across remaining rows */
+  &.collapse-left.collapse-right.collapse-bottom {
+    grid-template-areas:
+      'header header header header header header header header header header header header'
+      'toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar'
+      'chart  chart  chart  chart  chart  chart  chart  chart  chart  chart  chart  chart'
+      'chart  chart  chart  chart  chart  chart  chart  chart  chart  chart  chart  chart'
+      'chart  chart  chart  chart  chart  chart  chart  chart  chart  chart  chart  chart';
+  }
+
+  &.collapse-bottom {
+    grid-template-areas:
+      'header header header header header header header header header header header header'
+      'toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar'
+      'config config config chart  chart  chart  chart  chart  chart  labctrl labctrl labctrl'
+      'config config config chart  chart  chart  chart  chart  chart  labctrl labctrl labctrl'
+      'config config config chart  chart  chart  chart  chart  chart  labctrl labctrl labctrl';
   }
 }
 
@@ -68,16 +115,15 @@
       'toolbar toolbar toolbar toolbar toolbar toolbar'
       'chart  chart  chart  chart  chart  chart'
       'labctrl labctrl labctrl labctrl labctrl labctrl'
-      'labels labels labels labels labels labels'
       'config config config config config config'
       'stats  stats  stats  stats  stats  stats';
   }
 
-  .header {
+  .toolbar {
     flex-wrap: wrap;
   }
 
-  .header .center {
+  .toolbar .center {
     order: -1;
     width: 100%;
     text-align: left;
@@ -97,18 +143,17 @@
       'toolbar'
       'chart'
       'labctrl'
-      'labels'
       'config'
       'stats';
   }
 
-  .header {
+  .toolbar {
     flex-direction: column;
     align-items: flex-start;
     gap: $spacing-sm;
   }
 
-  .header .center {
+  .toolbar .center {
     text-align: left;
   }
 

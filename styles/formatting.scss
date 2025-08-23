@@ -128,12 +128,20 @@
   text-align: justify;
 }
 
+// Text sizing
+// -----------------------------------------------------------------------------
+.text-xs {
+  font-size: $font-size-xs;
+}
+.text-sm {
+  font-size: $font-size-sm;
+}
+
 // Layout utilities
 // -----------------------------------------------------------------------------
 .center {
   margin: 0 auto;
 }
-
 .block {
   display: block;
 }

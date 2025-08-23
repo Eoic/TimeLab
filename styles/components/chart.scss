@@ -1,6 +1,17 @@
 @use '@/styles/tokens' as *;
 @use '@/styles/semantic' as *;
 
+.chart {
+  display: flex;
+  flex-direction: column;
+  min-height: 0; // allow child to shrink in grid
+}
+
+.chart #chart-canvas {
+  flex: 1 1 auto;
+  min-height: 280px;
+}
+
 .chart .tools {
   gap: $spacing-xs;
   top: $spacing-sm;

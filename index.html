@@ -1,112 +1,358 @@
 <!doctype html>
 <html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TimeLab - time series data labeling tool</title>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+    />
+  </head>
 
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>TimeLab - time series data labeling tool</title>
-</head>
-
-<body>
-  <div class="container">
-    <div class="header">
-      <div class="float-left">
-        <div class="brand"></div>
-        <span>TimeLab</span> |
-        Time series data labeling tool
-      </div>
-      <div class="float-right">
-        <button> Settings </button>
-      </div>
-      <div class="clearfix"></div>
-    </div>
-
-    <div class="card toolbar">
-      <div class="left" role="group" aria-label="File actions">
-        <button aria-label="Upload data">Upload data</button>
-        <button aria-label="Export labels">Export labels</button>
-      </div>
-      <div class="right" role="group" aria-label="Edit actions">
-        <button class="btn-outline" aria-label="Undo">Undo</button>
-        <button class="btn-outline" aria-label="Redo">Redo</button>
-      </div>
-    </div>
-
-    <!-- Collapsible Chart Configuration -->
-    <div class="card config">
-      <span class="tag">Chart configuration</span>
-      <!-- <details class="config-accordion" open>
-        <summary>Configuration (accordion)</summary>
-        <div class="config-groups">
-          <div class="group">Axes</div>
-          <div class="group">Rendering (smoothing/decimation)</div>
-          <div class="group">Snapping</div>
-          <div class="group">Overlays</div>
-          <div class="group">Appearance</div>
-          <div class="group">Advanced…</div>
+  <body>
+    <div class="container">
+      <div class="header flex justify-between items-center">
+        <div>
+          <div class="brand">
+            <span class="material-symbols-outlined">vital_signs</span>
+            <strong> TimeLab </strong>
+            <div class="vertical"></div>
+            <p class="text-muted">Time-series data labeling tool</p>
+          </div>
         </div>
-      </details> -->
-    </div>
-
-    <!-- Chart with floating micro-toolbar -->
-    <div class="card chart">
-      <span class="tag">Chart Area (with minimap)</span>
-      <div class="tools" role="toolbar" aria-label="Chart quick tools">
-        <div class="pill" aria-label="Zoom out">−</div>
-        <div class="pill" aria-label="Zoom in">+</div>
-        <div class="pill" aria-label="Fit to view">Fit</div>
-        <div class="pill" aria-label="Snap toggle">Snap</div>
-        <div class="pill" aria-label="Label type switcher">Type</div>
-      </div>
-    </div>
-
-    <!-- Right sidebar: label controls strip -->
-    <div class="card labctrl">
-      <span class="tag">Label Controls</span>
-      <div class="labctrl-inner">
-        <div class="row" style="display: flex; flex-wrap: wrap; margin-top: 8px;">
-          <div class="pill">New</div>
-          <div class="pill">Merge</div>
-          <div class="pill">Delete</div>
-          <div class="pill">Filter</div>
+        <div>
+          <button class="btn-icon btn-outline" aria-label="settings">
+            <span class="material-symbols-outlined">settings</span>
+          </button>
         </div>
       </div>
-    </div>
 
-    <!-- Right sidebar: tabs (Labels / History) -->
-    <div class="card labels">
-      <span class="tag">Labels & History</span>
-      <div class="tabs" style="height: 100%">
-        <div class="tab-head">
-          <input type="radio" name="tabs" id="tab-labels" checked>
-          <label for="tab-labels">Labels</label>
-          <input type="radio" name="tabs" id="tab-history">
-          <label for="tab-history">History</label>
+      <div class="card toolbar">
+        <div class="left" role="group" aria-label="File actions">
+          <button class="btn-outline" aria-label="Upload data">
+            <span class="material-symbols-outlined">upload</span>Upload data
+          </button>
+          <button class="btn-outline" aria-label="Export labels">
+            <span class="material-symbols-outlined">download</span> Export labels
+          </button>
         </div>
-        <div class="panels">
-          <div class="tab-body panels">
-            <div class="panel labels-panel">
-              <!-- Placeholder list -->
-              <div class="group" style="height:40px;">Label search / filters</div>
-              <div class="group" style="height:40px;">Label item</div>
-              <div class="group" style="height:40px;">Label item</div>
-              <div class="group" style="height:40px;">Label item</div>
-              <div class="group" style="height:40px;">Label item</div>
+        <div class="right" role="group" aria-label="Edit actions"></div>
+      </div>
+
+      <!-- Chart Configuration Panel -->
+      <div class="card config" id="panel-config">
+        <div class="card-title" role="heading" aria-level="2">
+          <span class="material-symbols-outlined" aria-hidden="true">tune</span>
+          <h4>Chart configuration</h4>
+        </div>
+        <form class="form-grid" aria-label="Chart configuration">
+          <!-- Data mapping -->
+          <div class="section" aria-labelledby="cfg-data-heading">
+            <h5 id="cfg-data-heading" class="text-sm text-muted" style="margin: 0">Data</h5>
+            <div class="form-field">
+              <label for="x-axis">X axis (time/index)</label>
+              <tl-dropdown id="x-axis" placeholder="Choose column"></tl-dropdown>
             </div>
-            <div class="panel history-panel">
-              <div class="group" style="height:40px;">Action #1</div>
-              <div class="group" style="height:40px;">Action #2</div>
-              <div class="group" style="height:40px;">Action #3</div>
+            <div class="form-field">
+              <label for="y-axis">Y axis (values)</label>
+              <tl-dropdown id="y-axis" placeholder="Choose column" search></tl-dropdown>
+            </div>
+            <small class="text-muted text-sm"> Select columns from your dataset to define the chart axes. </small>
+          </div>
+
+          <hr />
+
+          <!-- Appearance -->
+          <div class="section" aria-labelledby="cfg-appearance-heading">
+            <h5 id="cfg-appearance-heading" class="text-sm text-muted" style="margin: 0">Appearance</h5>
+            <div class="form-field">
+              <label><input type="checkbox" id="cfg-smooth" checked /> Smooth line</label>
+            </div>
+            <div class="form-field">
+              <label><input type="checkbox" id="cfg-area" checked /> Area fill</label>
+            </div>
+            <div class="form-field">
+              <label for="cfg-linewidth">Line width</label>
+              <input id="cfg-linewidth" type="range" min="1" max="6" value="2" />
+            </div>
+            <div class="form-field">
+              <label><input type="checkbox" id="cfg-points" /> Show points</label>
+            </div>
+            <div class="form-field">
+              <label for="cfg-sampling">Downsampling</label>
+              <tl-dropdown id="cfg-sampling" placeholder="Choose method"></tl-dropdown>
+            </div>
+          </div>
+
+          <hr />
+
+          <!-- Axes -->
+          <div class="section" aria-labelledby="cfg-axes-heading">
+            <h5 id="cfg-axes-heading" class="text-sm text-muted" style="margin: 0">Axes</h5>
+            <div class="form-field">
+              <label for="cfg-x-type">X axis type</label>
+              <tl-dropdown id="cfg-x-type" placeholder="Select type"></tl-dropdown>
+            </div>
+            <div class="form-field">
+              <label for="cfg-y-type">Y axis scale</label>
+              <tl-dropdown id="cfg-y-type" placeholder="Select scale"></tl-dropdown>
+            </div>
+            <div class="form-field">
+              <label><input type="checkbox" id="cfg-y-auto" checked /> Auto-scale Y</label>
+            </div>
+            <div class="form-field">
+              <label for="cfg-y-min">Y min</label>
+              <input id="cfg-y-min" type="number" step="any" placeholder="auto" disabled />
+            </div>
+            <div class="form-field">
+              <label for="cfg-y-max">Y max</label>
+              <input id="cfg-y-max" type="number" step="any" placeholder="auto" disabled />
+            </div>
+            <div class="form-field">
+              <label><input type="checkbox" id="cfg-gridlines" checked /> Show gridlines</label>
+            </div>
+          </div>
+
+          <hr />
+
+          <!-- Guides -->
+          <div class="section" aria-labelledby="cfg-guides-heading">
+            <h5 id="cfg-guides-heading" class="text-sm text-muted" style="margin: 0">Guides</h5>
+            <div class="form-field">
+              <label for="cfg-tooltip">Tooltip mode</label>
+              <tl-dropdown id="cfg-tooltip" placeholder="Select mode"></tl-dropdown>
+            </div>
+            <div class="form-field">
+              <label><input type="checkbox" id="cfg-snap" /> Snap to data</label>
+            </div>
+            <div class="form-field">
+              <label><input type="checkbox" id="cfg-threshold-enable" /> Threshold line</label>
+            </div>
+            <div class="form-field">
+              <label for="cfg-threshold-value">Threshold value</label>
+              <input id="cfg-threshold-value" type="number" step="any" placeholder="e.g. 60" disabled />
+            </div>
+          </div>
+
+          <hr />
+
+          <!-- View -->
+          <div class="section" aria-labelledby="cfg-view-heading">
+            <h5 id="cfg-view-heading" class="text-sm text-muted" style="margin: 0">View</h5>
+            <div class="form-field">
+              <label for="cfg-zoom-preset">Zoom preset</label>
+              <tl-dropdown id="cfg-zoom-preset" placeholder="Select preset"></tl-dropdown>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- Chart with floating micro-toolbar -->
+      <div id="chart" class="card chart">
+        <div id="chart-canvas" aria-label="Chart area" style="position: relative"></div>
+        <div class="tools" role="toolbar" aria-label="Chart quick tools">
+          <button class="btn-icon btn-neutral" aria-label="Undo" title="Undo">
+            <span class="material-symbols-outlined">undo</span>
+          </button>
+          <button class="btn-icon btn-neutral" aria-label="Redo" title="Redo">
+            <span class="material-symbols-outlined">redo</span>
+          </button>
+          <button class="btn-icon btn-neutral" aria-label="Zoom out" title="Zoom out">
+            <span class="material-symbols-outlined">zoom_in</span>
+          </button>
+          <button class="btn-icon btn-neutral" aria-label="Zoom in" title="Zoom in">
+            <span class="material-symbols-outlined">zoom_out</span>
+          </button>
+          <button class="btn-icon btn-neutral" aria-label="Fit to view" title="Fit to view">
+            <span class="material-symbols-outlined">fit_screen</span>
+          </button>
+          <button class="btn-icon btn-neutral" aria-label="Snap settings" title="Snap settings">
+            <span class="material-symbols-outlined">point_scan</span>
+          </button>
+          <!-- Collapse/expand side panels -->
+          <button
+            class="btn-icon btn-neutral"
+            aria-controls="panel-config"
+            aria-label="Collapse configuration panel"
+            aria-expanded="true"
+            data-action="toggle-config"
+            title="Toggle left panel"
+          >
+            <span class="material-symbols-outlined">left_panel_close</span>
+          </button>
+          <button
+            class="btn-icon btn-neutral"
+            aria-controls="panel-stats"
+            aria-label="Collapse statistics panel"
+            aria-expanded="true"
+            data-action="toggle-stats"
+            title="Toggle bottom panel"
+          >
+            <span class="material-symbols-outlined">bottom_panel_close</span>
+          </button>
+
+          <button
+            class="btn-icon btn-neutral"
+            aria-controls="panel-labctrl"
+            aria-label="Collapse labels panel"
+            aria-expanded="true"
+            data-action="toggle-labctrl"
+            title="Toggle right panel"
+          >
+            <span class="material-symbols-outlined">right_panel_close</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Right sidebar: labels panel -->
+      <div class="card labctrl" id="panel-labctrl">
+        <div class="card-title" role="heading" aria-level="2">
+          <span class="material-symbols-outlined" aria-hidden="true">label</span>
+          <h4>Labels</h4>
+        </div>
+
+        <!-- Toolbar actions -->
+        <div class="toolbar mini" role="toolbar" aria-label="Label actions" style="flex-wrap: wrap; gap: 8px">
+          <button
+            class="btn-icon btn-neutral"
+            aria-haspopup="dialog"
+            aria-controls="modal-label-new"
+            data-modal="label-new"
+            aria-label="New label"
+          >
+            <span class="material-symbols-outlined">add</span>
+          </button>
+          <button
+            class="btn-icon btn-neutral"
+            aria-haspopup="dialog"
+            aria-controls="modal-label-delete"
+            data-modal="label-delete"
+            aria-label="Delete label"
+          >
+            <span class="material-symbols-outlined">delete</span>
+          </button>
+          <button
+            class="btn-icon btn-neutral"
+            aria-haspopup="dialog"
+            aria-controls="modal-label-merge"
+            data-modal="label-merge"
+            aria-label="Merge labels"
+          >
+            <span class="material-symbols-outlined">merge_type</span>
+          </button>
+        </div>
+
+        <!-- Active label selector -->
+        <div class="active-label">
+          <tl-dropdown id="active-label" placeholder="Select label" search></tl-dropdown>
+        </div>
+
+        <!-- Labels and History tabs -->
+        <div class="tabs" style="height: 100%">
+          <div class="tab-head">
+            <input type="radio" name="labels-tabs" id="tab-labels" checked />
+            <label for="tab-labels">Labels</label>
+            <input type="radio" name="labels-tabs" id="tab-history" />
+            <label for="tab-history">History</label>
+          </div>
+          <div class="panels">
+            <div class="tab-body panels">
+              <div class="panel labels-panel" role="region" aria-labelledby="tab-labels">
+                <ul class="labels-list" role="list">
+                  <li class="label-item">
+                    <span class="dot" style="--dot: #e74c3c"></span>
+                    <div class="meta">
+                      <div class="title">Label A</div>
+                      <div class="range text-sm text-muted">[100 – 250]</div>
+                    </div>
+                    <button class="btn-icon btn-ghost delete" aria-label="Delete label">
+                      <span class="material-symbols-outlined">delete</span>
+                    </button>
+                  </li>
+                  <li class="label-item">
+                    <span class="dot" style="--dot: #f1c40f"></span>
+                    <div class="meta">
+                      <div class="title">Label B</div>
+                      <div class="range text-sm text-muted">[260 – 320]</div>
+                    </div>
+                    <button class="btn-icon btn-ghost delete" aria-label="Delete label">
+                      <span class="material-symbols-outlined">delete</span>
+                    </button>
+                  </li>
+                  <li class="label-item">
+                    <span class="dot" style="--dot: #2ecc71"></span>
+                    <div class="meta">
+                      <div class="title">Label C</div>
+                      <div class="range text-sm text-muted">[400 – 520]</div>
+                    </div>
+                    <button class="btn-icon btn-ghost delete" aria-label="Delete label">
+                      <span class="material-symbols-outlined">delete</span>
+                    </button>
+                  </li>
+                  <li class="label-item">
+                    <span class="dot" style="--dot: #3498db"></span>
+                    <div class="meta">
+                      <div class="title">Label D</div>
+                      <div class="range text-sm text-muted">[600 – 740]</div>
+                    </div>
+                    <button class="btn-icon btn-ghost delete" aria-label="Delete label">
+                      <span class="material-symbols-outlined">delete</span>
+                    </button>
+                  </li>
+                </ul>
+              </div>
+              <div class="panel history-panel" role="region" aria-labelledby="tab-history">
+                <ul class="history-list" role="listbox" aria-label="History">
+                  <li class="history-item" role="option" aria-selected="true" tabindex="0">
+                    <div class="meta">
+                      <div class="title">Set Active: Label B</div>
+                      <div class="time text-sm text-muted">just now</div>
+                    </div>
+                  </li>
+                  <li class="history-item" role="option" aria-selected="false" tabindex="0">
+                    <div class="meta">
+                      <div class="title">Added range [260 – 320] to Label B</div>
+                      <div class="time text-sm text-muted">1 min ago</div>
+                    </div>
+                  </li>
+                  <li class="history-item" role="option" aria-selected="false" tabindex="0">
+                    <div class="meta">
+                      <div class="title">Deleted range [100 – 150] from Label A</div>
+                      <div class="time text-sm text-muted">3 min ago</div>
+                    </div>
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      <!-- Optional stats strip aligned to chart width -->
+      <div class="card stats" id="panel-stats">
+        <div class="card-title" role="heading" aria-level="2">
+          <span class="material-symbols-outlined" aria-hidden="true">analytics</span>
+          <h4>Statistics</h4>
+        </div>
+        <div class="stats-content" role="region" aria-label="Label statistics">
+          <div class="stats-summary">
+            <div class="stat">
+              <div class="label text-sm text-muted">Total labels</div>
+              <div class="value" id="stats-total">0</div>
+            </div>
+            <div class="stat">
+              <div class="label text-sm text-muted">Label types</div>
+              <div class="value" id="stats-types">0</div>
+            </div>
+          </div>
+          <div class="stats-list-wrap">
+            <div class="list-title text-sm text-muted">Counts by type</div>
+            <ul id="stats-list" class="stats-list" role="list"></ul>
+          </div>
+        </div>
+      </div>
     </div>
-
-    <!-- Optional stats strip aligned to chart width -->
-    <div class="card stats"><span class="tag">Statistics (compact)</span></div>
-  </div>
-  <script type="module" src="/src/main.ts"></script>
-</body>
-
+    <script type="module" src="/src/main.ts"></script>
+  </body>
 </html>
