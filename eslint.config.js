@@ -23,7 +23,13 @@ export default tseslint.config(
             },
         },
         rules: {
-            'prettier/prettier': 'error',
+            'prettier/prettier': [
+                'error',
+                {
+                    // Ensure the plugin loads settings from .prettierrc.json
+                    usePrettierrc: true,
+                },
+            ],
             '@typescript-eslint/no-unused-vars': [
                 'error',
                 {
@@ -32,7 +38,8 @@ export default tseslint.config(
                     caughtErrorsIgnorePattern: '^_',
                 },
             ],
-            'curly': ['error', 'all'],
+            // Allow single-line statements without braces like the example style
+            curly: ['error', 'multi-line'],
             '@stylistic/semi': 'error',
             '@typescript-eslint/explicit-function-return-type': 'off',
             '@typescript-eslint/explicit-module-boundary-types': 'off',
@@ -41,14 +48,7 @@ export default tseslint.config(
             'import/order': [
                 'error',
                 {
-                    groups: [
-                        'builtin',
-                        'external',
-                        'internal',
-                        'parent',
-                        'sibling',
-                        'index',
-                    ],
+                    groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
                     'newlines-between': 'always',
                     alphabetize: {
                         order: 'asc',
@@ -71,6 +71,6 @@ export default tseslint.config(
         ...tseslint.configs.disableTypeChecked,
     },
     {
-        ignores: ['dist/', 'node_modules/', 'coverage/'],
+        ignores: ['dist/', 'node_modules/', 'coverage/', 'src/vendor/'],
     }
 );

@@ -15,6 +15,18 @@
 				"$tsc"
 			],
 			"group": "build"
+		},
+		{
+			"label": "Type Check",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"-s",
+				"type-check"
+			],
+			"isBackground": false,
+			"group": "build"
 		}
 	]
 }

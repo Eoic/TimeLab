@@ -30,14 +30,59 @@
 
       <div class="card toolbar">
         <div class="left" role="group" aria-label="File actions">
-          <button class="btn-outline" aria-label="Upload data">
+          <button
+            class="btn-outline"
+            id="btn-upload-data"
+            aria-haspopup="dialog"
+            aria-controls="modal-data-upload"
+            aria-label="Upload data"
+            title="Upload data files"
+          >
             <span class="material-symbols-outlined">upload</span>Upload data
+          </button>
+          <button
+            class="btn-outline"
+            id="btn-manage-data"
+            aria-haspopup="dialog"
+            aria-controls="modal-data-manage"
+            aria-label="Manage data files"
+            title="Manage uploaded files"
+          >
+            <span class="material-symbols-outlined">folder_open</span>Manage data
           </button>
           <button class="btn-outline" aria-label="Export labels">
             <span class="material-symbols-outlined">download</span> Export labels
           </button>
         </div>
-        <div class="right" role="group" aria-label="Edit actions"></div>
+        <div class="right" role="group" aria-label="Series navigation">
+          <button
+            class="btn-neutral"
+            id="toggle-labeled"
+            aria-pressed="false"
+            aria-label="Mark series as labeled"
+            title="Mark series as labeled"
+          >
+            <span class="material-symbols-outlined" aria-hidden="true">hourglass_empty</span>
+            <span class="label">Unlabeled</span>
+          </button>
+          <button class="btn-icon btn-neutral" id="series-prev" aria-label="Previous series" title="Previous series">
+            <span class="material-symbols-outlined">navigate_before</span>
+          </button>
+          <span id="series-indicator" class="text-muted" aria-live="polite" aria-atomic="true">1 / 1</span>
+          <button class="btn-icon btn-neutral" id="series-next" aria-label="Next series" title="Next series">
+            <span class="material-symbols-outlined">navigate_next</span>
+          </button>
+          <button
+            class="btn-icon btn-outline"
+            id="series-grid"
+            aria-haspopup="dialog"
+            aria-controls="modal-series-selector"
+            aria-label="Open series selector"
+            title="Open series selector"
+          >
+            <span class="material-symbols-outlined">grid_view</span>
+          </button>
+        </div>
       </div>
 
       <!-- Chart Configuration Panel -->
@@ -103,11 +148,11 @@
             </div>
             <div class="form-field">
               <label for="cfg-y-min">Y min</label>
-              <input id="cfg-y-min" type="number" step="any" placeholder="auto" disabled />
+              <input id="cfg-y-min" type="number" step="any" placeholder="Auto" disabled />
             </div>
             <div class="form-field">
               <label for="cfg-y-max">Y max</label>
-              <input id="cfg-y-max" type="number" step="any" placeholder="auto" disabled />
+              <input id="cfg-y-max" type="number" step="any" placeholder="Auto" disabled />
             </div>
             <div class="form-field">
               <label><input type="checkbox" id="cfg-gridlines" checked /> Show gridlines</label>
@@ -226,6 +271,15 @@
           <button
             class="btn-icon btn-neutral"
             aria-haspopup="dialog"
+            aria-controls="modal-label-edit"
+            data-modal="label-edit"
+            aria-label="Edit label"
+          >
+            <span class="material-symbols-outlined">edit</span>
+          </button>
+          <button
+            class="btn-icon btn-neutral"
+            aria-haspopup="dialog"
             aria-controls="modal-label-delete"
             data-modal="label-delete"
             aria-label="Delete label"
@@ -245,7 +299,7 @@
 
         <!-- Active label selector -->
         <div class="active-label">
-          <tl-dropdown id="active-label" placeholder="Select label" search></tl-dropdown>
+          <tl-dropdown id="active-label" placeholder="Active label" search></tl-dropdown>
         </div>
 
         <!-- Labels and History tabs -->
@@ -350,6 +404,102 @@
             <div class="list-title text-sm text-muted">Counts by type</div>
             <ul id="stats-list" class="stats-list" role="list"></ul>
           </div>
+        </div>
+      </div>
+    </div>
+    <!-- Series selection modal -->
+    <div
+      class="modal"
+      id="modal-series-selector"
+      role="dialog"
+      aria-modal="true"
+      aria-hidden="true"
+      aria-labelledby="series-modal-title"
+    >
+      <div class="modal-backdrop" data-close></div>
+      <div class="modal-dialog card" role="document">
+        <div class="card-title">
+          <span class="material-symbols-outlined" aria-hidden="true">grid_view</span>
+          <h4 id="series-modal-title">Select time series</h4>
+        </div>
+        <div class="series-grid" id="series-grid-container" role="listbox" aria-label="Time series list"></div>
+        <div class="mt-sm" style="display: flex; justify-content: flex-end">
+          <button class="btn-outline" id="series-modal-close" data-close>
+            <span class="material-symbols-outlined" aria-hidden="true">close</span>
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- Data upload modal -->
+    <div
+      class="modal"
+      id="modal-data-upload"
+      role="dialog"
+      aria-modal="true"
+      aria-hidden="true"
+      aria-labelledby="data-upload-title"
+    >
+      <div class="modal-backdrop" data-close></div>
+      <div class="modal-dialog card" role="document">
+        <div class="card-title">
+          <span class="material-symbols-outlined" aria-hidden="true">upload</span>
+          <h4 id="data-upload-title">Upload data files</h4>
+        </div>
+
+        <div id="upload-dropzone" class="upload-zone" aria-label="File drop area" tabindex="0">
+          <input id="upload-input" type="file" accept=".csv,.tsv,.txt,text/csv" multiple hidden />
+          <div class="inner">
+            <span class="material-symbols-outlined" aria-hidden="true">cloud_upload</span>
+            <div class="title">Drag and drop CSV/TSV files here</div>
+            <div class="subtitle text-sm text-muted">or</div>
+            <button id="upload-select" class="btn-primary" type="button">
+              <span class="material-symbols-outlined" aria-hidden="true">folder</span>
+              Select files
+            </button>
+            <div class="hint text-sm text-muted">Files stay local in your browser (offline-first).</div>
+          </div>
+        </div>
+        <div id="uploads-section" class="mt-sm" aria-hidden="true" style="display: none">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin: 0 0 8px">
+            <h5 class="text-sm text-muted" style="margin: 0">Selected files</h5>
+            <button id="uploads-clear" class="btn-ghost btn-sm" type="button">
+              <span class="material-symbols-outlined" aria-hidden="true">delete_sweep</span>
+              Clear all
+            </button>
+          </div>
+          <div id="uploads-list" class="uploads-list" role="list" aria-live="polite"></div>
+        </div>
+        <div class="mt-sm" style="display: flex; justify-content: flex-end">
+          <button class="btn-outline" id="data-upload-close" data-close>
+            <span class="material-symbols-outlined" aria-hidden="true">close</span>
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data management modal -->
+    <div
+      class="modal"
+      id="modal-data-manage"
+      role="dialog"
+      aria-modal="true"
+      aria-hidden="true"
+      aria-labelledby="data-manage-title"
+    >
+      <div class="modal-backdrop" data-close></div>
+      <div class="modal-dialog card" role="document">
+        <div class="card-title">
+          <span class="material-symbols-outlined" aria-hidden="true">folder_open</span>
+          <h4 id="data-manage-title">Manage data files</h4>
+        </div>
+        <div id="data-files-list" class="files-list" role="list" aria-label="Uploaded files"></div>
+        <div class="mt-sm" style="display: flex; justify-content: flex-end; gap: 8px">
+          <button class="btn-outline" id="data-manage-close" data-close>
+            <span class="material-symbols-outlined" aria-hidden="true">close</span>
+            Close
+          </button>
         </div>
       </div>
     </div>

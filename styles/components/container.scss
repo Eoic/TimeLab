@@ -2,164 +2,173 @@
 @use '@/styles/semantic' as *;
 
 .container {
-  gap: $spacing-sm;
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  padding: $spacing-sm;
-  max-width: 100%;
-  display: grid;
-  /* Constrain to viewport height and let inner panels scroll */
-  min-block-size: 100vh;
-  min-block-size: 100svh;
-  min-block-size: 100dvh;
-  block-size: 100vh;
-  block-size: 100svh;
-  block-size: 100dvh;
-  overflow: hidden;
-  align-self: flex-start;
-  grid-template-columns: repeat(12, 1fr);
-  grid-template-rows: auto auto minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
-  grid-template-areas:
-    'header header header header header header header header header header header header'
-    'toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar'
-    'config config config chart  chart  chart  chart  chart  chart  labctrl labctrl labctrl'
-    'config config config chart  chart  chart  chart  chart  chart  labctrl labctrl labctrl'
-    'config config config stats  stats  stats  stats  stats  stats  labctrl labctrl labctrl';
-
-  .header {
-    grid-area: header;
-  }
-
-  .toolbar {
-    grid-area: toolbar;
-  }
-
-  .config {
-    grid-area: config;
-  }
-
-  .chart {
-    grid-area: chart;
-  }
-
-  .stats {
-    grid-area: stats;
-  }
-
-  .labctrl {
-    grid-area: labctrl;
-  }
-
-  .config,
-  .chart,
-  .stats,
-  .labctrl {
-    overflow: auto;
-    min-block-size: 0;
-  }
-
-  /* Collapsed layout variants (desktop) */
-  &.collapse-left {
+    gap: $spacing-sm;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    padding: $spacing-sm;
+    max-width: 100%;
+    display: grid;
+    /* Constrain to viewport height and let inner panels scroll */
+    min-block-size: 100vh;
+    min-block-size: 100svh;
+    min-block-size: 100dvh;
+    block-size: 100vh;
+    block-size: 100svh;
+    block-size: 100dvh;
+    overflow: hidden;
+    align-self: flex-start;
+    grid-template-columns: repeat(12, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
     grid-template-areas:
-      'header header header header header header header header header header header header'
-      'toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar'
-      'chart  chart  chart  chart  chart  chart  chart  chart  chart  labctrl labctrl labctrl'
-      'chart  chart  chart  chart  chart  chart  chart  chart  chart  labctrl labctrl labctrl'
-      'stats  stats  stats  stats  stats  stats  stats  stats  stats  labctrl labctrl labctrl';
-  }
+        'header header header header header header header header header header header header'
+        'toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar'
+        'config config config chart  chart  chart  chart  chart  chart  labctrl labctrl labctrl'
+        'config config config chart  chart  chart  chart  chart  chart  labctrl labctrl labctrl'
+        'config config config stats  stats  stats  stats  stats  stats  labctrl labctrl labctrl';
 
-  &.collapse-right {
-    grid-template-areas:
-      'header header header header header header header header header header header header'
-      'toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar'
-      'config config config chart  chart  chart  chart  chart  chart  chart  chart  chart'
-      'config config config chart  chart  chart  chart  chart  chart  chart  chart  chart'
-      'config config config stats  stats  stats  stats  stats  stats  stats  stats  stats';
-  }
+    .header {
+        grid-area: header;
+    }
 
-  &.collapse-left.collapse-right {
-    grid-template-areas:
-      'header header header header header header header header header header header header'
-      'toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar'
-      'chart  chart  chart  chart  chart  chart  chart  chart  chart  chart  chart  chart'
-      'chart  chart  chart  chart  chart  chart  chart  chart  chart  chart  chart  chart'
-      'stats  stats  stats  stats  stats  stats  stats  stats  stats  stats  stats  stats';
-  }
+    .toolbar {
+        grid-area: toolbar;
+    }
 
-  /* All panels collapsed: maximize chart area across remaining rows */
-  &.collapse-left.collapse-right.collapse-bottom {
-    grid-template-areas:
-      'header header header header header header header header header header header header'
-      'toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar'
-      'chart  chart  chart  chart  chart  chart  chart  chart  chart  chart  chart  chart'
-      'chart  chart  chart  chart  chart  chart  chart  chart  chart  chart  chart  chart'
-      'chart  chart  chart  chart  chart  chart  chart  chart  chart  chart  chart  chart';
-  }
+    .config {
+        grid-area: config;
+    }
 
-  &.collapse-bottom {
-    grid-template-areas:
-      'header header header header header header header header header header header header'
-      'toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar'
-      'config config config chart  chart  chart  chart  chart  chart  labctrl labctrl labctrl'
-      'config config config chart  chart  chart  chart  chart  chart  labctrl labctrl labctrl'
-      'config config config chart  chart  chart  chart  chart  chart  labctrl labctrl labctrl';
-  }
+    .chart {
+        grid-area: chart;
+    }
+
+    .stats {
+        grid-area: stats;
+    }
+
+    .labctrl {
+        grid-area: labctrl;
+    }
+
+    .config,
+    .chart,
+    .stats,
+    .labctrl {
+        overflow: auto;
+        min-block-size: 0;
+    }
+
+    /* Collapsed layout variants (desktop) */
+    &.collapse-left {
+        grid-template-areas:
+            'header header header header header header header header header header header header'
+            'toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar'
+            'chart  chart  chart  chart  chart  chart  chart  chart  chart  labctrl labctrl labctrl'
+            'chart  chart  chart  chart  chart  chart  chart  chart  chart  labctrl labctrl labctrl'
+            'stats  stats  stats  stats  stats  stats  stats  stats  stats  labctrl labctrl labctrl';
+    }
+
+    &.collapse-right {
+        grid-template-areas:
+            'header header header header header header header header header header header header'
+            'toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar'
+            'config config config chart  chart  chart  chart  chart  chart  chart  chart  chart'
+            'config config config chart  chart  chart  chart  chart  chart  chart  chart  chart'
+            'config config config stats  stats  stats  stats  stats  stats  stats  stats  stats';
+    }
+
+    &.collapse-left.collapse-right {
+        grid-template-areas:
+            'header header header header header header header header header header header header'
+            'toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar'
+            'chart  chart  chart  chart  chart  chart  chart  chart  chart  chart  chart  chart'
+            'chart  chart  chart  chart  chart  chart  chart  chart  chart  chart  chart  chart'
+            'stats  stats  stats  stats  stats  stats  stats  stats  stats  stats  stats  stats';
+    }
+
+    /* All panels collapsed: maximize chart area across remaining rows */
+    &.collapse-left.collapse-right.collapse-bottom {
+        grid-template-areas:
+            'header header header header header header header header header header header header'
+            'toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar'
+            'chart  chart  chart  chart  chart  chart  chart  chart  chart  chart  chart  chart'
+            'chart  chart  chart  chart  chart  chart  chart  chart  chart  chart  chart  chart'
+            'chart  chart  chart  chart  chart  chart  chart  chart  chart  chart  chart  chart';
+    }
+
+    &.collapse-bottom {
+        grid-template-areas:
+            'header header header header header header header header header header header header'
+            'toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar'
+            'config config config chart  chart  chart  chart  chart  chart  labctrl labctrl labctrl'
+            'config config config chart  chart  chart  chart  chart  chart  labctrl labctrl labctrl'
+            'config config config chart  chart  chart  chart  chart  chart  labctrl labctrl labctrl';
+    }
+
+    /* Combined variants to ensure correct expansion when bottom is collapsed */
+    &.collapse-left.collapse-bottom {
+        grid-template-areas:
+            'header header header header header header header header header header header header'
+            'toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar'
+            'chart  chart  chart  chart  chart  chart  chart  chart  chart  labctrl labctrl labctrl'
+            'chart  chart  chart  chart  chart  chart  chart  chart  chart  labctrl labctrl labctrl'
+            'chart  chart  chart  chart  chart  chart  chart  chart  chart  labctrl labctrl labctrl';
+    }
+
+    &.collapse-right.collapse-bottom {
+        grid-template-areas:
+            'header header header header header header header header header header header header'
+            'toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar'
+            'config config config chart  chart  chart  chart  chart  chart  chart  chart  chart'
+            'config config config chart  chart  chart  chart  chart  chart  chart  chart  chart'
+            'config config config chart  chart  chart  chart  chart  chart  chart  chart  chart';
+    }
 }
 
 @media (max-width: 1199px) {
-  .container {
-    grid-template-columns: repeat(6, 1fr);
-    grid-template-areas:
-      'header header header header header header'
-      'toolbar toolbar toolbar toolbar toolbar toolbar'
-      'chart  chart  chart  chart  chart  chart'
-      'labctrl labctrl labctrl labctrl labctrl labctrl'
-      'config config config config config config'
-      'stats  stats  stats  stats  stats  stats';
-  }
+    .container {
+        grid-template-columns: repeat(6, 1fr);
+        grid-template-areas:
+            'header header header header header header'
+            'toolbar toolbar toolbar toolbar toolbar toolbar'
+            'chart  chart  chart  chart  chart  chart'
+            'labctrl labctrl labctrl labctrl labctrl labctrl'
+            'config config config config config config'
+            'stats  stats  stats  stats  stats  stats';
+    }
 
-  .toolbar {
-    flex-wrap: wrap;
-  }
+    .toolbar {
+        flex-wrap: wrap;
+    }
 
-  .toolbar .center {
-    order: -1;
-    width: 100%;
-    text-align: left;
-  }
-
-  .chart .tools {
-    top: $spacing-xs;
-    right: $spacing-xs;
-  }
+    .chart .tools {
+        top: $spacing-xs;
+        right: $spacing-xs;
+    }
 }
 
 @media (max-width: 680px) {
-  .container {
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      'header'
-      'toolbar'
-      'chart'
-      'labctrl'
-      'config'
-      'stats';
-  }
+    .container {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            'header'
+            'toolbar'
+            'chart'
+            'labctrl'
+            'config'
+            'stats';
+    }
 
-  .toolbar {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: $spacing-sm;
-  }
+    .toolbar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: $spacing-sm;
+    }
 
-  .toolbar .center {
-    text-align: left;
-  }
-
-  .labctrl {
-    position: sticky;
-    bottom: 0;
-    z-index: 2;
-  }
+    .labctrl {
+        position: sticky;
+        bottom: 0;
+        z-index: 2;
+    }
 }

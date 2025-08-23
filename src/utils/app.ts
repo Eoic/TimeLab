@@ -1,16 +1,16 @@
 // Load in the trace types for pie, and choropleth
 
 export function setupApp(): void {
-  const app = document.querySelector<HTMLDivElement>('#app');
+    const app = document.querySelector<HTMLDivElement>('#app');
 
-  if (app) {
-    // app.innerHTML = `
-    //   <div class="center text-center">
-    //     <ul class="card center text-left">
-    //     </ul>
-    //   </div>
-    // `;
-  }
+    if (app) {
+        // app.innerHTML = `
+        //   <div class="center text-center">
+        //     <ul class="card center text-left">
+        //     </ul>
+        //   </div>
+        // `;
+    }
 }
 
 // function setupInteractivity(): void {
