@@ -57,6 +57,7 @@ export function setupCollapsiblePanels(): void {
     };
 
     const resizeChartSoon = () => {
+        // Try the old global first for backward compatibility
         const chart = (window as unknown as { __timestudioChart?: { resize: () => void } })
             .__timestudioChart;
         if (chart) {
@@ -67,6 +68,10 @@ export function setupCollapsiblePanels(): void {
                 chart.resize();
             }, 120);
         }
+
+        // Also emit a custom event for new chart implementations
+        const resizeEvent = new CustomEvent('timelab:layoutChanged');
+        window.dispatchEvent(resizeEvent);
     };
 
     const togglePanel = (

@@ -26,6 +26,7 @@ export function setupChartConfigControls(
     const applyOption = () => {
         const data = dataProvider();
         let xType: 'category' | 'time' | 'value' = 'category';
+
         switch (elXType?.value) {
             case 'time':
                 xType = 'time';
@@ -37,12 +38,14 @@ export function setupChartConfigControls(
             default:
                 xType = 'category';
         }
+
         const yType = elYType?.value === 'log' ? 'log' : 'value';
         const showGrid = !!elGridlines?.checked;
         const smooth = !!elSmooth?.checked;
         const showArea = !!elArea?.checked;
         const showSymbol = !!elPoints?.checked;
         const lineWidth = Number(elLineWidth?.value || 2);
+
         type Sampling = 'lttb' | 'average' | 'max' | 'min';
         let sampling: Sampling | undefined;
 
@@ -69,10 +72,10 @@ export function setupChartConfigControls(
         };
 
         let seriesData: Array<[number | string, number]> = data;
+
         if (xType === 'category') {
             seriesData = data.map((_pair, i) => [String(i), data[i]?.[1] ?? NaN]);
         } else {
-            // Keep pairs as-is (number x, number y) for time/value axes
             seriesData = data;
         }
 
@@ -88,26 +91,9 @@ export function setupChartConfigControls(
         if (yMax !== undefined) {
             yAxis.max = yMax;
         }
+
         // If auto-scaling and all Y values are identical (e.g., all 0),
         // pad the axis slightly so the line is visible.
-        if (yAuto && yMin === undefined && yMax === undefined) {
-            const ys = seriesData.map((p) => p[1]).filter((n) => Number.isFinite(n));
-            if (ys.length) {
-                let minY = ys[0] as number;
-                let maxY = ys[0] as number;
-                for (let i = 1; i < ys.length; i += 1) {
-                    const v = ys[i] as number;
-                    if (v < minY) minY = v;
-                    if (v > maxY) maxY = v;
-                }
-                if (minY === maxY) {
-                    const base = Math.abs(minY) || 1;
-                    const pad = base * 0.05; // 5% pad or ±0.05 around 0
-                    yAxis.min = minY - pad;
-                    yAxis.max = maxY + pad;
-                }
-            }
-        }
         const axisLineStyle = showGrid ? {} : { show: false };
         const splitLine = { show: showGrid };
 

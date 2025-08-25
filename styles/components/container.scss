@@ -128,7 +128,13 @@
 
 @media (max-width: 1199px) {
     .container {
+        /* Remove viewport constraints on smaller screens */
+        min-block-size: auto;
+        block-size: auto;
+        overflow: visible;
+
         grid-template-columns: repeat(6, 1fr);
+        grid-template-rows: auto auto auto auto auto auto;
         grid-template-areas:
             'header header header header header header'
             'toolbar toolbar toolbar toolbar toolbar toolbar'
@@ -151,6 +157,7 @@
 @media (max-width: 680px) {
     .container {
         grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto auto auto auto;
         grid-template-areas:
             'header'
             'toolbar'

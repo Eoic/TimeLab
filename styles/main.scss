@@ -17,6 +17,7 @@
 @use './components/button';
 @use './components/card';
 @use './components/chart';
+@use './components/empty-states';
 @use './components/forms';
 @use './components/dropdown';
 @use './components/toolbar';
@@ -31,52 +32,52 @@
 @use './formatting';
 
 :root {
-  color-scheme: light dark;
-  font-family: $font-family-base;
-  line-height: $line-height-base;
-  font-weight: $font-weight-normal;
-  font-size: $font-size-base;
-  color: $color-text-primary;
-  background-color: $color-bg-primary;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  -webkit-text-size-adjust: 100%;
-  font-synthesis: none;
+    color-scheme: light dark;
+    font-family: $font-family-base;
+    line-height: $line-height-base;
+    font-weight: $font-weight-normal;
+    font-size: $font-size-base;
+    color: $color-text-primary;
+    background-color: $color-bg-primary;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-text-size-adjust: 100%;
+    font-synthesis: none;
 }
 
 * {
-  @include theme-transition('color, background-color, border-color, box-shadow');
+    @include theme-transition('color, background-color, border-color, box-shadow');
 }
 
 body {
-  color: $color-text-primary;
-  background-color: $color-bg-primary;
-  overflow-x: hidden; /* avoid stray horizontal scrollbars */
+    color: $color-text-primary;
+    background-color: $color-bg-primary;
+    overflow-x: hidden; /* avoid stray horizontal scrollbars */
 }
 
 /* Compact, theme-aware scrollbars */
 * {
-  scrollbar-width: thin; /* Firefox */
-  scrollbar-color: $color-border-secondary transparent;
+    scrollbar-width: thin; /* Firefox */
+    scrollbar-color: $color-border-secondary transparent;
 }
 
 *::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+    width: 8px;
+    height: 8px;
 }
 
 *::-webkit-scrollbar-track {
-  background: transparent;
+    background: transparent;
 }
 
 *::-webkit-scrollbar-thumb {
-  background-color: $color-border-secondary;
-  border-radius: $border-radius;
-  border: 2px solid transparent; /* creates padding around thumb */
-  background-clip: content-box;
+    background-color: $color-border-secondary;
+    border-radius: $border-radius;
+    border: 2px solid transparent; /* creates padding around thumb */
+    background-clip: content-box;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background-color: $color-border-primary;
+    background-color: $color-border-primary;
 }

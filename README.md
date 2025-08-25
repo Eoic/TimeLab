@@ -6,15 +6,15 @@ A simple time series data labeling tool.
 
 1. **Install dependencies**
 
-   ```bash
-   npm install
-   ```
+    ```bash
+    npm install
+    ```
 
 2. **Start development server**
 
-   ```bash
-   npm run dev
-   ```
+    ```bash
+    npm run dev
+    ```
 
 3. **Open browser** - Vite will automatically open http://localhost:3000.
 
@@ -34,22 +34,3 @@ A simple time series data labeling tool.
 | `npm run format`        | Format code with Prettier.              |
 | `npm run type-check`    | Check TypeScript types.                 |
 | `npm run ci`            | Run all checks (CI pipeline).           |
-
-## Project structure
-
-```
-src/
-├── main.ts              # Application entry point.
-├── utils/
-│   └── app.ts           # Application setup utilities.
-├── styles/
-│   └── _variables.scss  # SCSS variables and design tokens.
-└── types/
-    └── assets.d.ts      # Type definitions for assets.
-styles/
-├── main.scss            # Global styles.
-└── _reset.scss          # CSS reset.
-tests/
-├── app.test.ts          # Example test file.
-└── setup.ts             # Test environment setup.
-```

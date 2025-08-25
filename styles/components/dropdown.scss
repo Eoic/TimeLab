@@ -3,159 +3,183 @@
 @use '@/styles/theme-utils' as *;
 
 tl-dropdown {
-  display: block;
-  width: 100%;
+    display: block;
+    width: 100%;
 }
 
 .dropdown {
-  position: relative;
-  width: 100%;
+    position: relative;
+    width: 100%;
 }
 
 .dropdown-toggle {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: calc($spacing-xs / 2);
-  padding: $spacing-sm $spacing-sm; // a bit more padding
-  font: inherit;
-  color: $color-text-primary;
-  border-radius: $border-radius;
-  background-color: $color-bg-secondary; // better contrast across themes
-  border: 1px solid $color-border-primary; // visible idle border
-  cursor: pointer;
-  @include focusable-transition();
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: calc($spacing-xs / 2);
+    padding: $spacing-sm $spacing-sm; // a bit more padding
+    font: inherit;
+    color: $color-text-primary;
+    border-radius: $border-radius;
+    background-color: $color-bg-secondary; // better contrast across themes
+    border: 1px solid $color-border-primary; // visible idle border
+    cursor: pointer;
+    @include focusable-transition();
 
-  &:hover {
-    background-color: $color-bg-tertiary; // subtle hover change in all themes
-  }
+    &:hover {
+        background-color: $color-bg-tertiary; // subtle hover change in all themes
+    }
 
-  &:focus-visible {
-    @include focus-ring();
-    border-color: $color-border-focus;
-  }
+    &:focus-visible {
+        @include focus-ring();
+        border-color: $color-border-focus;
+    }
 }
 
 .dropdown-toggle .placeholder {
-  color: $color-text-muted;
+    color: $color-text-muted;
 }
 
 .dropdown-toggle .chevron {
-  color: $color-text-secondary;
+    color: $color-text-secondary;
 }
 
 .dropdown-menu {
-  inset-inline: 0;
-  top: calc(100% + $spacing-xs);
-  z-index: $z-dropdown;
-  display: none;
-  position: absolute;
-  background-color: $color-bg-primary;
-  border-radius: $border-radius;
-  border: 1px solid $color-border-primary;
-  @include surface-elevation(2);
-  padding: calc($spacing-xs / 2);
-  padding-right: 0; // bring scrollbar closer to container edge
-  overflow: hidden; // clip overflowing list to menu bounds
+    inset-inline: 0;
+    top: calc(100% + $spacing-xs);
+    z-index: $z-dropdown;
+    display: none;
+    position: absolute;
+    background-color: $color-bg-primary;
+    border-radius: $border-radius;
+    border: 1px solid $color-border-primary;
+    @include surface-elevation(2);
+    padding: calc($spacing-xs / 2);
+    padding-right: 0; // bring scrollbar closer to container edge
+    overflow: hidden; // clip overflowing list to menu bounds
 }
 
 .dropdown[aria-expanded='true'] .dropdown-menu {
-  display: block;
+    display: block;
 }
 
 .dropdown-search {
-  padding: 0 $spacing-sm; // ensure right padding present
-  padding-top: calc($spacing-xs / 2);
-  padding-bottom: calc($spacing-xs / 2);
-  border-bottom: 1px solid $color-border-primary;
-  margin-bottom: 0; // let input margins control spacing
+    padding: 0 $spacing-sm; // ensure right padding present
+    padding-top: calc($spacing-xs / 2);
+    padding-bottom: calc($spacing-xs / 2);
+    border-bottom: 1px solid $color-border-primary;
+    margin-bottom: 0; // let input margins control spacing
 }
 
 .dropdown-search input[type='text'] {
-  width: 100%;
-  padding-block: 0.5rem; // reduce vertical padding
-  padding-inline: $spacing-sm;
-  margin-block: $spacing-xs; // add more vertical margin around input
-  border-radius: $border-radius;
-  border: 1px solid $color-border-primary; // visible idle border for contrast
-  background-color: $color-bg-tertiary; // stand out from menu in dark/oled/light
-  color: $color-text-primary;
-  box-sizing: border-box;
-  @include focusable-transition();
+    width: 100%;
+    padding-block: 0.5rem; // reduce vertical padding
+    padding-inline: $spacing-sm;
+    margin-block: $spacing-xs; // add more vertical margin around input
+    border-radius: $border-radius;
+    border: 1px solid $color-border-primary; // visible idle border for contrast
+    background-color: $color-bg-tertiary; // stand out from menu in dark/oled/light
+    color: $color-text-primary;
+    box-sizing: border-box;
+    @include focusable-transition();
 
-  &:focus-visible {
-    border-color: transparent; // avoid inner border causing "hollow" look
-    background-color: $color-bg-secondary; // keep contrast on focus
-    // use inner ring color matching input bg to eliminate visual gap
-    box-shadow:
-      0 0 0 2px $color-bg-secondary,
-      0 0 0 4px var(--color-border-focus);
-  }
+    &:focus-visible {
+        border-color: transparent; // avoid inner border causing "hollow" look
+        background-color: $color-bg-secondary; // keep contrast on focus
+        // use inner ring color matching input bg to eliminate visual gap
+        box-shadow:
+            0 0 0 2px $color-bg-secondary,
+            0 0 0 4px var(--color-border-focus);
+    }
 
-  &:hover {
-    border-color: $color-border-secondary;
-  }
-  &:hover:focus-visible {
-    border-color: transparent;
-  }
+    &:hover {
+        border-color: $color-border-secondary;
+    }
+    &:hover:focus-visible {
+        border-color: transparent;
+    }
 }
 // When both hover and focus-visible apply, keep border hidden
 
 .dropdown-options {
-  list-style: none;
-  padding: 0;
-  padding-right: $spacing-xs; // keep content away from scrollbar (left side of scrollbar)
-  padding-left: $spacing-xs; // ensure left padding for items container
-  margin: 0;
-  max-height: 204px;
-  overflow: auto;
+    list-style: none;
+    padding: 0;
+    padding-right: $spacing-xs; // keep content away from scrollbar (left side of scrollbar)
+    padding-left: $spacing-xs; // ensure left padding for items container
+    margin: 0;
+    max-height: 204px;
+    overflow: auto;
 }
 
 .dropdown-option {
-  display: flex;
-  align-items: center;
-  gap: calc($spacing-xs / 2);
-  padding: calc($spacing-xs * 1.25); // a bit more padding
-  padding-left: $spacing-sm; // explicit left padding safety
-  border-radius: $border-radius;
-  cursor: pointer;
-  color: $color-text-primary;
-  font-size: $font-size-sm;
-  &:hover,
-  &.active {
-    background: $color-bg-tertiary; // clearer hover/active backdrop in all themes
-  }
+    display: flex;
+    align-items: center;
+    gap: calc($spacing-xs / 2);
+    padding: calc($spacing-xs * 1.25); // a bit more padding
+    padding-left: $spacing-sm; // explicit left padding safety
+    border-radius: $border-radius;
+    cursor: pointer;
+    color: $color-text-primary;
+    font-size: $font-size-sm;
+    &:hover,
+    &.active {
+        background: $color-bg-tertiary; // clearer hover/active backdrop in all themes
+    }
 
-  &[aria-selected='true'] .check {
-    visibility: visible;
-  }
+    &[aria-selected='true'] .check {
+        visibility: visible;
+    }
 }
 
 // Dropdown-specific scrollbar spacing (override global) to avoid extra right gap
 .dropdown-options::-webkit-scrollbar {
-  width: 10px;
+    width: 10px;
 }
 
 .dropdown-options::-webkit-scrollbar-thumb {
-  border: 0; // remove global transparent border to bring thumb closer to edge
+    border: 0; // remove global transparent border to bring thumb closer to edge
 }
 
 .dropdown-option .check {
-  visibility: hidden;
-  color: $color-text-secondary;
-  font-size: 18px;
+    visibility: hidden;
+    color: $color-text-secondary;
+    font-size: 18px;
 }
 
 .dropdown-option .swatch {
-  width: 0.75rem;
-  height: 0.75rem;
-  border-radius: 50%;
-  border: 1px solid $color-border-secondary;
-  flex: 0 0 auto;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+    border: 1px solid $color-border-secondary;
+    flex: 0 0 auto;
 }
 
 .dropdown-empty {
-  padding: $spacing-sm;
-  color: $color-text-muted;
+    padding: $spacing-sm;
+    color: $color-text-muted;
+}
+
+/* Empty/disabled state styling */
+.dropdown-disabled {
+    .dropdown-toggle {
+        opacity: 0.6;
+        cursor: not-allowed;
+        background-color: $color-bg-secondary;
+        border-color: $color-border-secondary;
+
+        &:hover {
+            border-color: $color-border-secondary;
+            background-color: $color-bg-secondary;
+        }
+
+        &:focus {
+            border-color: $color-border-secondary;
+            box-shadow: none;
+        }
+    }
+
+    .dropdown-chevron {
+        opacity: 0.4;
+    }
 }

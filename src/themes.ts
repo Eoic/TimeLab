@@ -9,4 +9,5 @@ export const THEMES = [
     'purple',
     'auto',
 ] as const;
+
 export type Theme = (typeof THEMES)[number];

@@ -10,23 +10,29 @@ export function setupDropdowns(): void {
     const cfgSampling = document.querySelector<TLDropdown>('#cfg-sampling');
     const cfgTooltip = document.querySelector<TLDropdown>('#cfg-tooltip');
     const cfgZoom = document.querySelector<TLDropdown>('#cfg-zoom-preset');
-    const defaultColumns = [
-        { value: 'index', label: 'index' },
-        { value: 'time', label: 'time' },
-    ];
-    const defaultMeasures = [{ value: 'value', label: 'value' }];
 
     const setAxisOptions = (cols: string[] | null) => {
         if (!xAxisDropdown || !yAxisDropdown) {
             return;
         }
         if (!cols || cols.length === 0) {
-            xAxisDropdown.options = defaultColumns;
-            if (!xAxisDropdown.value) xAxisDropdown.value = 'index';
-            yAxisDropdown.options = defaultMeasures;
-            if (!yAxisDropdown.value) yAxisDropdown.value = 'value';
+            // Show empty state for dropdowns when no data is available
+            const emptyOption = { value: '', label: 'No data available' };
+            xAxisDropdown.options = [emptyOption];
+            xAxisDropdown.value = '';
+            yAxisDropdown.options = [emptyOption];
+            yAxisDropdown.value = '';
+
+            // Add visual indication of disabled state via CSS class
+            xAxisDropdown.classList.add('dropdown-disabled');
+            yAxisDropdown.classList.add('dropdown-disabled');
             return;
         }
+
+        // Remove disabled state when data is available
+        xAxisDropdown.classList.remove('dropdown-disabled');
+        yAxisDropdown.classList.remove('dropdown-disabled');
+
         const options = cols.map((c) => ({ value: c, label: c }));
         // Always offer synthetic index as an option for X
         xAxisDropdown.options = [{ value: 'index', label: 'index' }, ...options];
@@ -137,5 +143,11 @@ export function setupDropdowns(): void {
     window.addEventListener('timelab:dataFilesChanged', (ev) => {
         const detail = (ev as CustomEvent<{ files: TDataFile[] }>).detail;
         refreshAxisOptionsFromDataFiles(detail.files);
+    });
+
+    // Listen for direct column updates from the chart system
+    window.addEventListener('timelab:columnsAvailable', (ev) => {
+        const detail = (ev as CustomEvent<{ columns: string[] }>).detail;
+        setAxisOptions(detail.columns.length > 0 ? detail.columns : null);
     });
 }

@@ -44,6 +44,22 @@ export function setupStatsPanel(): void {
         typesEl.textContent = String(countsByName.size);
 
         listEl.textContent = '';
+
+        if (countsByName.size === 0) {
+            // Show empty state when no labels exist
+            const emptyState = document.createElement('li');
+            emptyState.className = 'empty-state stats-empty';
+            emptyState.innerHTML = `
+                <div class="empty-state-content">
+                    <span class="material-symbols-outlined empty-icon">bar_chart</span>
+                    <div class="empty-title">No labels to analyze</div>
+                    <div class="empty-subtitle text-muted text-sm">Create labels to see statistics</div>
+                </div>
+            `;
+            listEl.appendChild(emptyState);
+            return;
+        }
+
         const sorted = Array.from(countsByName.values()).sort(
             (a, b) => b.count - a.count || a.name.localeCompare(b.name)
         );

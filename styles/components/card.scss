@@ -242,7 +242,7 @@
     display: grid;
     gap: $spacing-xs;
 }
-.card.stats .stats-list li {
+.card.stats .stats-list li:not(.empty-state) {
     display: grid;
     grid-template-columns: auto 1fr auto;
     align-items: center;
@@ -312,6 +312,15 @@
     background: $color-surface-raised;
     border: 1px solid $color-border-primary;
     padding: $spacing-md; /* increased modal spacing */
+
+    /* Ensure dropdowns don't break modal layout */
+    .dropdown {
+        position: relative;
+    }
+
+    &.modal-fluid {
+        width: 100%;
+    }
 }
 
 /* Upload dropzone */

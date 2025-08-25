@@ -16,6 +16,11 @@ export class TLDropdown extends HTMLElement {
 
     // Bound handlers
     private onKeydown = (e: KeyboardEvent): void => {
+        // Check if dropdown is disabled
+        if (this.classList.contains('dropdown-disabled')) {
+            return;
+        }
+
         const expanded = this.getAttribute('aria-expanded') === 'true';
         if (e.key === 'Escape') {
             this.setExpanded(false);
@@ -165,6 +170,11 @@ export class TLDropdown extends HTMLElement {
     }
 
     private toggle(): void {
+        // Check if dropdown is disabled
+        if (this.classList.contains('dropdown-disabled')) {
+            return;
+        }
+
         const expanded = this.getAttribute('aria-expanded') === 'true';
         this.setExpanded(!expanded);
         if (!expanded && this.enableSearch) {
@@ -376,13 +386,24 @@ export class TLDropdown extends HTMLElement {
         const viewportW = window.innerWidth;
         const viewportH = window.innerHeight;
         const margin = 8; // viewport margin
-        const gap = 4; // gap between button and menu
+
+        // Check if this is a theme dropdown for custom spacing
+        const isThemeDropdown = this.classList.contains('theme-dropdown');
+        const gap = isThemeDropdown ? 8 : 4; // $spacing-sm (16px) for theme, default 4px for others
+        const rightOffset = isThemeDropdown ? 0 : 0; // $spacing-lg (32px) from right for theme dropdown
 
         // Width: at least a comfortable min, not smaller than anchor; clamp to viewport
         const searchElForWidth = menu.querySelector<HTMLElement>('.dropdown-search');
         const minWidth = searchElForWidth ? 280 : 240;
         const width = Math.min(Math.max(rect.width, minWidth), viewportW - margin * 2);
-        const left = Math.min(Math.max(rect.left, margin), viewportW - width - margin);
+
+        // Calculate left position with right offset for theme dropdown
+        let left = Math.min(Math.max(rect.left, margin), viewportW - width - margin);
+        if (isThemeDropdown) {
+            // Position dropdown with right offset for theme dropdown
+            left = Math.min(rect.right - width - rightOffset, viewportW - width - margin);
+            left = Math.max(left, margin); // Ensure it doesn't go off-screen
+        }
 
         // Determine placement
         const belowSpace = viewportH - rect.bottom - margin;
@@ -431,6 +452,18 @@ export class TLDropdown extends HTMLElement {
             this._anchorEl = anchor;
         }
         this.setExpanded(true);
+
+        // Ensure dropdown receives focus for keyboard navigation when opened externally
+        if (this._anchorEl && this._anchorEl.closest('tl-dropdown') !== this) {
+            // Focus the dropdown toggle for keyboard navigation
+            const toggleBtn = this.querySelector<HTMLButtonElement>('.dropdown-toggle');
+            if (toggleBtn) {
+                // Use setTimeout to ensure the dropdown is fully rendered and positioned
+                setTimeout(() => {
+                    toggleBtn.focus();
+                }, 0);
+            }
+        }
     }
 
     /** Programmatically close the dropdown. */
