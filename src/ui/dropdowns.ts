@@ -106,12 +106,44 @@ export function setupDropdowns(): void {
         const options = cols.map((c) => ({ value: c, label: c }));
         // Always offer synthetic index as an option for X
         xAxisDropdown.options = [{ value: 'index', label: 'index' }, ...options];
-        if (!xAxisDropdown.value) xAxisDropdown.value = 'index';
+
+        // Auto-select good defaults for the CSV file
+        if (!xAxisDropdown.value) {
+            // Try to find a time-like column first (e.g., "Winkel" for angle)
+            const timeColumn = cols.find(
+                (col) =>
+                    col.toLowerCase().includes('time') ||
+                    col.toLowerCase().includes('winkel') ||
+                    col.toLowerCase().includes('angle') ||
+                    col.toLowerCase().includes('index')
+            );
+            xAxisDropdown.value = timeColumn || 'index';
+        }
+
         // Y options are all columns except the currently selected X (if present in list)
         const xVal = xAxisDropdown.value;
         const yOpts = options.filter((o) => o.value !== xVal);
         yAxisDropdown.options = yOpts.length ? yOpts : options;
-        if (!yAxisDropdown.value) yAxisDropdown.value = yAxisDropdown.options[0]?.value ?? '';
+
+        if (!yAxisDropdown.value) {
+            // Try to find a good Y column (e.g., "Kanal ROUND PUNCH")
+            const yColumn = yOpts.find(
+                (opt) =>
+                    opt.value.toLowerCase().includes('punch') ||
+                    opt.value.toLowerCase().includes('force') ||
+                    opt.value.toLowerCase().includes('value') ||
+                    opt.value.toLowerCase().includes('signal')
+            );
+            yAxisDropdown.value = yColumn?.value || yAxisDropdown.options[0]?.value || '';
+        }
+
+        // Trigger chart update after setting defaults
+        setTimeout(() => {
+            const updateEvent = new CustomEvent('timelab:axisOptionsUpdated', {
+                detail: { xColumn: xAxisDropdown.value, yColumn: yAxisDropdown.value },
+            });
+            window.dispatchEvent(updateEvent);
+        }, 50);
     };
 
     const guessColumnsFromFile = (file: TDataFile | undefined | null): string[] | null => {

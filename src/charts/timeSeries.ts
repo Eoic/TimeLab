@@ -29,6 +29,25 @@ export interface TimeSeriesEvents {
 export interface TimeSeriesConfig {
     xColumn: string;
     yColumn: string;
+    // Chart appearance
+    smooth?: boolean;
+    showArea?: boolean;
+    lineWidth?: number;
+    showPoints?: boolean;
+    sampling?: 'lttb' | 'average' | 'max' | 'min' | undefined;
+    // Axes
+    xType?: 'category' | 'time' | 'value';
+    yType?: 'value' | 'log';
+    yAuto?: boolean;
+    yMin?: number;
+    yMax?: number;
+    showGridlines?: boolean;
+    // Tooltip and interaction
+    tooltipMode?: 'axis' | 'item' | 'none';
+    snap?: boolean;
+    // Threshold
+    thresholdEnabled?: boolean;
+    thresholdValue?: number;
 }
 
 /**
@@ -44,6 +63,8 @@ export class TimeSeriesChart {
     private resizeTimeout: number | null = null;
     private resizeObserver: ResizeObserver | null = null;
     private layoutChangeHandler: (() => void) | null = null;
+    private chartConfigCleanup: (() => void) | null = null;
+    private lastConfig: TimeSeriesConfig | null = null;
 
     constructor(container: HTMLElement) {
         this.container = container;
@@ -71,9 +92,8 @@ export class TimeSeriesChart {
                     type: 'line',
                     name: 'Signal',
                     showSymbol: false,
-                    smooth: true,
+                    // Don't set smooth or areaStyle here - let updateDisplay handle it
                     lineStyle: { width: 2 },
-                    areaStyle: {},
                     data: [],
                 },
             ],
@@ -88,6 +108,9 @@ export class TimeSeriesChart {
 
             // Empty state is shown by default, hide it only if we have data
             this.updateEmptyState(this.dataSources.length === 0);
+
+            // Initialize chart configuration controls
+            this.initializeConfigControls();
         });
 
         // Empty state will be created after chart initialization
@@ -304,6 +327,12 @@ export class TimeSeriesChart {
             currentIndex: this.currentIndex,
             total: this.dataSources.length,
         });
+
+        // Emit columns available for the new current source
+        const currentSource = this.getCurrentSource();
+        if (currentSource) {
+            this.emit('columns-available', { columns: currentSource.columns });
+        }
     }
 
     /**
@@ -316,6 +345,12 @@ export class TimeSeriesChart {
             currentIndex: this.currentIndex,
             total: this.dataSources.length,
         });
+
+        // Emit columns available for the new current source
+        const currentSource = this.getCurrentSource();
+        if (currentSource) {
+            this.emit('columns-available', { columns: currentSource.columns });
+        }
     }
 
     /**
@@ -328,6 +363,12 @@ export class TimeSeriesChart {
                 currentIndex: this.currentIndex,
                 total: this.dataSources.length,
             });
+
+            // Emit columns available for the new current source
+            const currentSource = this.getCurrentSource();
+            if (currentSource) {
+                this.emit('columns-available', { columns: currentSource.columns });
+            }
         }
     }
 
@@ -347,6 +388,9 @@ export class TimeSeriesChart {
      * Update chart display with current configuration
      */
     updateDisplay(config: TimeSeriesConfig): void {
+        // Store the configuration for future reference
+        this.lastConfig = { ...config };
+
         const source = this.getCurrentSource();
 
         // If no data sources at all, always show empty state
@@ -363,10 +407,88 @@ export class TimeSeriesChart {
         }
 
         const data = source.getData(config.xColumn, config.yColumn);
+
+        // Apply configuration with defaults
+        const xType = config.xType || 'category';
+        const yType = config.yType || 'value';
+        const showGrid = config.showGridlines ?? true;
+        const smooth = config.smooth ?? true;
+        const showArea = config.showArea ?? false;
+        const showSymbol = config.showPoints ?? false;
+        const lineWidth = config.lineWidth ?? 2;
+        const sampling = config.sampling;
+        const tooltipMode = config.tooltipMode ?? 'axis';
+        const snap = config.snap ?? false;
+        const yAuto = config.yAuto ?? true;
+
+        // Process data based on x-axis type
+        let seriesData: Array<[number | string, number]> = data;
+        if (xType === 'category') {
+            seriesData = data.map((_pair, i) => [String(i), data[i]?.[1] ?? NaN]);
+        }
+
+        // Configure axes
+        const xAxis: EChartOption.XAxis = {
+            type: xType as EChartOption.XAxis['type'],
+            boundaryGap: xType === 'category',
+            axisLine: showGrid ? {} : { show: false },
+            splitLine: { show: showGrid },
+        };
+
+        const yAxis: EChartOption.YAxis = {
+            type: yType as EChartOption.YAxis['type'],
+            scale: yAuto,
+            axisLine: showGrid ? {} : { show: false },
+            splitLine: { show: showGrid },
+        };
+
+        // Apply manual Y-axis range if not auto
+        if (!yAuto) {
+            if (config.yMin !== undefined) {
+                yAxis.min = config.yMin;
+            }
+            if (config.yMax !== undefined) {
+                yAxis.max = config.yMax;
+            }
+        }
+
+        // Configure threshold line
+        let markLine: EChartOption.SeriesLine['markLine'] | undefined;
+        if (config.thresholdEnabled && config.thresholdValue !== undefined) {
+            markLine = {
+                data: [{ yAxis: config.thresholdValue }],
+                lineStyle: { type: 'dashed' },
+                symbol: 'none',
+            } as unknown as EChartOption.SeriesLine['markLine'];
+        }
+
+        // Configure tooltip
+        const tooltip =
+            tooltipMode === 'none'
+                ? { show: false }
+                : {
+                      trigger: tooltipMode as EChartOption.Tooltip['trigger'],
+                      axisPointer: { type: 'cross' as const, snap },
+                  };
+
         this.chart.setOption(
             {
-                series: [{ data }],
-                dataZoom: [{ start: 0, end: 100 }],
+                tooltip,
+                xAxis,
+                yAxis,
+                series: [
+                    {
+                        type: 'line',
+                        name: 'Signal',
+                        smooth,
+                        showSymbol,
+                        sampling,
+                        lineStyle: { width: lineWidth },
+                        areaStyle: showArea ? {} : undefined,
+                        markLine,
+                        data: seriesData,
+                    },
+                ],
             },
             false,
             true
@@ -402,6 +524,13 @@ export class TimeSeriesChart {
     }
 
     /**
+     * Get the last used configuration
+     */
+    getLastConfig(): TimeSeriesConfig | null {
+        return this.lastConfig;
+    }
+
+    /**
      * Clean up resources
      */
     dispose(): void {
@@ -417,6 +546,10 @@ export class TimeSeriesChart {
             window.removeEventListener('timelab:layoutChanged', this.layoutChangeHandler);
             this.layoutChangeHandler = null;
         }
+        if (this.chartConfigCleanup) {
+            this.chartConfigCleanup();
+            this.chartConfigCleanup = null;
+        }
         if (this.chart) {
             this.chart.dispose();
             this.chart = null;
@@ -425,6 +558,17 @@ export class TimeSeriesChart {
             this.emptyStateElement.remove();
             this.emptyStateElement = null;
         }
+    }
+
+    /**
+     * Initialize chart configuration controls
+     */
+    initializeConfigControls(): void {
+        if (!this.chart) return;
+
+        // Note: We handle configuration directly in our updateDisplay method
+        // and listen for config changes in bindUIControls, so we don't need
+        // to import the old config system that would conflict with our approach
     }
 }
 
@@ -449,6 +593,95 @@ export interface DataManager {
 }
 
 // UI Helper Functions for integration with existing UI
+/**
+ * Get current chart configuration from all UI controls
+ */
+function getCurrentChartConfig(xColumn: string, yColumn: string): TimeSeriesConfig {
+    // Get references to all config controls
+    const elSmooth = document.querySelector<HTMLInputElement>('#cfg-smooth');
+    const elArea = document.querySelector<HTMLInputElement>('#cfg-area');
+    const elLineWidth = document.querySelector<HTMLInputElement>('#cfg-linewidth');
+    const elPoints = document.querySelector<HTMLInputElement>('#cfg-points');
+    const elSampling = document.querySelector('#cfg-sampling');
+    const elXType = document.querySelector('#cfg-x-type');
+    const elYType = document.querySelector('#cfg-y-type');
+    const elYAuto = document.querySelector<HTMLInputElement>('#cfg-y-auto');
+    const elYMin = document.querySelector<HTMLInputElement>('#cfg-y-min');
+    const elYMax = document.querySelector<HTMLInputElement>('#cfg-y-max');
+    const elGridlines = document.querySelector<HTMLInputElement>('#cfg-gridlines');
+    const elTooltip = document.querySelector('#cfg-tooltip');
+    const elSnap = document.querySelector<HTMLInputElement>('#cfg-snap');
+    const elThreshEnable = document.querySelector<HTMLInputElement>('#cfg-threshold-enable');
+    const elThreshValue = document.querySelector<HTMLInputElement>('#cfg-threshold-value');
+
+    // Helper to get sampling value
+    const samplingValue = elSampling ? (elSampling as { value?: string }).value : undefined;
+    const sampling: 'lttb' | 'average' | 'max' | 'min' | undefined =
+        samplingValue && ['lttb', 'average', 'max', 'min'].includes(samplingValue)
+            ? (samplingValue as 'lttb' | 'average' | 'max' | 'min')
+            : undefined;
+
+    // Helper to get xType value
+    const xTypeValue = elXType ? (elXType as { value?: string }).value : undefined;
+    const xType: 'category' | 'time' | 'value' =
+        xTypeValue && ['category', 'time', 'value'].includes(xTypeValue)
+            ? (xTypeValue as 'category' | 'time' | 'value')
+            : 'category';
+
+    // Helper to get yType value
+    const yTypeValue = elYType ? (elYType as { value?: string }).value : undefined;
+    const yType: 'value' | 'log' = yTypeValue === 'log' ? 'log' : 'value';
+
+    // Helper to get tooltip mode
+    const tooltipValue = elTooltip ? (elTooltip as { value?: string }).value : undefined;
+    const tooltipMode: 'axis' | 'item' | 'none' =
+        tooltipValue && ['axis', 'item', 'none'].includes(tooltipValue)
+            ? (tooltipValue as 'axis' | 'item' | 'none')
+            : 'axis';
+
+    // Check if Y auto-scaling is disabled
+    const yAutoDisabled = !elYAuto?.checked;
+    const yMinValue =
+        yAutoDisabled && elYMin?.value !== '' && elYMin?.value != null
+            ? Number(elYMin.value)
+            : undefined;
+    const yMaxValue =
+        yAutoDisabled && elYMax?.value !== '' && elYMax?.value != null
+            ? Number(elYMax.value)
+            : undefined;
+    const thresholdValue =
+        elThreshEnable?.checked && elThreshValue?.value !== '' && elThreshValue?.value != null
+            ? Number(elThreshValue.value)
+            : undefined;
+
+    // Build configuration object
+    const config: TimeSeriesConfig = {
+        xColumn,
+        yColumn,
+        // Chart appearance
+        smooth: elSmooth?.checked ?? true,
+        showArea: elArea?.checked ?? true, // Default to true to match HTML checked state
+        lineWidth: Number(elLineWidth?.value) || 2,
+        showPoints: elPoints?.checked ?? false,
+        ...(sampling && { sampling }),
+        // Axes
+        xType,
+        yType,
+        yAuto: elYAuto?.checked ?? true,
+        ...(yMinValue !== undefined && { yMin: yMinValue }),
+        ...(yMaxValue !== undefined && { yMax: yMaxValue }),
+        showGridlines: elGridlines?.checked ?? true,
+        // Tooltip and interaction
+        tooltipMode,
+        snap: elSnap?.checked ?? false,
+        // Threshold
+        thresholdEnabled: elThreshEnable?.checked ?? false,
+        ...(thresholdValue !== undefined && { thresholdValue }),
+    };
+
+    return config;
+}
+
 function bindUIControls(chart: TimeSeriesChart): void {
     const elPrev = document.getElementById('series-prev') as HTMLButtonElement | null;
     const elNext = document.getElementById('series-next') as HTMLButtonElement | null;
@@ -490,12 +723,73 @@ function bindUIControls(chart: TimeSeriesChart): void {
 
         // Only update if we have valid column values
         if (xColumn && yColumn && xColumn !== '' && yColumn !== '') {
-            chart.updateDisplay({ xColumn, yColumn });
+            // Get current configuration from all UI controls
+            const config = getCurrentChartConfig(xColumn, yColumn);
+            chart.updateDisplay(config);
+        }
+    };
+
+    // Auto-update chart when data becomes available
+    const autoUpdateOnDataAvailable = () => {
+        const seriesInfo = chart.getCurrentSeriesInfo();
+        if (seriesInfo.total > 0) {
+            // Small delay to ensure dropdowns are populated
+            setTimeout(updateChart, 100);
         }
     };
 
     xDropdown?.addEventListener('change', updateChart);
     yDropdown?.addEventListener('change', updateChart);
+
+    // Auto-update when data sources change
+    chart.on('series-changed', autoUpdateOnDataAvailable);
+    chart.on('columns-available', autoUpdateOnDataAvailable);
+
+    // Listen for automatic axis option updates
+    window.addEventListener('timelab:axisOptionsUpdated', (event) => {
+        const customEvent = event as CustomEvent<{ xColumn: string; yColumn: string }>;
+        const { xColumn, yColumn } = customEvent.detail;
+        if (xColumn && yColumn) {
+            // Get current configuration from all UI controls
+            const config = getCurrentChartConfig(xColumn, yColumn);
+            chart.updateDisplay(config);
+        }
+    });
+
+    // Listen for chart configuration changes to trigger updates
+    const configElements = [
+        '#cfg-smooth',
+        '#cfg-area',
+        '#cfg-linewidth',
+        '#cfg-points',
+        '#cfg-sampling',
+        '#cfg-x-type',
+        '#cfg-y-type',
+        '#cfg-y-auto',
+        '#cfg-y-min',
+        '#cfg-y-max',
+        '#cfg-gridlines',
+        '#cfg-tooltip',
+        '#cfg-snap',
+        '#cfg-threshold-enable',
+        '#cfg-threshold-value',
+    ];
+
+    const onConfigChange = () => {
+        const lastConfig = chart.getLastConfig();
+        if (lastConfig) {
+            const config = getCurrentChartConfig(lastConfig.xColumn, lastConfig.yColumn);
+            chart.updateDisplay(config);
+        }
+    };
+
+    configElements.forEach((selector) => {
+        const element = document.querySelector(selector);
+        if (element) {
+            element.addEventListener('change', onConfigChange);
+            element.addEventListener('input', onConfigChange);
+        }
+    });
 }
 
 function bindSeriesModal(chart: TimeSeriesChart): void {

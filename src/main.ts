@@ -4,6 +4,7 @@
 
 import { initializeApp } from './app';
 import { initializeTimeSeriesChart } from './charts/timeSeries';
+import { getDataManager } from './data';
 import { setupDropdowns, setupLabelsEmptyStates } from './ui';
 import { setupLabelManagement } from './ui/labelManagement';
 import { setupLabelModal, setupModalTriggers } from './ui/labelModal';
@@ -25,6 +26,23 @@ defineDropdown();
 
 // Initialize empty chart
 const timeSeriesChart = initializeTimeSeriesChart();
+
+// Connect data manager to chart
+const dataManager = getDataManager();
+dataManager.onDataChanged((sources) => {
+    timeSeriesChart.setDataSources(sources);
+});
+
+// Load initial data if available
+dataManager
+    .getDataSources()
+    .then((sources) => {
+        timeSeriesChart.setDataSources(sources);
+    })
+    .catch((error: unknown) => {
+        // eslint-disable-next-line no-console
+        console.error('Failed to load initial data sources:', error);
+    });
 
 // Expose for debugging in development
 if (process.env.NODE_ENV === 'development') {
