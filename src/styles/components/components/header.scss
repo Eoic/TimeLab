@@ -1,0 +1,26 @@
+.header {
+    .brand {
+        p,
+        span {
+            vertical-align: middle;
+        }
+
+        p {
+            display: inline-block;
+        }
+    }
+}
+
+@media (max-width: 680px) {
+    .header {
+        .brand {
+            p {
+                display: none;
+            }
+
+            .vertical {
+                display: none;
+            }
+        }
+    }
+}

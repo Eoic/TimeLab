@@ -1,0 +1,75 @@
+// Note: tokens are auto-imported via Vite config
+@use '../../_semantic' as *;
+
+ul {
+    list-style: disc;
+    margin: $spacing-sm 0;
+    padding-left: $spacing-lg;
+
+    ul {
+        list-style: circle;
+        margin: $spacing-xs 0;
+
+        ul {
+            list-style: square;
+        }
+    }
+}
+
+ol {
+    list-style: decimal;
+    margin: $spacing-sm 0;
+    padding-left: $spacing-lg;
+
+    ol {
+        margin: $spacing-xs 0;
+        list-style: lower-alpha;
+
+        ol {
+            list-style: lower-roman;
+        }
+    }
+}
+
+li {
+    margin: $spacing-xs 0;
+    color: $color-text-primary;
+    line-height: $line-height-base;
+
+    &::marker {
+        color: $color-text-secondary;
+    }
+}
+
+.list-unstyled {
+    list-style: none;
+    padding-left: 0;
+
+    li {
+        margin: 0;
+    }
+}
+
+.list-inline {
+    list-style: none;
+    padding-left: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: $spacing-sm;
+
+    li {
+        margin: 0;
+    }
+}
+
+.list-spaced {
+    li {
+        margin: $spacing-sm 0;
+    }
+}
+
+.list-compact {
+    li {
+        margin: 0;
+    }
+}

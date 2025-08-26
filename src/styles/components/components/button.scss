@@ -1,0 +1,217 @@
+// Note: tokens are auto-imported via Vite config
+@use '../../_semantic' as *;
+@use '../../abstracts/theme-utils' as *;
+
+// Buttons — streamlined, compact, and professional (Figma-like)
+
+// Base button styles apply to both <button> and .btn for flexibility
+button,
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: $spacing-xs;
+    cursor: pointer;
+    user-select: none;
+    font-family: inherit;
+    font-weight: $font-weight-medium;
+    line-height: 1;
+    white-space: nowrap;
+    text-decoration: none;
+    border-radius: $border-radius;
+    border: 1px solid transparent;
+    color: $color-text-primary;
+    background: transparent;
+    @include focusable-transition();
+
+    &:disabled,
+    &[aria-disabled='true'] {
+        opacity: 0.6;
+        cursor: not-allowed;
+        box-shadow: none;
+    }
+}
+
+// Sizes (compact by default)
+.btn-sm {
+    font-size: $font-size-sm;
+    padding: calc(#{$spacing-xs} * 0.5) calc(#{$spacing-sm} * 0.75);
+}
+.btn-md {
+    font-size: $font-size-base;
+    padding: calc(#{$spacing-xs} * 0.75) $spacing-sm;
+}
+.btn-lg {
+    font-size: $font-size-base;
+    padding: $spacing-sm calc(#{$spacing-md} * 0.75);
+}
+
+// Default to medium size when none specified
+button:not(.btn-sm):not(.btn-lg),
+.btn:not(.btn-sm):not(.btn-lg) {
+    @extend .btn-md;
+}
+
+// Icon button — square, minimal padding; combine with size modifiers
+.btn-icon {
+    aspect-ratio: 1 / 1;
+    padding: calc(#{$spacing-xs} * 0.5);
+}
+.btn-icon.btn-md {
+    padding: calc(#{$spacing-xs} * 0.75);
+}
+.btn-icon.btn-lg {
+    padding: $spacing-sm;
+}
+.btn .icon,
+button .icon {
+    width: 1em;
+    height: 1em;
+    display: inline-flex;
+}
+
+// Variants
+// Primary
+.btn-primary,
+button.btn-primary {
+    @include interactive-states(
+        $base-bg: $color-primary,
+        $hover-bg: $color-primary-hover,
+        $focus-color: $color-border-focus,
+        $base-color: $color-text-inverse,
+        $hover-color: $color-text-inverse,
+        $active-bg: $color-primary-hover,
+        $active-color: $color-text-inverse
+    );
+    border-color: transparent;
+    box-shadow: none;
+}
+
+// Neutral (aka Secondary)
+.btn-neutral,
+.btn-secondary, // backwards-compat alias
+button.btn-neutral,
+button.btn-secondary {
+    @include interactive-states(
+        $base-bg: $color-bg-secondary,
+        $hover-bg: $color-bg-tertiary,
+        $focus-color: $color-border-focus,
+        $base-color: $color-text-primary,
+        $hover-color: $color-text-primary,
+        $active-bg: $color-bg-tertiary,
+        $active-color: $color-text-primary,
+        $base-border: $color-border-primary,
+        $hover-border: $color-border-primary,
+        $active-border: $color-border-primary
+    );
+    border-color: $color-border-primary;
+}
+
+// Subtle — low-emphasis, filled with light surface
+.btn-subtle,
+button.btn-subtle {
+    @include interactive-states(
+        $base-bg: $color-bg-secondary,
+        $hover-bg: $color-bg-tertiary,
+        $focus-color: $color-border-focus,
+        $base-color: $color-text-secondary,
+        $hover-color: $color-text-primary,
+        $active-bg: $color-bg-tertiary,
+        $active-color: $color-text-primary,
+        $base-border: $color-border-secondary,
+        $hover-border: $color-border-secondary,
+        $active-border: $color-border-secondary
+    );
+    border-color: $color-border-secondary;
+}
+
+// Outline
+.btn-outline,
+button.btn-outline {
+    @include interactive-states(
+        $base-bg: transparent,
+        $hover-bg: $color-bg-secondary,
+        $focus-color: $color-border-focus,
+        $base-color: $color-text-primary,
+        $hover-color: $color-text-primary,
+        $active-bg: $color-bg-secondary,
+        $active-color: $color-text-primary,
+        $base-border: $color-border-primary,
+        $hover-border: $color-border-primary,
+        $active-border: $color-border-primary
+    );
+    border-color: $color-border-primary;
+}
+
+// Outline (Primary accent)
+.btn-outline-primary,
+button.btn-outline-primary {
+    @include interactive-states(
+        $base-bg: transparent,
+        $hover-bg: $color-bg-secondary,
+        $focus-color: $color-border-focus,
+        $base-color: $color-primary,
+        $hover-color: $color-primary,
+        $active-bg: $color-bg-secondary,
+        $active-color: $color-primary,
+        $base-border: $color-primary,
+        $hover-border: $color-primary,
+        $active-border: $color-primary
+    );
+    border-color: $color-primary;
+}
+
+// Ghost — text-only look with hover surface
+.btn-ghost,
+button.btn-ghost {
+    @include interactive-states(
+        $base-bg: transparent,
+        $hover-bg: $color-bg-secondary,
+        $focus-color: $color-border-focus,
+        $base-color: $color-text-secondary,
+        $hover-color: $color-text-primary,
+        $active-bg: $color-bg-tertiary,
+        $active-color: $color-text-primary
+    );
+    border-color: transparent;
+}
+
+// Destructive
+.btn-danger,
+button.btn-danger {
+    @include interactive-states(
+        $base-bg: $color-error,
+        $hover-bg: $color-error,
+        // no distinct hover token available
+        $focus-color: $color-border-focus,
+        $base-color: $color-text-inverse,
+        $hover-color: $color-text-inverse,
+        $active-bg: $color-error,
+        $active-color: $color-text-inverse
+    );
+    border-color: transparent;
+}
+
+// Link-style button
+.btn-link,
+button.btn-link {
+    background: transparent;
+    border-color: transparent;
+    color: $color-primary;
+    padding: 0;
+    @include focusable-transition();
+
+    &:hover {
+        color: $color-primary-hover;
+    }
+    &:focus-visible {
+        @include focus-ring();
+    }
+    &:active,
+    &.is-active,
+    &[aria-pressed='true'],
+    &[aria-current='page'] {
+        color: $color-primary-hover;
+        text-decoration: underline;
+    }
+}

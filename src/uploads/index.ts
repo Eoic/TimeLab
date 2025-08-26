@@ -1,6 +1,6 @@
-import { closeModal, openModal } from '@/utils/dom';
-import { idbDelete, idbGetAll, idbPut } from '@/utils/idb';
-import { formatBytes, uuid } from '@/utils/misc';
+import { getAllRecords, saveRecord, deleteRecord } from '../platform/storage';
+import { formatBytes, uuid } from '../shared/misc';
+import { closeModal, openModal } from '../ui/dom';
 
 export type TDataFile = {
     id: string;
@@ -138,8 +138,8 @@ export function setupUploads(): void {
             '<span class="material-symbols-outlined" aria-hidden="true">close</span>';
         actions.appendChild(remove);
 
-        row.appendChild(meta);
         row.appendChild(status);
+        row.appendChild(meta);
         row.appendChild(actions);
         uploadsList.appendChild(row);
 
@@ -172,7 +172,7 @@ export function setupUploads(): void {
         filesList.textContent = '';
         if (dataFiles.length === 0) {
             const empty = document.createElement('div');
-            empty.className = 'empty';
+            empty.className = 'empty-state';
             empty.textContent = 'No files uploaded yet.';
             filesList.appendChild(empty);
             return;
@@ -199,7 +199,11 @@ export function setupUploads(): void {
                 file.visible = !file.visible;
                 void (async () => {
                     try {
-                        await idbPut(file);
+                        const result = await saveRecord(file);
+                        if (!result.ok) {
+                            // eslint-disable-next-line no-console
+                            console.error('Failed to save file:', result.error);
+                        }
                     } catch {
                         // ignore persistence errors for UI responsiveness
                     }
@@ -219,7 +223,11 @@ export function setupUploads(): void {
                     dataFiles.splice(idx, 1);
                     void (async () => {
                         try {
-                            await idbDelete(file.id);
+                            const result = await deleteRecord(file.id);
+                            if (!result.ok) {
+                                // eslint-disable-next-line no-console
+                                console.error('Failed to delete file:', result.error);
+                            }
                         } catch {
                             // ignore persistence errors
                         }
@@ -271,14 +279,18 @@ export function setupUploads(): void {
                 };
                 dataFiles.push(record);
                 try {
-                    await idbPut(record);
+                    const result = await saveRecord(record);
+                    if (!result.ok) {
+                        // eslint-disable-next-line no-console
+                        console.error('Failed to save record:', result.error);
+                    }
                 } catch {
                     // ignore persistence errors and continue
                 }
                 uploadUI.bar.style.width = '100%';
                 uploadUI.row.classList.add('done');
                 uploadUI.status.innerHTML =
-                    '<span class="material-symbols-outlined" aria-hidden="true">check_circle</span>Ready';
+                    '<span class="material-symbols-outlined" aria-hidden="true">check_circle</span>';
                 notifyChange();
             } catch (_err) {
                 if (!uploadUI.state.cancelled) {
@@ -359,11 +371,14 @@ export function setupUploads(): void {
     // Load previously stored files from IndexedDB
     void (async () => {
         try {
-            const stored = await idbGetAll<TDataFile>();
-            if (Array.isArray(stored) && stored.length > 0) {
-                dataFiles.push(...stored);
+            const storedResult = await getAllRecords<TDataFile>();
+            if (storedResult.ok && storedResult.value.length > 0) {
+                dataFiles.push(...storedResult.value);
                 renderFilesList();
                 notifyChange();
+            } else if (!storedResult.ok) {
+                // eslint-disable-next-line no-console
+                console.error('Failed to load stored files:', storedResult.error);
             }
         } catch {
             // ignore load failures gracefully

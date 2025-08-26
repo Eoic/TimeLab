@@ -1,6 +1,76 @@
 import type { TLDropdown } from '@/components/dropdown';
 import type { TDataFile } from '@/uploads';
 
+/**
+ * Update the active label dropdown to show labels from the labels list
+ */
+// Label definitions registry (in a real app, this would be in a proper store/service)
+const labelDefinitions: Array<{ name: string; color: string }> = [];
+
+export function updateActiveLabelDropdown(): void {
+    const activeLabelDropdown = document.querySelector<TLDropdown>('#active-label');
+
+    if (!activeLabelDropdown) {
+        return;
+    }
+
+    if (labelDefinitions.length === 0) {
+        // No label definitions yet - show placeholder
+        activeLabelDropdown.options = [{ value: '', label: 'No labels created yet' }];
+        activeLabelDropdown.value = '';
+        return;
+    }
+
+    // Create options from label definitions
+    const options = labelDefinitions.map((def, index) => ({
+        value: `label-${String(index)}`,
+        label: def.name,
+        color: def.color,
+    }));
+
+    activeLabelDropdown.options = options;
+
+    // If no value is currently selected, select the first one
+    if (!activeLabelDropdown.value && options.length > 0 && options[0]) {
+        activeLabelDropdown.value = options[0].value;
+    }
+}
+
+/**
+ * Add a new label definition to the registry
+ */
+export function addLabelDefinition(name: string, color: string): void {
+    labelDefinitions.push({ name, color });
+    updateActiveLabelDropdown();
+}
+
+/**
+ * Get all label definitions
+ */
+export function getLabelDefinitions(): Array<{ name: string; color: string }> {
+    return [...labelDefinitions]; // Return a copy to prevent direct mutation
+}
+
+/**
+ * Update an existing label definition
+ */
+export function updateLabelDefinition(index: number, name: string, color: string): void {
+    if (index >= 0 && index < labelDefinitions.length) {
+        labelDefinitions[index] = { name, color };
+        updateActiveLabelDropdown();
+    }
+}
+
+/**
+ * Delete a label definition
+ */
+export function deleteLabelDefinition(index: number): void {
+    if (index >= 0 && index < labelDefinitions.length) {
+        labelDefinitions.splice(index, 1);
+        updateActiveLabelDropdown();
+    }
+}
+
 export function setupDropdowns(): void {
     const xAxisDropdown = document.querySelector<TLDropdown>('#x-axis');
     const yAxisDropdown = document.querySelector<TLDropdown>('#y-axis');
@@ -117,12 +187,8 @@ export function setupDropdowns(): void {
         cfgZoom.value = 'fit';
     }
     if (activeLabelDropdown) {
-        activeLabelDropdown.options = [
-            { value: 'label-a', label: 'Label A', color: '#e74c3c' },
-            { value: 'label-b', label: 'Label B', color: '#f1c40f' },
-            { value: 'label-c', label: 'Label C', color: '#2ecc71' },
-            { value: 'label-d', label: 'Label D', color: '#3498db' },
-        ];
+        // Initialize with empty state - will be populated from actual labels
+        updateActiveLabelDropdown();
     }
     xAxisDropdown?.addEventListener('change', (ev: Event) => {
         const ce = ev as CustomEvent<{ value?: unknown }>;
@@ -150,4 +216,13 @@ export function setupDropdowns(): void {
         const detail = (ev as CustomEvent<{ columns: string[] }>).detail;
         setAxisOptions(detail.columns.length > 0 ? detail.columns : null);
     });
+
+    // Set up observer for labels list changes to update active label dropdown
+    const labelsList = document.querySelector<HTMLUListElement>('.labels-list');
+    if (labelsList) {
+        const labelsObserver = new MutationObserver(() => {
+            updateActiveLabelDropdown();
+        });
+        labelsObserver.observe(labelsList, { childList: true, subtree: true });
+    }
 }

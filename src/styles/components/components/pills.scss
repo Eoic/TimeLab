@@ -1,0 +1,14 @@
+// Note: tokens are auto-imported via Vite config
+@use '../../_semantic' as *;
+@use '../../abstracts/theme-utils' as *;
+
+.pill {
+    font-size: $font-size-sm;
+    padding: $spacing-xs $spacing-sm;
+    white-space: nowrap;
+    border-radius: $border-radius-pill;
+    border: 1px dashed $color-border-primary;
+    color: $color-text-secondary;
+    background-color: $color-bg-secondary;
+    @include theme-transition();
+}

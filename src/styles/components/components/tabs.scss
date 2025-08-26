@@ -1,0 +1,99 @@
+// Note: tokens are auto-imported via Vite config
+@use '../../_semantic' as *;
+@use '../../abstracts/theme-utils' as *;
+
+.tabs {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.tab-head {
+    gap: $spacing-sm;
+    display: flex;
+    align-items: flex-end;
+    padding-bottom: 0;
+    border-bottom: 1px solid $color-border-secondary;
+}
+
+.tab-head label {
+    cursor: pointer;
+    font-size: $font-size-sm;
+    padding: calc($spacing-xs - 2px) $spacing-sm;
+    border-radius: $border-radius $border-radius 0 0;
+    border: 1px solid $color-border-primary;
+    border-bottom-color: transparent;
+    position: relative;
+    top: 1px; // visually connect with panel border
+    color: $color-text-secondary;
+    background-color: $color-bg-secondary;
+    @include theme-transition('background-color, color, border-color, box-shadow');
+    @include interactive-states(
+        $base-bg: $color-bg-secondary,
+        $hover-bg: $color-bg-tertiary,
+        $base-color: $color-text-secondary,
+        $hover-color: $color-text-primary
+    );
+
+    &:focus-visible {
+        @include focus-ring();
+    }
+}
+
+.panels {
+    flex: 1 1 auto;
+    height: 100%;
+    min-height: 0; // allow children to size with overflow
+}
+
+.tab-body {
+    padding: $spacing-sm;
+    min-height: 200px;
+    border-radius: 0 $border-radius $border-radius $border-radius;
+    border: 1px solid $color-border-primary;
+    background-color: $color-bg-primary;
+    max-height: 100%;
+    overflow: auto;
+}
+
+.panel {
+    display: none;
+}
+
+.tabs input[type='radio'] {
+    position: absolute;
+    left: -9999px;
+}
+
+/* Use :has() so inputs can live inside .tab-head */
+.tabs:has(#tab-labels:checked) .panel.labels-panel {
+    display: block;
+    height: 100%;
+}
+.tabs:has(#tab-history:checked) .panel.history-panel {
+    display: block;
+    height: 100%;
+}
+.tabs:has(#tab-labels:checked) label[for='tab-labels'] {
+    background-color: $color-bg-primary;
+    color: $color-text-primary;
+    border-color: $color-border-primary;
+    border-bottom-color: $color-bg-primary;
+}
+.tabs:has(#tab-history:checked) label[for='tab-history'] {
+    background-color: $color-bg-primary;
+    color: $color-text-primary;
+    border-color: $color-border-primary;
+    border-bottom-color: $color-bg-primary;
+}
+
+/* Optional subtle elevation for active tab body */
+.tabs:has(#tab-labels:checked) .tab-body,
+.tabs:has(#tab-history:checked) .tab-body {
+    @include surface-elevation(1);
+}
+
+/* Full-width dropdown button inside tl-dropdown */
+tl-dropdown .dropdown-toggle {
+    width: 100%;
+}

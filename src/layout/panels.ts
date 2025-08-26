@@ -1,5 +1,6 @@
 export function setupCollapsiblePanels(): void {
     const root = document.querySelector<HTMLDivElement>('.container');
+
     if (!root) {
         return;
     }

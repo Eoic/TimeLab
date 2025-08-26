@@ -11,7 +11,7 @@
     </head>
 
     <body>
-        <div class="container">
+        <div id="app" class="container">
             <div class="header flex justify-between items-center">
                 <div>
                     <div class="brand">
@@ -44,7 +44,8 @@
                         aria-label="Upload data"
                         title="Upload data files"
                     >
-                        <span class="material-symbols-outlined">upload</span>Upload data
+                        <span class="material-symbols-outlined">upload</span>
+                        <span>Upload data </span>
                     </button>
                     <button
                         class="btn-outline"
@@ -54,10 +55,12 @@
                         aria-label="Manage data files"
                         title="Manage uploaded files"
                     >
-                        <span class="material-symbols-outlined">folder_open</span>Manage data
+                        <span class="material-symbols-outlined">folder_open</span>
+                        <span>Manage data</span>
                     </button>
                     <button class="btn-outline" aria-label="Export labels">
-                        <span class="material-symbols-outlined">download</span> Export labels
+                        <span class="material-symbols-outlined">export_notes</span>
+                        <span>Export labels</span>
                     </button>
                 </div>
                 <div class="right" role="group" aria-label="Series navigation">
@@ -363,21 +366,11 @@
                     </button>
                     <button
                         class="btn-icon btn-neutral"
-                        aria-haspopup="dialog"
-                        aria-controls="modal-label-edit"
-                        data-modal="label-edit"
-                        aria-label="Edit label"
+                        id="btn-manage-labels"
+                        aria-label="Manage labels"
+                        title="Manage labels"
                     >
-                        <span class="material-symbols-outlined">edit</span>
-                    </button>
-                    <button
-                        class="btn-icon btn-neutral"
-                        aria-haspopup="dialog"
-                        aria-controls="modal-label-delete"
-                        data-modal="label-delete"
-                        aria-label="Delete label"
-                    >
-                        <span class="material-symbols-outlined">delete</span>
+                        <span class="material-symbols-outlined">tune</span>
                     </button>
                     <button
                         class="btn-icon btn-neutral"
@@ -445,8 +438,7 @@
                             <div class="value" id="stats-types">0</div>
                         </div>
                     </div>
-                    <div class="stats-list-wrap">
-                        <div class="list-title text-sm text-muted">Counts by type</div>
+                    <div id="stats-list-wrap" class="stats-list-wrap">
                         <ul id="stats-list" class="stats-list" role="list"></ul>
                     </div>
                 </div>
@@ -587,6 +579,159 @@
                 </div>
             </div>
         </div>
+
+        <!-- New Label Modal -->
+        <div
+            class="modal"
+            id="modal-label-new"
+            role="dialog"
+            aria-modal="true"
+            aria-hidden="true"
+            aria-labelledby="label-new-title"
+        >
+            <div class="modal-backdrop" data-close></div>
+            <div class="modal-dialog card" role="document">
+                <div class="card-title">
+                    <span class="material-symbols-outlined" aria-hidden="true">add</span>
+                    <h4 id="label-new-title">Create new label</h4>
+                </div>
+
+                <form id="label-new-form" class="form-grid" aria-label="New label form">
+                    <div class="form-field">
+                        <label for="label-name">Label name</label>
+                        <input
+                            id="label-name"
+                            type="text"
+                            placeholder="Enter label name"
+                            required
+                            aria-describedby="label-name-error"
+                        />
+                        <div id="label-name-error" class="form-error" aria-live="polite"></div>
+                    </div>
+
+                    <div class="form-field">
+                        <label>Label color</label>
+                        <div class="color-picker-section">
+                            <div class="color-presets" role="radiogroup" aria-label="Preset colors">
+                                <button
+                                    type="button"
+                                    class="color-preset"
+                                    data-color="#e74c3c"
+                                    aria-label="Red"
+                                    style="background-color: #e74c3c"
+                                ></button>
+                                <button
+                                    type="button"
+                                    class="color-preset"
+                                    data-color="#f39c12"
+                                    aria-label="Orange"
+                                    style="background-color: #f39c12"
+                                ></button>
+                                <button
+                                    type="button"
+                                    class="color-preset"
+                                    data-color="#f1c40f"
+                                    aria-label="Yellow"
+                                    style="background-color: #f1c40f"
+                                ></button>
+                                <button
+                                    type="button"
+                                    class="color-preset"
+                                    data-color="#2ecc71"
+                                    aria-label="Green"
+                                    style="background-color: #2ecc71"
+                                ></button>
+                                <button
+                                    type="button"
+                                    class="color-preset"
+                                    data-color="#3498db"
+                                    aria-label="Blue"
+                                    style="background-color: #3498db"
+                                ></button>
+                                <button
+                                    type="button"
+                                    class="color-preset"
+                                    data-color="#9b59b6"
+                                    aria-label="Purple"
+                                    style="background-color: #9b59b6"
+                                ></button>
+                                <button
+                                    type="button"
+                                    class="color-preset"
+                                    data-color="#e91e63"
+                                    aria-label="Pink"
+                                    style="background-color: #e91e63"
+                                ></button>
+                                <button
+                                    type="button"
+                                    class="color-preset"
+                                    data-color="#34495e"
+                                    aria-label="Dark Blue"
+                                    style="background-color: #34495e"
+                                ></button>
+                            </div>
+                            <div class="custom-color-section">
+                                <input
+                                    id="label-color-custom"
+                                    type="color"
+                                    value="#3498db"
+                                    aria-label="Custom color picker"
+                                />
+                                <label for="label-color-custom" class="custom-color-label"
+                                    >Custom color</label
+                                >
+                            </div>
+                        </div>
+                    </div>
+                </form>
+
+                <div class="modal-actions">
+                    <button class="btn-outline" type="button" data-close>
+                        <span class="material-symbols-outlined" aria-hidden="true">close</span>
+                        Cancel
+                    </button>
+                    <button
+                        class="btn-primary"
+                        type="submit"
+                        form="label-new-form"
+                        id="label-create-btn"
+                    >
+                        <span class="material-symbols-outlined" aria-hidden="true">add</span>
+                        Create label
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Label Management Modal -->
+        <div
+            class="modal"
+            id="modal-label-manage"
+            aria-hidden="true"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="label-manage-title"
+        >
+            <div class="modal-backdrop" data-close></div>
+            <div class="modal-dialog modal-fluid card" role="document">
+                <div class="card-title">
+                    <span class="material-symbols-outlined" aria-hidden="true">tune</span>
+                    <h4 id="label-manage-title">Manage labels</h4>
+                </div>
+
+                <div class="label-management-list" id="label-manage-list">
+                    <!-- Label items will be populated here -->
+                </div>
+
+                <div class="mt-sm" style="display: flex; justify-content: flex-end">
+                    <button class="btn-outline" data-close>
+                        <span class="material-symbols-outlined" aria-hidden="true">close</span>
+                        Done
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <script type="module" src="/src/main.ts"></script>
     </body>
 </html>

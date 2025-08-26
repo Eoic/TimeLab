@@ -1,0 +1,244 @@
+// Note: tokens are auto-imported via Vite config
+@use '../../_semantic' as *;
+@use '../../abstracts/theme-utils' as *;
+
+input:not([type='checkbox']):not([type='range']),
+textarea,
+select {
+    padding: $spacing-xs $spacing-sm;
+    font-family: inherit;
+    color: $color-text-primary;
+    border-radius: $border-radius;
+    background-color: $color-bg-primary;
+    border: 1px solid $color-border-primary;
+    box-sizing: border-box;
+    @include theme-transition();
+
+    &:focus {
+        @include focus-ring();
+        border-color: $color-border-focus;
+    }
+
+    &::placeholder {
+        color: $color-text-muted;
+    }
+
+    &:disabled,
+    &[aria-disabled='true'] {
+        background-color: $color-bg-secondary;
+        border-color: $color-border-secondary;
+        color: $color-text-muted;
+        cursor: not-allowed;
+        opacity: 0.7;
+
+        &::placeholder {
+            color: $color-text-tertiary;
+        }
+    }
+}
+
+/* Checkbox styling (compact, filled when checked) */
+input[type='checkbox'] {
+    appearance: none;
+    inline-size: 16px;
+    block-size: 16px;
+    padding: 0;
+    margin-right: $spacing-xs;
+    border: 1px solid $color-border-primary;
+    border-radius: $border-radius-sm;
+    background: $color-bg-primary;
+    display: inline-block;
+    vertical-align: middle;
+    box-sizing: border-box;
+    position: relative;
+    cursor: pointer;
+    accent-color: $color-primary; /* fallback */
+    @include theme-transition('background-color, border-color, box-shadow');
+}
+input[type='checkbox']:checked {
+    background: $color-primary;
+    border-color: $color-primary;
+}
+/* Hover states */
+input[type='checkbox']:hover {
+    border-color: $color-border-focus;
+    background: $color-bg-secondary;
+}
+input[type='checkbox']:checked:hover {
+    background: $color-primary-hover;
+    border-color: $color-primary-hover;
+}
+input[type='checkbox']:focus-visible {
+    @include focus-ring();
+}
+
+/* Visible checkmark glyph when checked */
+input[type='checkbox']::after {
+    content: '';
+    position: absolute;
+    width: 3px;
+    height: 7px;
+    border: solid $color-text-inverse;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+    top: 1.5px;
+    left: 5px;
+    opacity: 0;
+    transition: opacity 120ms ease;
+}
+input[type='checkbox']:checked::after {
+    opacity: 1;
+}
+
+/* Vertically center checkbox text with the box */
+label:has(> input[type='checkbox']),
+label:has(input[type='checkbox']) {
+    display: inline-flex;
+    align-items: center;
+    gap: $spacing-xs;
+    cursor: pointer;
+}
+label:has(input[type='checkbox']) input[type='checkbox'] {
+    margin-right: 0; /* gap handles spacing */
+}
+
+/* Range slider styling */
+input[type='range'] {
+    -webkit-appearance: none;
+    appearance: none;
+    display: block;
+    inline-size: 100%;
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    accent-color: $color-primary;
+    /* Progress fill via CSS var set in JS: --range-pct (e.g., 42%) */
+    --range-pct: 0%;
+    background:
+        linear-gradient($color-primary, $color-primary) no-repeat,
+        linear-gradient($color-border-secondary, $color-border-secondary) no-repeat;
+    background-size:
+        var(--range-pct) 6px,
+        100% 6px;
+    background-position:
+        left center,
+        left center;
+    border-radius: $border-radius-pill;
+}
+input[type='range']::-webkit-slider-runnable-track {
+    height: 6px;
+    background: transparent; /* let the input's background show the progress fill */
+    border-radius: $border-radius-pill;
+}
+input[type='range']::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: $color-primary;
+    border: 1px solid $color-border-primary;
+    margin-top: -5px; /* center the 16px thumb on 6px track */
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    transition:
+        transform $transition-fast $ease-out,
+        box-shadow $transition-fast $ease-out,
+        background-color $transition-fast $ease-out;
+}
+input[type='range']::-moz-range-track {
+    height: 6px;
+    background: $color-border-secondary;
+    border-radius: $border-radius-pill;
+}
+input[type='range']::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: $color-primary;
+    border: 1px solid $color-border-primary;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    transition:
+        transform $transition-fast $ease-out,
+        box-shadow $transition-fast $ease-out,
+        background-color $transition-fast $ease-out;
+}
+input[type='range']:focus-visible::-webkit-slider-thumb,
+input[type='range']:focus-visible::-moz-range-thumb {
+    box-shadow: 0 0 0 3px rgba($color-primary, 0.25);
+}
+input[type='range']:hover::-webkit-slider-thumb,
+input[type='range']:hover::-moz-range-thumb {
+    transform: scale(1.05);
+    background: $color-primary-hover;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+}
+/* Direct hover on thumbs for engines that support it */
+input[type='range']::-webkit-slider-thumb:hover {
+    transform: scale(1.05);
+    background: $color-primary-hover;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+}
+input[type='range']::-moz-range-thumb:hover {
+    transform: scale(1.05);
+    background: $color-primary-hover;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+}
+input[type='range']:active::-webkit-slider-thumb,
+input[type='range']:active::-moz-range-thumb {
+    transform: scale(1.1);
+}
+/* Firefox progress fill */
+input[type='range']::-moz-range-progress {
+    height: 6px;
+    background: color-mix(in oklab, $color-primary 50%, $color-border-secondary);
+    border-radius: $border-radius-pill 0 0 $border-radius-pill;
+}
+/* Disabled state */
+input[type='range']:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* Visible focus ring on the whole range control */
+input[type='range']:focus,
+input[type='range']:focus-visible {
+    @include focus-ring();
+}
+
+.form-grid {
+    display: grid;
+    gap: $spacing-sm;
+}
+
+.form-field {
+    display: grid;
+    gap: $spacing-xs;
+
+    label {
+        font-size: $font-size-sm;
+        color: $color-text-secondary;
+    }
+}
+
+/* Lightweight form sections inside cards */
+.section {
+    display: grid;
+    gap: $spacing-sm;
+}
+.section + .section {
+    margin-top: $spacing-sm;
+}
+.section h5 {
+    font-weight: $font-weight-medium;
+    color: $color-text-secondary;
+}
+
+/* Compact <hr> dividers in forms */
+form hr {
+    margin: 0;
+    border: 0;
+    border-top: 1px solid $color-border-primary;
+}

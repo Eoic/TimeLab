@@ -71,6 +71,12 @@ export default tseslint.config(
         ...tseslint.configs.disableTypeChecked,
     },
     {
-        ignores: ['dist/', 'node_modules/', 'coverage/', 'src/vendor/'],
+        ignores: [
+            'dist/',
+            'node_modules/',
+            'coverage/',
+            'src/vendor/',
+            'src/charts/echarts.min.js',
+        ],
     }
 );

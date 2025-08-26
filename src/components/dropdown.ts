@@ -278,6 +278,15 @@ export class TLDropdown extends HTMLElement {
 
         btn.append(label, icon);
 
+        // Add color dot for single selection if color is available (after elements are appended)
+        if (!this.isMultiple && selected && !Array.isArray(selected) && selected.color) {
+            const colorDot = document.createElement('span');
+            colorDot.className = 'color-dot';
+            colorDot.style.setProperty('--dot-color', selected.color);
+            colorDot.setAttribute('aria-hidden', 'true');
+            btn.insertBefore(colorDot, label);
+        }
+
         const menu = document.createElement('div');
         menu.className = 'dropdown-menu';
         menu.setAttribute('role', 'listbox');
@@ -394,8 +403,16 @@ export class TLDropdown extends HTMLElement {
 
         // Width: at least a comfortable min, not smaller than anchor; clamp to viewport
         const searchElForWidth = menu.querySelector<HTMLElement>('.dropdown-search');
-        const minWidth = searchElForWidth ? 280 : 240;
-        const width = Math.min(Math.max(rect.width, minWidth), viewportW - margin * 2);
+        // Use a more reasonable minimum width that doesn't force dropdowns to be too wide
+        const baseMinWidth = searchElForWidth ? 200 : 160;
+
+        // Special handling for theme dropdown which needs extra width for theme names
+        const themeMinWidth = isThemeDropdown ? 180 : baseMinWidth;
+
+        // Prefer the button width, but ensure a reasonable minimum for usability
+        // For theme dropdowns, always use the theme minimum since the button is just an icon
+        const minWidth = isThemeDropdown ? themeMinWidth : Math.max(rect.width, baseMinWidth);
+        const width = Math.min(minWidth, viewportW - margin * 2);
 
         // Calculate left position with right offset for theme dropdown
         let left = Math.min(Math.max(rect.left, margin), viewportW - width - margin);
@@ -630,6 +647,21 @@ export class TLDropdown extends HTMLElement {
                 labelEl.classList.add('placeholder');
             } else {
                 labelEl.classList.remove('placeholder');
+            }
+
+            // Update color dot for single selection
+            const btn = this.querySelector<HTMLButtonElement>('.dropdown-toggle');
+            const existingDot = btn?.querySelector('.color-dot');
+            if (existingDot) {
+                existingDot.remove();
+            }
+
+            if (selected?.color && btn) {
+                const colorDot = document.createElement('span');
+                colorDot.className = 'color-dot';
+                colorDot.style.setProperty('--dot-color', selected.color);
+                colorDot.setAttribute('aria-hidden', 'true');
+                btn.insertBefore(colorDot, labelEl);
             }
         }
     }

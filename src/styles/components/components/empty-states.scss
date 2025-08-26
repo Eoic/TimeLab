@@ -1,0 +1,81 @@
+// Note: tokens are auto-imported via Vite config
+@use '../../_semantic' as *;
+
+/* Empty state styling for all panels */
+
+.empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: $spacing-xs;
+    margin: $spacing-sm 0;
+    list-style: none;
+}
+
+.empty-state-content {
+    text-align: center;
+    color: $color-text-muted;
+}
+
+.empty-state .empty-icon {
+    font-size: 2.5rem;
+    opacity: 0.4;
+    margin-bottom: $spacing-sm;
+    display: block;
+}
+
+.empty-state .empty-title {
+    font-weight: $font-weight-medium;
+    margin-bottom: $spacing-xs;
+    color: $color-text-secondary;
+}
+
+.empty-state .empty-subtitle {
+    font-size: $font-size-sm;
+    line-height: 1.4;
+}
+
+/* Specific styling for different panels */
+
+/* Labels panel empty states */
+.labels-empty,
+.history-empty {
+    min-height: 8rem;
+    margin: auto !important;
+}
+
+/* Stats panel empty state */
+.stats-empty {
+    margin: 0;
+    border-radius: $border-radius;
+    background-color: $color-bg-secondary;
+    border: 1px dashed $color-border-primary;
+}
+
+.stats-empty .empty-icon {
+    font-size: 2rem;
+    margin-bottom: $spacing-xs; /* Reduce spacing between icon and text */
+}
+
+/* Chart empty state (already defined in chart component but ensure consistency) */
+.chart-empty-state .empty-state-content {
+    color: $color-text-muted;
+}
+
+.chart-empty-state .empty-icon {
+    font-size: 3rem;
+    opacity: 0.3;
+    margin-bottom: $spacing-md;
+}
+
+.chart-empty-state .empty-title {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-medium;
+    margin-bottom: $spacing-sm;
+    color: $color-text-secondary;
+}
+
+.chart-empty-state .empty-subtitle {
+    font-size: $font-size-base;
+    color: $color-text-muted;
+}

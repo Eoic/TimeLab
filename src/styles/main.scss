@@ -1,0 +1,26 @@
+/**
+ * Main SCSS entry point following the 7-1 architecture pattern
+ * Import order: abstracts, base, layout, components, pages, themes
+ */
+
+// Abstracts: Variables, mixins, functions - no actual CSS output
+// Note: tokens are auto-imported via Vite config
+@use 'abstracts/variables' as *;
+@use 'abstracts/theme-utils' as *;
+
+// Base: Resets, typography, base element styles
+@use 'base/reset';
+
+// Layout: Grid, header, sidebar, panels
+// (no layout files to import yet)
+
+// Components: Buttons, forms, etc.
+@use 'components/main';
+@use 'components/formatting';
+
+// Pages: Page-specific styles
+// (no page-specific styles yet)
+
+// Themes: Theme overrides
+@use '_theme-variants';
+@use '_semantic';

@@ -1,27 +1,39 @@
+/**
+ * Application entry point following the engineering guide structure
+ */
+
+import { initializeApp } from './app';
+import { initializeTimeSeriesChart } from './charts/timeSeries';
+import { setupDropdowns, setupLabelsEmptyStates } from './ui';
+import { setupLabelManagement } from './ui/labelManagement';
+import { setupLabelModal, setupModalTriggers } from './ui/labelModal';
+
 import { setupCheckboxEnterToggle } from '@/a11y/checkbox';
-import { initializeTimeSeriesChart } from '@/chart/timeSeries';
 import { defineDropdown } from '@/components/dropdown';
 import { setupRangeProgress } from '@/inputs/range';
 import { setupCollapsiblePanels } from '@/layout/panels';
 import { setupSettings } from '@/settings';
 import { setupStatsPanel } from '@/stats/panel';
 import { setupSnapSettingsDropdown } from '@/toolbar/snap';
-import { setupDropdowns } from '@/ui/dropdowns';
-import { setupLabelsEmptyStates } from '@/ui/emptyStates';
 import { setupUploads } from '@/uploads';
-import { setupApp } from '@/utils/app';
-import '../styles/main.scss';
 
-setupApp();
+import './styles/main.scss';
+
+// Initialize app
+initializeApp();
 defineDropdown();
 
 // Initialize empty chart
 const timeSeriesChart = initializeTimeSeriesChart();
 
-// Expose for debugging
-(window as unknown as { __timeSeriesController?: typeof timeSeriesChart }).__timeSeriesController =
-    timeSeriesChart;
+// Expose for debugging in development
+if (process.env.NODE_ENV === 'development') {
+    (
+        window as unknown as { __timeSeriesController?: typeof timeSeriesChart }
+    ).__timeSeriesController = timeSeriesChart;
+}
 
+// Setup UI components
 setupDropdowns();
 setupSettings();
 setupCollapsiblePanels();
@@ -31,3 +43,6 @@ setupRangeProgress();
 setupSnapSettingsDropdown();
 setupCheckboxEnterToggle();
 setupUploads();
+setupLabelModal();
+setupLabelManagement();
+setupModalTriggers();

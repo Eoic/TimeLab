@@ -1,0 +1,18 @@
+// Note: tokens are auto-imported via Vite config
+@use '../../_semantic' as *;
+
+hr {
+    border: none;
+    margin: $spacing-lg 0;
+    border-top: 1px solid $color-border-primary;
+}
+
+// Vertical divider
+.vertical {
+    width: 1px;
+    display: inline-block;
+    vertical-align: middle;
+    height: $spacing-sm;
+    margin: 0 $spacing-xs;
+    background-color: $color-border-primary;
+}

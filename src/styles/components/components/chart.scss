@@ -1,0 +1,52 @@
+// Note: tokens are auto-imported via Vite config
+@use '../../_semantic' as *;
+
+.chart {
+    display: flex;
+    flex-direction: column;
+    min-height: 0; // allow child to shrink in grid
+}
+
+.chart #chart-canvas {
+    flex: 1 1 auto;
+    min-height: 280px;
+    position: relative; // For empty state positioning
+}
+
+.chart .tools {
+    gap: $spacing-xs;
+    top: $spacing-sm;
+    right: $spacing-sm;
+    display: flex;
+    position: absolute;
+}
+
+/* Empty state styling */
+.chart-empty-state {
+    background-color: $color-surface-raised;
+
+    .empty-state-content {
+        text-align: center;
+        color: $color-text-muted;
+    }
+
+    .empty-icon {
+        font-size: 3rem;
+        margin-bottom: $spacing-sm;
+        opacity: 0.6;
+        display: block;
+    }
+
+    .empty-title {
+        font-size: 1.125rem;
+        font-weight: 500;
+        margin: 0 0 $spacing-xs 0;
+        color: $color-text-secondary;
+    }
+
+    .empty-subtitle {
+        font-size: 0.875rem;
+        margin: 0;
+        opacity: 0.8;
+    }
+}

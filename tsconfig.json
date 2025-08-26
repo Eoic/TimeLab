@@ -1,39 +1,44 @@
 {
-  "compilerOptions": {
-    "target": "ES2022",
-    "useDefineForClassFields": true,
-    "module": "ESNext",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "skipLibCheck": true,
+    "compilerOptions": {
+        "target": "ES2022",
+        "useDefineForClassFields": true,
+        "module": "ESNext",
+        "lib": ["ES2022", "DOM", "DOM.Iterable"],
+        "skipLibCheck": true,
 
-    /* Bundler mode. */
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
-    "jsx": "preserve",
+        /* Bundler mode. */
+        "moduleResolution": "bundler",
+        "allowImportingTsExtensions": true,
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "noEmit": true,
+        "jsx": "preserve",
 
-    /* Linting. */
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
-    "noImplicitReturns": true,
-    "noImplicitOverride": true,
+        /* Linting. */
+        "strict": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "noFallthroughCasesInSwitch": true,
+        "noUncheckedIndexedAccess": true,
+        "exactOptionalPropertyTypes": true,
+        "noImplicitReturns": true,
+        "noImplicitOverride": true,
 
-    /* Path mapping. */
-    "baseUrl": ".",
-    "typeRoots": ["src/types", "node_modules/@types"],
-    "paths": {
-      "@/*": ["src/*"],
-      "@/types/*": ["src/types/*"],
-      "@/utils/*": ["src/utils/*"],
-      "@/components/*": ["src/components/*"]
-    }
-  },
-  "include": ["src/**/*", "tests/**/*"],
-  "exclude": ["node_modules", "dist"]
+        /* Path mapping. */
+        "baseUrl": ".",
+        "typeRoots": ["src/types", "node_modules/@types"],
+        "paths": {
+            "@/*": ["src/*"],
+            "@app/*": ["src/app/*"],
+            "@domain/*": ["src/domain/*"],
+            "@platform/*": ["src/platform/*"],
+            "@charts/*": ["src/charts/*"],
+            "@ui/*": ["src/ui/*"],
+            "@styles/*": ["src/styles/*"],
+            "@shared/*": ["src/shared/*"],
+            "@workers/*": ["src/workers/*"]
+        }
+    },
+    "include": ["src/**/*", "tests/**/*"],
+    "exclude": ["node_modules", "dist"]
 }

@@ -3,8 +3,9 @@ export function setupStatsPanel(): void {
     const totalEl = document.getElementById('stats-total');
     const typesEl = document.getElementById('stats-types');
     const listEl = document.getElementById('stats-list');
+    const listWrap = document.getElementById('stats-list-wrap');
 
-    if (!labelsList || !totalEl || !typesEl || !listEl) {
+    if (!labelsList || !totalEl || !typesEl || !listEl || !listWrap) {
         return;
     }
 
@@ -56,13 +57,22 @@ export function setupStatsPanel(): void {
                     <div class="empty-subtitle text-muted text-sm">Create labels to see statistics</div>
                 </div>
             `;
-            listEl.appendChild(emptyState);
+
+            const empty = listWrap.querySelector('.empty-state');
+
+            if (!empty) {
+                listWrap.appendChild(emptyState);
+            }
+
             return;
+        } else {
+            listWrap.querySelector('.empty-state')?.remove();
         }
 
         const sorted = Array.from(countsByName.values()).sort(
             (a, b) => b.count - a.count || a.name.localeCompare(b.name)
         );
+
         for (const row of sorted) {
             const li = document.createElement('li');
             const dot = document.createElement('span');

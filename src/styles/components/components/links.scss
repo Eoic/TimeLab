@@ -1,0 +1,18 @@
+// Note: tokens are auto-imported via Vite config
+@use '../../_semantic' as *;
+@use '../../abstracts/theme-utils' as *;
+
+a {
+    color: $color-primary;
+    text-decoration: none;
+    @include theme-transition('color');
+
+    &:hover {
+        color: $color-primary-hover;
+        text-decoration: underline;
+    }
+
+    &:focus {
+        @include focus-ring();
+    }
+}
