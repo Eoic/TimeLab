@@ -53,4 +53,4 @@ npm run preview
 ### Hosting
 
 - **Any static server**: copy the contents of `dist/` to your server's public directory.
-- **Vercel**: the included `vercel.json` config uses `npm run build` and serves the `dist/` folder.
+- **Vercel**: the included `vercel.json` runs `npm run build`, serves `dist/`, and falls back to `index.html` for SPA routes after static assets are served.
