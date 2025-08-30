@@ -12,7 +12,7 @@ export class CSVTimeSeriesData implements TimeSeriesData {
     public readonly id: string;
     public readonly name: string;
     public readonly columns: readonly string[];
-    private parsedData: number[][] = [];
+    private parsedData: ReadonlyArray<readonly number[]> = [];
     private labeled = false;
 
     constructor(file: TDataFile) {
@@ -25,7 +25,7 @@ export class CSVTimeSeriesData implements TimeSeriesData {
         this.parsedData = data;
     }
 
-    getData(xColumn: string, yColumn: string): Array<[number, number]> {
+    getData(xColumn: string, yColumn: string): ReadonlyArray<readonly [number, number]> {
         const xIndex = this.columns.indexOf(xColumn);
         const yIndex = this.columns.indexOf(yColumn);
 
@@ -36,7 +36,7 @@ export class CSVTimeSeriesData implements TimeSeriesData {
         return this.parsedData.map((row, index) => {
             const xValue = xIndex < row.length ? (row[xIndex] ?? index) : index;
             const yValue = yIndex < row.length ? (row[yIndex] ?? 0) : 0;
-            return [xValue, yValue];
+            return [xValue, yValue] as const;
         });
     }
 
@@ -77,7 +77,12 @@ function parseNumericValue(value: string): number {
 /**
  * Parse CSV text into columns and numeric data
  */
-function parseCSV(text: string): { columns: string[]; data: number[][] } {
+type ParsedCSV = {
+    readonly columns: readonly string[];
+    readonly data: ReadonlyArray<readonly number[]>;
+};
+
+function parseCSV(text: string): ParsedCSV {
     const lines = text.split(/\r?\n/).filter((line) => line.trim().length > 0);
 
     if (lines.length === 0) {
@@ -206,7 +211,7 @@ function tryParseTime(value: string): number {
 /**
  * Convert uploaded data files to TimeSeriesData array
  */
-export function convertDataFilesToTimeSeries(files: TDataFile[]): TimeSeriesData[] {
+export function convertDataFilesToTimeSeries(files: TDataFile[]): ReadonlyArray<TimeSeriesData> {
     return files
         .filter((file) => file.visible && file.text && file.text.trim().length > 0)
         .map((file) => new CSVTimeSeriesData(file));

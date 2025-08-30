@@ -2,6 +2,11 @@ import { installModalFocusTrap } from '../ui/dom';
 
 import { init, type EChartOption, type ECharts } from './echarts';
 
+interface DataZoomEvent {
+    readonly start?: number;
+    readonly end?: number;
+}
+
 /**
  * Interface for time series data - clean abstraction for different data sources
  */
@@ -9,7 +14,7 @@ export interface TimeSeriesData {
     readonly id: string;
     readonly name: string;
     readonly columns: readonly string[];
-    getData(xColumn: string, yColumn: string): Array<[number, number]>;
+    getData(xColumn: string, yColumn: string): ReadonlyArray<readonly [number, number]>;
     isLabeled(): boolean;
     setLabeled(labeled: boolean): void;
 }
@@ -55,7 +60,7 @@ export interface TimeSeriesConfig {
  */
 export class TimeSeriesChart {
     private chart: ECharts | null = null;
-    private dataSources: TimeSeriesData[] = [];
+    private dataSources: ReadonlyArray<TimeSeriesData> = [];
     private currentIndex = 0;
     private listeners = new Map<keyof TimeSeriesEvents, Array<(event: unknown) => void>>();
     private container: HTMLElement;
@@ -65,6 +70,10 @@ export class TimeSeriesChart {
     private layoutChangeHandler: (() => void) | null = null;
     private chartConfigCleanup: (() => void) | null = null;
     private lastConfig: TimeSeriesConfig | null = null;
+    private currentData: ReadonlyArray<readonly [number | string, number]> = [];
+    private readonly handleZoomEvent = (params: DataZoomEvent): void => {
+        this.updateYAxisFromZoom(params.start, params.end);
+    };
 
     constructor(container: HTMLElement) {
         this.container = container;
@@ -111,6 +120,8 @@ export class TimeSeriesChart {
 
             // Initialize chart configuration controls
             this.initializeConfigControls();
+
+            chartInstance.on('dataZoom', this.handleZoomEvent);
         });
 
         // Empty state will be created after chart initialization
@@ -235,7 +246,7 @@ export class TimeSeriesChart {
     /**
      * Set data sources for the chart
      */
-    setDataSources(sources: TimeSeriesData[]): void {
+    setDataSources(sources: readonly TimeSeriesData[]): void {
         this.dataSources = [...sources];
         this.currentIndex = Math.min(this.currentIndex, Math.max(0, sources.length - 1));
 
@@ -422,9 +433,9 @@ export class TimeSeriesChart {
         const yAuto = config.yAuto ?? true;
 
         // Process data based on x-axis type
-        let seriesData: Array<[number | string, number]> = data;
+        let seriesData: ReadonlyArray<readonly [number | string, number]> = data;
         if (xType === 'category') {
-            seriesData = data.map((_pair, i) => [String(i), data[i]?.[1] ?? NaN]);
+            seriesData = data.map((_pair, i) => [String(i), data[i]?.[1] ?? NaN] as const);
         }
 
         // Configure axes
@@ -486,14 +497,50 @@ export class TimeSeriesChart {
                         lineStyle: { width: lineWidth },
                         areaStyle: showArea ? {} : undefined,
                         markLine,
-                        data: seriesData,
+                        data: [...seriesData] as Array<[number | string, number]>,
                     },
                 ],
             },
             false,
             true
         );
+        this.currentData = seriesData;
+        this.updateYAxisFromZoom();
         this.updateEmptyState(false);
+    }
+
+    private updateYAxisFromZoom(start?: number, end?: number): void {
+        if (!this.chart || !this.lastConfig?.yAuto || this.currentData.length === 0) {
+            return;
+        }
+
+        type ZoomOption = { start: number; end: number };
+        const zoomOpts = this.chart.getOption().dataZoom as ReadonlyArray<ZoomOption> | undefined;
+        const s = start ?? zoomOpts?.[0]?.start ?? 0;
+        const e = end ?? zoomOpts?.[0]?.end ?? 100;
+
+        const len = this.currentData.length;
+        const startIdx = Math.max(0, Math.floor((s / 100) * (len - 1)));
+        const endIdx = Math.min(len - 1, Math.ceil((e / 100) * (len - 1)));
+
+        let min = Number.POSITIVE_INFINITY;
+        let max = Number.NEGATIVE_INFINITY;
+        for (let i = startIdx; i <= endIdx; i++) {
+            const point = this.currentData[i];
+            if (!point) continue;
+            const y = point[1];
+            if (y < min) min = y;
+            if (y > max) max = y;
+        }
+        if (!isFinite(min) || !isFinite(max)) {
+            return;
+        }
+        const range = max - min;
+        const padding = range === 0 ? Math.abs(min || 1) * 0.1 : range * 0.1;
+
+        this.chart.setOption({
+            yAxis: { min: min - padding, max: max + padding },
+        });
     }
 
     /**
@@ -551,6 +598,7 @@ export class TimeSeriesChart {
             this.chartConfigCleanup = null;
         }
         if (this.chart) {
+            this.chart.off('dataZoom', this.handleZoomEvent);
             this.chart.dispose();
             this.chart = null;
         }
@@ -579,17 +627,17 @@ export interface DataManager {
     /**
      * Get all available data sources
      */
-    getDataSources(): Promise<TimeSeriesData[]>;
+    getDataSources(): Promise<readonly TimeSeriesData[]>;
 
     /**
      * Subscribe to data changes
      */
-    onDataChanged(callback: (sources: TimeSeriesData[]) => void): void;
+    onDataChanged(callback: (sources: readonly TimeSeriesData[]) => void): void;
 
     /**
      * Remove data change subscription
      */
-    offDataChanged(callback: (sources: TimeSeriesData[]) => void): void;
+    offDataChanged(callback: (sources: readonly TimeSeriesData[]) => void): void;
 }
 
 // UI Helper Functions for integration with existing UI
