@@ -11,8 +11,8 @@ import { convertDataFilesToTimeSeries } from './csvProcessor';
  * Implementation of DataManager that listens to uploaded data files
  */
 export class UploadDataManager implements DataManager {
-    private dataSources: TimeSeriesData[] = [];
-    private callbacks = new Set<(sources: TimeSeriesData[]) => void>();
+    private dataSources: ReadonlyArray<TimeSeriesData> = [];
+    private callbacks = new Set<(sources: readonly TimeSeriesData[]) => void>();
 
     constructor() {
         // Listen for data file changes
@@ -22,15 +22,15 @@ export class UploadDataManager implements DataManager {
         this.loadInitialData();
     }
 
-    getDataSources(): Promise<TimeSeriesData[]> {
+    getDataSources(): Promise<readonly TimeSeriesData[]> {
         return Promise.resolve([...this.dataSources]);
     }
 
-    onDataChanged(callback: (sources: TimeSeriesData[]) => void): void {
+    onDataChanged(callback: (sources: readonly TimeSeriesData[]) => void): void {
         this.callbacks.add(callback);
     }
 
-    offDataChanged(callback: (sources: TimeSeriesData[]) => void): void {
+    offDataChanged(callback: (sources: readonly TimeSeriesData[]) => void): void {
         this.callbacks.delete(callback);
     }
 
@@ -55,7 +55,7 @@ export class UploadDataManager implements DataManager {
     }
 
     private notifyDataChanged(): void {
-        const sourcesCopy = [...this.dataSources];
+        const sourcesCopy: readonly TimeSeriesData[] = [...this.dataSources];
         this.callbacks.forEach((callback) => {
             try {
                 callback(sourcesCopy);
