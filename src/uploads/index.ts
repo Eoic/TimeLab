@@ -10,6 +10,7 @@ export type TDataFile = {
     addedAt: number;
     visible: boolean;
     text?: string;
+    demo?: boolean;
 };
 
 export function setupUploads(): void {
@@ -31,6 +32,19 @@ export function setupUploads(): void {
     const dataFiles: TDataFile[] = [];
     (window as unknown as { __dataFiles?: TDataFile[] }).__dataFiles = dataFiles;
 
+    window.addEventListener('timelab:dataFilesChanged', (event) => {
+        const detail = (event as CustomEvent<{ files: TDataFile[] }>).detail;
+
+        for (const file of detail.files) {
+            if (file.demo) {
+                exampleDataButton?.setAttribute('disabled', 'true');
+                return;
+            }
+        }
+
+        exampleDataButton?.removeAttribute('disabled');
+    });
+
     const notifyChange = () => {
         window.dispatchEvent(
             new CustomEvent<{ files: TDataFile[] }>('timelab:dataFilesChanged', {
@@ -44,18 +58,22 @@ export function setupUploads(): void {
         bar: HTMLDivElement;
         status: HTMLDivElement;
     };
+
     const activeUploads = new Set<UploadItemUI>();
 
     const readSlice = (blob: Blob): Promise<ArrayBuffer> =>
         new Promise((resolve, reject) => {
-            const fr = new FileReader();
-            fr.onload = () => {
-                resolve(fr.result as ArrayBuffer);
+            const reader = new FileReader();
+
+            reader.onload = () => {
+                resolve(reader.result as ArrayBuffer);
             };
-            fr.onerror = () => {
-                reject(fr.error ?? new Error('Failed to read file'));
+
+            reader.onerror = () => {
+                reject(reader.error ?? new Error('Failed to read file'));
             };
-            fr.readAsArrayBuffer(blob);
+
+            reader.readAsArrayBuffer(blob);
         });
 
     const processFile = async (
@@ -63,34 +81,42 @@ export function setupUploads(): void {
         progressCb: (percent: number, status: string) => void,
         shouldCancel?: () => boolean
     ): Promise<string> => {
-        const chunkSize = 1024 * 512; // 512KB
+        const chunkSize = 1024 * 512;
         const decoder = new TextDecoder();
         const parts: string[] = [];
         let offset = 0;
         let chunkIdx = 0;
+
         while (offset < file.size) {
             if (shouldCancel && shouldCancel()) {
                 throw new Error('UPLOAD_CANCELLED');
             }
+
             const end = Math.min(offset + chunkSize, file.size);
             const buf = await readSlice(file.slice(offset, end));
             const isLast = end >= file.size;
             const textPart = decoder.decode(buf, { stream: !isLast });
+
             if (textPart) {
                 parts.push(textPart);
             }
+
             offset = end;
             const percent = file.size === 0 ? 100 : Math.floor((offset / file.size) * 100);
             progressCb(percent, percent >= 100 ? 'Finalizing…' : 'Reading…');
             chunkIdx += 1;
+
             if (chunkIdx % 4 === 0) {
                 await new Promise((resolve) => setTimeout(resolve, 0));
             }
         }
+
         const flush = decoder.decode();
+
         if (flush) {
             parts.push(flush);
         }
+
         return parts.join('');
     };
 
@@ -200,6 +226,7 @@ export function setupUploads(): void {
             vis.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true">${file.visible ? 'visibility' : 'visibility_off'}</span>${file.visible ? 'Visible' : 'Hidden'}`;
             vis.addEventListener('click', () => {
                 file.visible = !file.visible;
+
                 void (async () => {
                     try {
                         const result = await saveRecord(file);
@@ -210,6 +237,7 @@ export function setupUploads(): void {
                     } catch {
                         // ignore persistence errors for UI responsiveness
                     }
+
                     renderFilesList();
                     notifyChange();
                 })();
@@ -220,8 +248,10 @@ export function setupUploads(): void {
             del.title = 'Delete file';
             del.innerHTML =
                 '<span class="material-symbols-outlined" aria-hidden="true">delete</span>Delete';
+
             del.addEventListener('click', () => {
                 const idx = dataFiles.findIndex((x) => x.id === file.id);
+
                 if (idx >= 0) {
                     dataFiles.splice(idx, 1);
                     void (async () => {
@@ -257,26 +287,29 @@ export function setupUploads(): void {
             '300,14,6.5',
             '400,16,7.5',
         ] as const;
+
         const text = lines.join('\n');
         const blob = new Blob([text], { type: 'text/csv' });
+
         const record: TDataFile = {
             id: uuid(),
-            name: 'example-press-data.csv',
+            name: 'demo.csv',
             size: blob.size,
             type: 'text/csv',
             addedAt: Date.now(),
             visible: true,
             text,
+            demo: true,
         };
+
         dataFiles.push(record);
         renderFilesList();
         notifyChange();
-        if (manageModal) {
-            openModal(manageModal);
-        }
+
         void (async () => {
             try {
                 const result = await saveRecord(record);
+
                 if (!result.ok) {
                     // eslint-disable-next-line no-console
                     console.error('Failed to save record:', result.error);

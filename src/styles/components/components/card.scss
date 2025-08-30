@@ -295,6 +295,7 @@
     display: flex;
     flex-direction: column;
     gap: $spacing-xs;
+    height: 100%;
 }
 .modal[aria-hidden='true'] {
     display: none;

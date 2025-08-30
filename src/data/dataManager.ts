@@ -15,10 +15,7 @@ export class UploadDataManager implements DataManager {
     private callbacks = new Set<(sources: readonly TimeSeriesData[]) => void>();
 
     constructor() {
-        // Listen for data file changes
         window.addEventListener('timelab:dataFilesChanged', this.handleDataFilesChanged.bind(this));
-
-        // Initialize with existing data if available
         this.loadInitialData();
     }
 
@@ -37,17 +34,13 @@ export class UploadDataManager implements DataManager {
     private handleDataFilesChanged(event: Event): void {
         const customEvent = event as CustomEvent<{ files: TDataFile[] }>;
         const files = customEvent.detail.files;
-
-        // Convert data files to time series data
         this.dataSources = convertDataFilesToTimeSeries(files);
-
-        // Notify all listeners
         this.notifyDataChanged();
     }
 
     private loadInitialData(): void {
-        // Check if there are any existing data files
         const win = window as unknown as { __dataFiles?: TDataFile[] };
+
         if (Array.isArray(win.__dataFiles)) {
             this.dataSources = convertDataFilesToTimeSeries(win.__dataFiles);
             this.notifyDataChanged();
@@ -56,6 +49,7 @@ export class UploadDataManager implements DataManager {
 
     private notifyDataChanged(): void {
         const sourcesCopy: readonly TimeSeriesData[] = [...this.dataSources];
+
         this.callbacks.forEach((callback) => {
             try {
                 callback(sourcesCopy);
@@ -79,5 +73,6 @@ export function getDataManager(): UploadDataManager {
     if (!globalDataManager) {
         globalDataManager = new UploadDataManager();
     }
+
     return globalDataManager;
 }

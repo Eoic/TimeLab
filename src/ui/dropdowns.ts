@@ -4,7 +4,6 @@ import type { TDataFile } from '@/uploads';
 /**
  * Update the active label dropdown to show labels from the labels list
  */
-// Label definitions registry (in a real app, this would be in a proper store/service)
 const labelDefinitions: Array<{ name: string; color: string }> = [];
 
 export function updateActiveLabelDropdown(): void {
@@ -126,7 +125,6 @@ export function setupDropdowns(): void {
         yAxisDropdown.options = yOpts.length ? yOpts : options;
 
         if (!yAxisDropdown.value) {
-            // Try to find a good Y column (e.g., "Kanal ROUND PUNCH")
             const yColumn = yOpts.find(
                 (opt) =>
                     opt.value.toLowerCase().includes('punch') ||
@@ -176,6 +174,7 @@ export function setupDropdowns(): void {
     } else {
         setAxisOptions(null);
     }
+
     if (cfgXType) {
         cfgXType.options = [
             { value: 'index', label: 'Index (category)' },
@@ -184,6 +183,7 @@ export function setupDropdowns(): void {
         ];
         cfgXType.value = 'index';
     }
+
     if (cfgYType) {
         cfgYType.options = [
             { value: 'value', label: 'Linear' },
@@ -191,6 +191,7 @@ export function setupDropdowns(): void {
         ];
         cfgYType.value = 'value';
     }
+
     if (cfgSampling) {
         cfgSampling.options = [
             { value: 'none', label: 'None' },
@@ -201,6 +202,7 @@ export function setupDropdowns(): void {
         ];
         cfgSampling.value = 'none';
     }
+
     if (cfgTooltip) {
         cfgTooltip.options = [
             { value: 'axis', label: 'Axis crosshair' },
@@ -209,6 +211,7 @@ export function setupDropdowns(): void {
         ];
         cfgTooltip.value = 'axis';
     }
+
     if (cfgZoom) {
         cfgZoom.options = [
             { value: 'fit', label: 'Fit (all)' },
@@ -218,10 +221,12 @@ export function setupDropdowns(): void {
         ];
         cfgZoom.value = 'fit';
     }
+
     if (activeLabelDropdown) {
         // Initialize with empty state - will be populated from actual labels
         updateActiveLabelDropdown();
     }
+
     xAxisDropdown?.addEventListener('change', (ev: Event) => {
         const ce = ev as CustomEvent<{ value?: unknown }>;
         const val = typeof ce.detail.value === 'string' ? ce.detail.value : '';
@@ -251,10 +256,12 @@ export function setupDropdowns(): void {
 
     // Set up observer for labels list changes to update active label dropdown
     const labelsList = document.querySelector<HTMLUListElement>('.labels-list');
+
     if (labelsList) {
         const labelsObserver = new MutationObserver(() => {
             updateActiveLabelDropdown();
         });
+
         labelsObserver.observe(labelsList, { childList: true, subtree: true });
     }
 }
