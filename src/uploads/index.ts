@@ -15,6 +15,9 @@ export type TDataFile = {
 export function setupUploads(): void {
     const uploadDataButton = document.getElementById('btn-upload-data') as HTMLButtonElement | null;
     const manageDataButton = document.getElementById('btn-manage-data') as HTMLButtonElement | null;
+    const exampleDataButton = document.getElementById(
+        'btn-load-example'
+    ) as HTMLButtonElement | null;
     const uploadModal = document.getElementById('modal-data-upload');
     const uploadDropzone = document.getElementById('upload-dropzone');
     const uploadInput = document.getElementById('upload-input') as HTMLInputElement | null;
@@ -245,6 +248,45 @@ export function setupUploads(): void {
         }
     };
 
+    const addExampleData = (): void => {
+        const lines = [
+            'timestamp_ms,press_force_kN,piezo_strain_microstrain',
+            '0,10,5',
+            '100,12,6',
+            '200,15,7',
+            '300,14,6.5',
+            '400,16,7.5',
+        ] as const;
+        const text = lines.join('\n');
+        const blob = new Blob([text], { type: 'text/csv' });
+        const record: TDataFile = {
+            id: uuid(),
+            name: 'example-press-data.csv',
+            size: blob.size,
+            type: 'text/csv',
+            addedAt: Date.now(),
+            visible: true,
+            text,
+        };
+        dataFiles.push(record);
+        renderFilesList();
+        notifyChange();
+        if (manageModal) {
+            openModal(manageModal);
+        }
+        void (async () => {
+            try {
+                const result = await saveRecord(record);
+                if (!result.ok) {
+                    // eslint-disable-next-line no-console
+                    console.error('Failed to save record:', result.error);
+                }
+            } catch {
+                // ignore persistence errors
+            }
+        })();
+    };
+
     const handleUploads = async (files: FileList | File[]) => {
         const list = Array.from(files);
         for (const file of list) {
@@ -357,6 +399,7 @@ export function setupUploads(): void {
         renderFilesList();
         openModal(manageModal as HTMLElement);
     });
+    exampleDataButton?.addEventListener('click', addExampleData);
     uploadSelectButton?.addEventListener('click', () => {
         uploadInput?.click();
     });
