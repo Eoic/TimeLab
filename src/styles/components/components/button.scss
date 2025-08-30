@@ -85,6 +85,18 @@ button.btn-primary {
     );
     border-color: transparent;
     box-shadow: none;
+
+    &.btn-danger {
+        @include interactive-states(
+            $base-bg: $color-error,
+            $hover-bg: color-mix(in oklab, $color-error 85%, black),
+            $focus-color: $color-border-focus,
+            $base-color: $color-text-inverse,
+            $hover-color: $color-text-inverse,
+            $active-bg: color-mix(in oklab, $color-error 85%, black),
+            $active-color: $color-text-inverse
+        );
+    }
 }
 
 // Neutral (aka Secondary)

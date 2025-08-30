@@ -14,15 +14,24 @@ export class CSVTimeSeriesData implements TimeSeriesData {
     public readonly columns: readonly string[];
     private parsedData: ReadonlyArray<readonly number[]> = [];
     private labeled = false;
+    private sourceFile: TDataFile;
 
     constructor(file: TDataFile) {
         this.id = file.id;
         this.name = file.name;
+        this.sourceFile = file;
 
         // Parse CSV and extract columns and data
         const { columns, data } = parseCSV(file.text || '');
         this.columns = columns;
         this.parsedData = data;
+
+        // Initialize labeled state from file data
+        if (file.labeled) {
+            this.labeled = file.labeled;
+        } else {
+            this.labeled = false;
+        }
     }
 
     getData(xColumn: string, yColumn: string): ReadonlyArray<readonly [number, number]> {
@@ -46,6 +55,16 @@ export class CSVTimeSeriesData implements TimeSeriesData {
 
     setLabeled(labeled: boolean): void {
         this.labeled = labeled;
+
+        // Update the source file
+        this.sourceFile.labeled = labeled;
+
+        // Trigger an update to refresh global data files array
+        // The uploads system will handle persistence
+        const event = new CustomEvent('timelab:labeledStateChanged', {
+            detail: { fileId: this.sourceFile.id, labeled },
+        });
+        window.dispatchEvent(event);
     }
 }
 

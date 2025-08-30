@@ -151,6 +151,12 @@
     .chart .tools {
         top: $spacing-xs;
         right: $spacing-xs;
+
+        [aria-controls='panel-config'],
+        [aria-controls='panel-stats'],
+        [aria-controls='panel-labctrl'] {
+            display: none;
+        }
     }
 }
 
@@ -167,18 +173,42 @@
             'stats';
     }
 
-    .toolbar {
+    .toolbar:not(.mini) {
         align-items: flex-start;
         gap: $spacing-sm;
+        flex-direction: column;
+        padding: $spacing-xs $spacing-sm;
 
         .btn-outline span:nth-child(2) {
             display: none;
         }
-    }
 
-    .labctrl {
-        position: sticky;
-        bottom: 0;
-        z-index: 2;
+        .left {
+            order: 2;
+            width: 100%;
+            display: flex;
+            gap: $spacing-xs;
+        }
+
+        .left .btn-outline {
+            flex: 1;
+            justify-content: center;
+        }
+
+        .right {
+            order: 1;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: transparent;
+            border-radius: 0;
+            padding: 0;
+        }
+
+        .right .btn-neutral {
+            flex: 1;
+            margin-right: 0;
+        }
     }
 }

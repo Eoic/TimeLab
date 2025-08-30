@@ -1,3 +1,4 @@
+import { confirmDelete } from './confirmation.js';
 import { getLabelDefinitions, updateLabelDefinition, deleteLabelDefinition } from './dropdowns.js';
 
 /**
@@ -19,7 +20,7 @@ export function setupLabelManagement(): void {
     // Close modal when clicking backdrop or close button
     modal.addEventListener('click', (e) => {
         const target = e.target as HTMLElement;
-        if (target.hasAttribute('data-close') || target === modal) {
+        if (target.closest('[data-close]') || target === modal) {
             closeLabelManagementModal();
         }
     });
@@ -187,7 +188,7 @@ function setupItemEventListeners(
 
     // Delete button
     deleteBtn.addEventListener('click', () => {
-        deleteLabelDefinitionWithConfirm(index, label);
+        void deleteLabelDefinitionWithConfirm(index, label);
     });
 
     // Handle enter key to save
@@ -325,13 +326,11 @@ function exitEditMode(item: HTMLElement, name: string, _color: string): void {
 /**
  * Delete a label definition with confirmation
  */
-function deleteLabelDefinitionWithConfirm(
+async function deleteLabelDefinitionWithConfirm(
     index: number,
     label: { name: string; color: string }
-): void {
-    const confirmed = confirm(
-        `Are you sure you want to delete the label "${label.name}"?\n\nThis action cannot be undone.`
-    );
+): Promise<void> {
+    const confirmed = await confirmDelete(label.name, 'label');
     if (!confirmed) {
         return;
     }

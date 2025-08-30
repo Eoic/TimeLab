@@ -1,8 +1,10 @@
 import { getAllRecords, saveRecord, deleteRecord } from '../platform/storage';
 import { formatBytes, uuid } from '../shared/misc';
+import { confirmDelete } from '../ui/confirmation';
 import { closeModal, openModal } from '../ui/dom';
 
 export type TDataFile = {
+    labeled: boolean;
     id: string;
     name: string;
     size: number;
@@ -253,8 +255,14 @@ export function setupUploads(): void {
                 const idx = dataFiles.findIndex((x) => x.id === file.id);
 
                 if (idx >= 0) {
-                    dataFiles.splice(idx, 1);
                     void (async () => {
+                        // Show confirmation dialog
+                        const confirmed = await confirmDelete(file.name, 'data file');
+                        if (!confirmed) {
+                            return;
+                        }
+
+                        dataFiles.splice(idx, 1);
                         try {
                             const result = await deleteRecord(file.id);
                             if (!result.ok) {

@@ -1,10 +1,120 @@
 import type { TLDropdown } from '@/components/dropdown';
+import { getAllLabels, saveLabel, deleteLabel } from '@/platform';
+import { uuid } from '@/shared/misc';
+import type { LabelDefinition } from '@/types/storage';
 import type { TDataFile } from '@/uploads';
 
 /**
- * Update the active label dropdown to show labels from the labels list
+ * In-memory cache of label definitions
  */
 const labelDefinitions: Array<{ name: string; color: string }> = [];
+let isLoaded = false;
+
+/**
+ * Load label definitions from IndexedDB
+ */
+async function loadLabelDefinitions(): Promise<void> {
+    if (isLoaded) return;
+
+    try {
+        const result = await getAllLabels<LabelDefinition>();
+        if (result.ok) {
+            // Clear current definitions and populate from storage
+            labelDefinitions.length = 0;
+            labelDefinitions.push(
+                ...result.value.map((def) => ({ name: def.name, color: def.color }))
+            );
+            updateActiveLabelDropdown();
+        } else {
+            // eslint-disable-next-line no-console
+            console.error('Failed to load label definitions:', result.error);
+        }
+    } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Error loading label definitions:', error);
+    }
+
+    isLoaded = true;
+}
+
+/**
+ * Save a label definition to IndexedDB
+ */
+async function saveLabelDefinitionToDB(name: string, color: string): Promise<string> {
+    const id = uuid();
+    const labelDef: LabelDefinition = {
+        id,
+        name,
+        color,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+    };
+
+    try {
+        const result = await saveLabel(labelDef);
+        if (!result.ok) {
+            // eslint-disable-next-line no-console
+            console.error('Failed to save label definition:', result.error);
+        }
+    } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Error saving label definition:', error);
+    }
+
+    return id;
+}
+
+/**
+ * Update label definition in IndexedDB
+ */
+async function updateLabelDefinitionInDB(id: string, name: string, color: string): Promise<void> {
+    const labelDef: LabelDefinition = {
+        id,
+        name,
+        color,
+        createdAt: 0, // Will be overwritten if it exists
+        updatedAt: Date.now(),
+    };
+
+    try {
+        // Get existing definition to preserve createdAt
+        const allResult = await getAllLabels<LabelDefinition>();
+        if (allResult.ok) {
+            const existing = allResult.value.find((def) => def.id === id);
+            if (existing) {
+                labelDef.createdAt = existing.createdAt;
+            }
+        }
+
+        const result = await saveLabel(labelDef);
+        if (!result.ok) {
+            // eslint-disable-next-line no-console
+            console.error('Failed to update label definition:', result.error);
+        }
+    } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Error updating label definition:', error);
+    }
+}
+
+/**
+ * Delete label definition from IndexedDB
+ */
+async function deleteLabelDefinitionFromDB(id: string): Promise<void> {
+    try {
+        const result = await deleteLabel(id);
+        if (!result.ok) {
+            // eslint-disable-next-line no-console
+            console.error('Failed to delete label definition:', result.error);
+        }
+    } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Error deleting label definition:', error);
+    }
+}
+
+// We need to maintain a mapping between indices and IDs for existing API compatibility
+const labelIdMap: string[] = []; // Maps index to ID
 
 export function updateActiveLabelDropdown(): void {
     const activeLabelDropdown = document.querySelector<TLDropdown>('#active-label');
@@ -40,6 +150,13 @@ export function updateActiveLabelDropdown(): void {
  */
 export function addLabelDefinition(name: string, color: string): void {
     labelDefinitions.push({ name, color });
+
+    // Save to database and update ID mapping
+    void (async () => {
+        const id = await saveLabelDefinitionToDB(name, color);
+        labelIdMap.push(id);
+    })();
+
     updateActiveLabelDropdown();
 }
 
@@ -56,6 +173,13 @@ export function getLabelDefinitions(): Array<{ name: string; color: string }> {
 export function updateLabelDefinition(index: number, name: string, color: string): void {
     if (index >= 0 && index < labelDefinitions.length) {
         labelDefinitions[index] = { name, color };
+
+        // Update in database
+        const id = labelIdMap[index];
+        if (id) {
+            void updateLabelDefinitionInDB(id, name, color);
+        }
+
         updateActiveLabelDropdown();
     }
 }
@@ -65,12 +189,33 @@ export function updateLabelDefinition(index: number, name: string, color: string
  */
 export function deleteLabelDefinition(index: number): void {
     if (index >= 0 && index < labelDefinitions.length) {
+        const id = labelIdMap[index];
+
+        // Remove from memory
         labelDefinitions.splice(index, 1);
+        labelIdMap.splice(index, 1);
+
+        // Delete from database
+        if (id) {
+            void deleteLabelDefinitionFromDB(id);
+        }
+
         updateActiveLabelDropdown();
     }
 }
 
 export function setupDropdowns(): void {
+    // Load label definitions from IndexedDB on startup
+    void (async () => {
+        await loadLabelDefinitions();
+        // Also load IDs for existing definitions
+        const result = await getAllLabels<LabelDefinition>();
+        if (result.ok) {
+            labelIdMap.length = 0;
+            labelIdMap.push(...result.value.map((def) => def.id));
+        }
+    })();
+
     const xAxisDropdown = document.querySelector<TLDropdown>('#x-axis');
     const yAxisDropdown = document.querySelector<TLDropdown>('#y-axis');
     const activeLabelDropdown = document.querySelector<TLDropdown>('#active-label');

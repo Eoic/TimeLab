@@ -41,7 +41,7 @@
             </div>
 
             <div class="card toolbar">
-                <div class="left" role="group" aria-label="File actions">
+                <div class="left flex-wrap" role="group" aria-label="File actions">
                     <button
                         class="btn-outline"
                         id="btn-upload-data"
@@ -64,7 +64,7 @@
                         <span class="material-symbols-outlined">folder_open</span>
                         <span>Manage data</span>
                     </button>
-                    <button class="btn-outline" aria-label="Export labels">
+                    <button class="btn-outline" aria-label="Export labels" disabled>
                         <span class="material-symbols-outlined">export_notes</span>
                         <span>Export labels</span>
                     </button>
@@ -80,7 +80,7 @@
                         <span>Load example</span>
                     </button>
                 </div>
-                <div class="right" role="group" aria-label="Series navigation">
+                <div class="right flex-wrap" role="group" aria-label="Series navigation">
                     <button
                         class="btn-neutral"
                         id="toggle-labeled"
@@ -93,29 +93,31 @@
                         >
                         <span class="label">Unlabeled</span>
                     </button>
-                    <button
-                        class="btn-icon btn-neutral"
-                        id="series-prev"
-                        aria-label="Previous series"
-                        title="Previous series"
-                    >
-                        <span class="material-symbols-outlined">navigate_before</span>
-                    </button>
-                    <span
-                        id="series-indicator"
-                        class="text-muted"
-                        aria-live="polite"
-                        aria-atomic="true"
-                        >1 / 1</span
-                    >
-                    <button
-                        class="btn-icon btn-neutral"
-                        id="series-next"
-                        aria-label="Next series"
-                        title="Next series"
-                    >
-                        <span class="material-symbols-outlined">navigate_next</span>
-                    </button>
+                    <div class="series-stepper">
+                        <button
+                            class="btn-icon btn-neutral"
+                            id="series-prev"
+                            aria-label="Previous series"
+                            title="Previous series"
+                        >
+                            <span class="material-symbols-outlined">navigate_before</span>
+                        </button>
+                        <span
+                            id="series-indicator"
+                            class="text-muted"
+                            aria-live="polite"
+                            aria-atomic="true"
+                            >1 / 1</span
+                        >
+                        <button
+                            class="btn-icon btn-neutral"
+                            id="series-next"
+                            aria-label="Next series"
+                            title="Next series"
+                        >
+                            <span class="material-symbols-outlined">navigate_next</span>
+                        </button>
+                    </div>
                     <button
                         class="btn-icon btn-outline"
                         id="series-grid"
@@ -125,6 +127,7 @@
                         title="Open series selector"
                     >
                         <span class="material-symbols-outlined">grid_view</span>
+                        <span> Select series </span>
                     </button>
                 </div>
             </div>
@@ -744,6 +747,36 @@
                     <button class="btn-outline" data-close>
                         <span class="material-symbols-outlined" aria-hidden="true">close</span>
                         Done
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Confirmation dialog -->
+        <div
+            class="modal"
+            id="modal-confirm"
+            role="dialog"
+            aria-modal="true"
+            aria-hidden="true"
+            aria-labelledby="confirm-title"
+            aria-describedby="confirm-message"
+        >
+            <div class="modal-backdrop" data-close></div>
+            <div class="modal-dialog modal-sm card" role="document">
+                <div class="card-title">
+                    <span class="material-symbols-outlined" aria-hidden="true" id="confirm-icon"
+                        >warning</span
+                    >
+                    <h4 id="confirm-title">Confirm action</h4>
+                </div>
+                <div class="card-content">
+                    <p id="confirm-message">Are you sure you want to perform this action?</p>
+                </div>
+                <div class="mt-sm" style="display: flex; justify-content: flex-end; gap: 8px">
+                    <button class="btn-outline" id="confirm-cancel" data-close>Cancel</button>
+                    <button class="btn-primary" id="confirm-ok">
+                        <span id="confirm-ok-text">Confirm</span>
                     </button>
                 </div>
             </div>

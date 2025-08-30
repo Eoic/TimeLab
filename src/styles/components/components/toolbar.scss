@@ -37,9 +37,63 @@
     display: none;
 }
 
-#series-indicator {
+/* Series navigation grouping on all screen sizes */
+.toolbar .right {
+    background: transparent;
+    border-radius: $border-radius;
+    padding: 0;
+}
+
+/* Series stepper as a unified component */
+.series-stepper {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: $color-bg-primary;
+    border: 1px solid $color-border-primary;
+    border-radius: $border-radius;
+    overflow: hidden;
+    height: 44px; /* Match button height */
+}
+
+.series-stepper .btn-icon {
+    border-radius: 0;
+    border: none;
+    margin: 0;
+    height: 100%; /* Fill the stepper height */
+    max-width: 44px;
+}
+
+.series-stepper .btn-icon:first-child {
+    border-radius: $border-radius 0 0 $border-radius;
+}
+
+.series-stepper .btn-icon:last-child {
+    border-radius: 0 $border-radius $border-radius 0;
+}
+
+.series-stepper #series-indicator {
+    margin: 0;
     min-width: 64px;
+    height: 100%; /* Fill the stepper height */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
     text-align: center;
+    color: $color-text-primary;
+    flex-grow: 1;
+}
+
+@media (min-width: 681px) {
+    .toolbar .right {
+        padding: 0;
+        background: transparent;
+    }
+
+    .series-stepper {
+        height: auto; /* Reset height on desktop */
+    }
 }
 
 /* Small status badge for toolbar buttons when active */
@@ -53,6 +107,74 @@
 }
 
 /* Responsive: the right group will naturally wrap if needed via global toolbar rules */
+
+/* Responsive button text handling for narrow screens */
+@media (max-width: 900px) {
+    .toolbar:not(.mini) .left .btn-outline span:nth-child(2),
+    .toolbar:not(.mini) .left .btn-neutral span:nth-child(2) {
+        display: none;
+    }
+}
+
+@media (max-width: 690px) {
+    .toolbar:not(.mini) {
+        flex-direction: column;
+        align-items: stretch;
+        gap: $spacing-xs;
+        padding: $spacing-xs $spacing-sm;
+    }
+
+    .toolbar:not(.mini) .left,
+    .toolbar:not(.mini) .right {
+        width: 100%;
+    }
+
+    /* File actions - expand buttons to fill space */
+    .toolbar:not(.mini) .left {
+        display: flex;
+        gap: $spacing-xs;
+    }
+
+    .toolbar:not(.mini) .left .btn-outline {
+        flex: 1;
+        min-width: 0; /* Allow buttons to shrink if needed */
+        justify-content: center;
+    }
+
+    /* Make series navigation more prominent on mobile */
+    .toolbar:not(.mini) .right {
+        order: -1; /* Move series nav to top on mobile */
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: transparent;
+        border-radius: 0;
+        padding: 0;
+        margin-bottom: 0;
+    }
+
+    /* Ensure labeled button remains readable but takes available space */
+    .toolbar:not(.mini) .right .btn-neutral {
+        flex: 1;
+        margin-right: 0;
+    }
+
+    .toolbar:not(.mini) .right .btn-neutral .label {
+        display: inline;
+    }
+
+    /* Improve touch targets on mobile - only for main toolbar */
+    .toolbar:not(.mini) .btn-icon {
+        min-height: 44px;
+        min-width: 44px;
+    }
+
+    .toolbar:not(.mini) .btn-outline,
+    .toolbar:not(.mini) .btn-neutral {
+        min-height: 44px;
+        padding: $spacing-xs $spacing-sm;
+    }
+}
 
 /* Visual pressed/active state for toolbar buttons (dropdown open, toggled, etc.) */
 .toolbar .btn-icon.active,
@@ -89,4 +211,27 @@
 .tools button[aria-pressed='true']:active {
     background-color: $color-primary-hover;
     border-color: $color-primary-hover;
+}
+
+#series-grid {
+    span:nth-child(2) {
+        display: none;
+    }
+}
+
+@media (max-width: 440px) {
+    .toolbar:not(.mini) {
+        .series-stepper {
+            width: 100%;
+        }
+
+        #series-grid {
+            width: 100%;
+            max-height: 44px;
+
+            span:nth-child(2) {
+                display: initial;
+            }
+        }
+    }
 }

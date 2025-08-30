@@ -328,6 +328,13 @@ export class TimeSeriesChart {
     }
 
     /**
+     * Get data source by index
+     */
+    getDataSourceByIndex(index: number): TimeSeriesData | null {
+        return this.dataSources[index] || null;
+    }
+
+    /**
      * Navigate to previous series
      */
     previousSeries(): void {
@@ -855,7 +862,7 @@ function bindSeriesModal(chart: TimeSeriesChart): void {
     modal?.addEventListener('click', (ev) => {
         const target = ev.target as HTMLElement | null;
         if (!target) return;
-        if (target.hasAttribute('data-close') || target === modal) {
+        if (target.closest('[data-close]') || target === modal) {
             closeSeriesModal();
         }
     });
@@ -957,7 +964,12 @@ function renderSeriesGrid(chart: TimeSeriesChart): void {
     for (let i = 0; i < info.total; i++) {
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = 'series-cell'; // labeled class would be added based on data
+
+        // Check if this series is labeled
+        const dataSource = chart.getDataSourceByIndex(i);
+        const isLabeled = dataSource ? dataSource.isLabeled() : false;
+
+        btn.className = isLabeled ? 'series-cell labeled' : 'series-cell';
         btn.setAttribute('role', 'option');
         btn.setAttribute('aria-selected', String(i === info.index));
         btn.dataset.index = String(i);

@@ -1,4 +1,12 @@
+import type { HistoryEntry } from '../types/storage';
+
 import { addLabelDefinition } from './dropdowns.js';
+
+import { getAllHistory, saveHistory } from '@/platform';
+import { uuid } from '@/shared/misc';
+
+// Timer for updating history timestamps
+let historyUpdateTimer: number | null = null;
 
 /**
  * Label data structure
@@ -94,7 +102,7 @@ export function setupLabelModal(): void {
             range: '[0 – 0]', // Placeholder range
         };
 
-        createLabel(labelData);
+        void createLabel(labelData);
         resetForm();
         closeModal();
     });
@@ -102,7 +110,7 @@ export function setupLabelModal(): void {
     // Reset form when modal opens
     modal.addEventListener('click', (e) => {
         const target = e.target as HTMLElement;
-        if (target.hasAttribute('data-close') || target === modal) {
+        if (target.closest('[data-close]') || target === modal) {
             closeModal();
         }
     });
@@ -145,12 +153,12 @@ export function setupLabelModal(): void {
 /**
  * Create a new label definition (for future use in labeling)
  */
-function createLabel(labelData: LabelData): void {
+async function createLabel(labelData: LabelData): Promise<void> {
     // Add the label definition to the registry
     addLabelDefinition(labelData.name, labelData.color);
 
     // Add history entry
-    addHistoryEntry(`Created label definition "${labelData.name}"`);
+    await addHistoryEntry(`Created label definition "${labelData.name}"`);
 
     // Dispatch event for other components to listen to
     window.dispatchEvent(
@@ -163,9 +171,28 @@ function createLabel(labelData: LabelData): void {
 /**
  * Add an entry to the history list
  */
-function addHistoryEntry(action: string): void {
+async function addHistoryEntry(action: string): Promise<void> {
     const historyList = document.querySelector<HTMLUListElement>('.history-list');
     if (!historyList) {
+        return;
+    }
+
+    // Create history entry object
+    const historyEntry: HistoryEntry = {
+        id: uuid(),
+        action,
+        timestamp: Date.now(),
+    };
+
+    // Save to IndexedDB
+    try {
+        const result = await saveHistory(historyEntry);
+        if (!result.ok) {
+            // Failed to save history entry
+            return;
+        }
+    } catch (_error) {
+        // Failed to save history entry
         return;
     }
 
@@ -174,15 +201,177 @@ function addHistoryEntry(action: string): void {
     historyItem.setAttribute('role', 'option');
     historyItem.setAttribute('aria-selected', 'false');
     historyItem.setAttribute('tabindex', '0');
+    historyItem.setAttribute('data-timestamp', historyEntry.timestamp.toString());
     historyItem.innerHTML = `
         <div class="meta">
             <div class="title">${escapeHtml(action)}</div>
-            <div class="time text-sm text-muted">just now</div>
+            <div class="time text-sm text-muted" data-time-element>just now</div>
         </div>
     `;
 
     // Add to the top of the history list
     historyList.prepend(historyItem);
+}
+
+/**
+ * Load and display history entries from IndexedDB
+ */
+export async function loadHistoryEntries(): Promise<void> {
+    const historyList = document.querySelector<HTMLUListElement>('.history-list');
+    if (!historyList) {
+        return;
+    }
+
+    try {
+        const result = await getAllHistory<HistoryEntry>();
+
+        if (result.ok) {
+            const historyEntries = result.value;
+
+            // Sort by timestamp (newest first)
+            historyEntries.sort((a: HistoryEntry, b: HistoryEntry) => b.timestamp - a.timestamp);
+
+            // Clear existing entries
+            historyList.innerHTML = '';
+
+            // Render each entry
+            historyEntries.forEach((entry: HistoryEntry) => {
+                renderHistoryEntry(entry, historyList);
+            });
+
+            // Setup visibility observer for real-time updates
+            setupHistoryPanelObserver();
+        }
+    } catch (_error) {
+        // Failed to load history entries
+    }
+}
+
+/**
+ * Render a single history entry in the UI
+ */
+function renderHistoryEntry(entry: HistoryEntry, historyList: HTMLUListElement): void {
+    const historyItem = document.createElement('li');
+    historyItem.className = 'history-item';
+    historyItem.setAttribute('role', 'option');
+    historyItem.setAttribute('aria-selected', 'false');
+    historyItem.setAttribute('tabindex', '0');
+    historyItem.setAttribute('data-timestamp', entry.timestamp.toString());
+
+    // Format timestamp
+    const timeText = formatTimestamp(entry.timestamp);
+
+    historyItem.innerHTML = `
+        <div class="meta">
+            <div class="title">${escapeHtml(entry.action)}</div>
+            <div class="time text-sm text-muted" data-time-element>${timeText}</div>
+        </div>
+    `;
+
+    historyList.appendChild(historyItem);
+}
+
+/**
+ * Format timestamp for display
+ */
+function formatTimestamp(timestamp: number): string {
+    const now = Date.now();
+    const diff = now - timestamp;
+
+    // Less than a minute
+    if (diff < 60000) {
+        return 'just now';
+    }
+
+    // Less than an hour
+    if (diff < 3600000) {
+        const minutes = Math.floor(diff / 60000);
+        return `${minutes.toString()} min ago`;
+    }
+
+    // Less than a day
+    if (diff < 86400000) {
+        const hours = Math.floor(diff / 3600000);
+        return `${hours.toString()}h ago`;
+    }
+
+    // More than a day - show date
+    const date = new Date(timestamp);
+    return date.toLocaleDateString();
+}
+
+/**
+ * Update all visible history timestamps
+ */
+function updateHistoryTimestamps(): void {
+    const historyItems = document.querySelectorAll<HTMLElement>('.history-item[data-timestamp]');
+
+    historyItems.forEach((item) => {
+        const timestampStr = item.getAttribute('data-timestamp');
+        if (!timestampStr) return;
+
+        const timestamp = parseInt(timestampStr, 10);
+        const timeElement = item.querySelector<HTMLElement>('[data-time-element]');
+
+        if (timeElement) {
+            timeElement.textContent = formatTimestamp(timestamp);
+        }
+    });
+}
+
+/**
+ * Start the history update timer
+ */
+function startHistoryUpdateTimer(): void {
+    // Clear any existing timer
+    stopHistoryUpdateTimer();
+
+    // Update every 30 seconds
+    historyUpdateTimer = window.setInterval(updateHistoryTimestamps, 30000);
+}
+
+/**
+ * Stop the history update timer
+ */
+function stopHistoryUpdateTimer(): void {
+    if (historyUpdateTimer !== null) {
+        clearInterval(historyUpdateTimer);
+        historyUpdateTimer = null;
+    }
+}
+
+/**
+ * Setup history panel visibility observer
+ */
+function setupHistoryPanelObserver(): void {
+    const historyPanel = document.querySelector('.history-list');
+    if (!historyPanel) return;
+
+    // Use Intersection Observer to detect when history panel becomes visible
+    const observer = new IntersectionObserver(
+        (entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting && entry.intersectionRatio > 0) {
+                    // Panel is visible, start updating timestamps
+                    startHistoryUpdateTimer();
+                } else {
+                    // Panel is not visible, stop updating
+                    stopHistoryUpdateTimer();
+                }
+            });
+        },
+        {
+            threshold: 0.1, // Trigger when at least 10% of the panel is visible
+        }
+    );
+
+    observer.observe(historyPanel);
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+        stopHistoryUpdateTimer();
+        observer.disconnect();
+    });
 }
 
 /**
@@ -225,7 +414,7 @@ export function setupModalTriggers(): void {
     modals.forEach((modal) => {
         modal.addEventListener('click', (e) => {
             const target = e.target as HTMLElement;
-            if (target.hasAttribute('data-close') || target === modal) {
+            if (target.closest('[data-close]') || target === modal) {
                 modal.setAttribute('aria-hidden', 'true');
             }
         });

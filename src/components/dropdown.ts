@@ -506,7 +506,9 @@ export class TLDropdown extends HTMLElement {
             const isSel = this.isMultiple ? this._values.has(o.value) : o.value === this._value;
             li.setAttribute('aria-selected', String(isSel));
             // Click anywhere on the option toggles selection (checkbox sync handled elsewhere)
-            li.addEventListener('click', () => {
+            li.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 this.select(o.value);
             });
 
@@ -522,6 +524,7 @@ export class TLDropdown extends HTMLElement {
                 checkbox.checked = isSel;
                 checkbox.tabIndex = -1; // avoid double focus
                 checkbox.addEventListener('click', (ev) => {
+                    ev.preventDefault();
                     ev.stopPropagation();
                     this.select(o.value);
                 });

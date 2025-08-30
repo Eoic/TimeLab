@@ -10,3 +10,9 @@ export {
     setupLabelsEmptyStates,
     type EmptyStateConfig,
 } from './emptyStates';
+export {
+    showConfirmation,
+    confirmDelete,
+    confirmAction,
+    type ConfirmationOptions,
+} from './confirmation';

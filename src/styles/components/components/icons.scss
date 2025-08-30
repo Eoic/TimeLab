@@ -5,3 +5,9 @@
         'GRAD' 0,
         'opsz' 24;
 }
+
+/* Ensure icons inside buttons don't interfere with click events */
+button .material-symbols-outlined,
+.btn .material-symbols-outlined {
+    pointer-events: none;
+}

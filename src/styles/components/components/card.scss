@@ -316,7 +316,7 @@
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-    min-width: 320px;
+    min-width: 300px;
     max-width: min(90vw, 720px);
     max-height: 80vh;
     overflow: auto;
@@ -331,6 +331,11 @@
 
     &.modal-fluid {
         width: 100%;
+    }
+
+    &.modal-sm {
+        min-width: 240px;
+        max-width: min(90vw, 480px);
     }
 }
 

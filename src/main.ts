@@ -7,7 +7,7 @@ import { initializeTimeSeriesChart } from './charts/timeSeries';
 import { getDataManager } from './data';
 import { setupDropdowns, setupLabelsEmptyStates } from './ui';
 import { setupLabelManagement } from './ui/labelManagement';
-import { setupLabelModal, setupModalTriggers } from './ui/labelModal';
+import { setupLabelModal, setupModalTriggers, loadHistoryEntries } from './ui/labelModal';
 
 import { setupCheckboxEnterToggle } from '@/a11y/checkbox';
 import { defineDropdown } from '@/components/dropdown';
@@ -64,3 +64,6 @@ setupUploads();
 setupLabelModal();
 setupLabelManagement();
 setupModalTriggers();
+
+// Load persisted data
+void loadHistoryEntries();
