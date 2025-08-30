@@ -3,6 +3,7 @@ import { resolve } from 'path';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
+    base: './',
     resolve: {
         alias: {
             '@': resolve(__dirname, 'src'),
@@ -43,5 +44,6 @@ export default defineConfig({
     },
     preview: {
         port: 4173,
+        open: false,
     },
 });
