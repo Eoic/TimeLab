@@ -306,6 +306,7 @@ export function setupUploads(): void {
             type: 'text/csv',
             addedAt: Date.now(),
             visible: true,
+            labeled: false,
             text,
             demo: true,
         };
@@ -358,6 +359,7 @@ export function setupUploads(): void {
                     type: file.type || 'text/csv',
                     addedAt: Date.now(),
                     visible: true,
+                    labeled: false,
                     text,
                 };
                 dataFiles.push(record);
