@@ -34,3 +34,23 @@ A simple time series data labeling tool.
 | `npm run format`        | Format code with Prettier.              |
 | `npm run type-check`    | Check TypeScript types.                 |
 | `npm run ci`            | Run all checks (CI pipeline).           |
+
+## Building & deployment
+
+To create a production build with static assets:
+
+```bash
+npm run build
+```
+
+This outputs the app to the `dist/` directory with **relative asset paths** so it can be served from any URL prefix.
+Verify the output locally with:
+
+```bash
+npm run preview
+```
+
+### Hosting
+
+- **Any static server**: copy the contents of `dist/` to your server's public directory.
+- **Vercel**: the included `vercel.json` config uses `npm run build` and serves the `dist/` folder.
