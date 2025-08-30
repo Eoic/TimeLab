@@ -1,27 +1,23 @@
-# TypeScript Web Project – Engineering & Refactoring Guide (for Copilot + humans)
+# TimeLab engineering & refactoring guide
 
-> Paste this file into your repo (e.g., `docs/engineering-guide.md`) and link it from the README. Use the **Prompt Library** at the end when asking Copilot to refactor code.
-
----
-
-## 0) Goals & Non‑Goals
+## 0) Goals & Non‑goals
 
 **Goals**
 
-- Consistent, readable, maintainable TypeScript.
+- Consistent, readable, maintainable TypeScript codebase.
 - Clear project structure with strict module boundaries.
 - Predictable error handling, logging, and testing.
 - Tooling that enforces rules automatically (ESLint + Prettier + strict TS).
 
-**Non‑Goals**
+**Non‑goals**
 
 - Bikeshedding on formatting. Prettier decides formatting; we focus on design and correctness.
 
 ---
 
-## 0a) Project Profile (Time series labeling tool – offline‑first)
+## 0a) Project profile (time series labeling tool – offline‑first)
 
-- Runtime: **browser only** (desktop & mobile). **No server component.**
+- Runtime: **browser only** (desktop & mobile), **no server component.**
 - Build tool: **Vite**.
 - Charts: **Apache ECharts** for time‑series rendering (minimap, zoom, shaded regions).
 - Styling: **SCSS**, **no external UI libraries or frameworks**.
@@ -30,7 +26,7 @@
 
 ---
 
-## 1) Core Principles
+## 1) Core principles
 
 1. **Types first**: Strive for zero `any`. Prefer `unknown` over `any` and narrow with type guards.
 2. **Small, pure units**: Prefer small, pure functions; push side effects to the edges (I/O, DOM, network).
@@ -43,7 +39,7 @@
 
 ---
 
-## 2) Project Structure & Module Boundaries (Vanilla TS + SCSS + ECharts)
+## 2) Project structure & module boundaries (TS + SCSS + ECharts)
 
 **Recommended layout**
 
@@ -75,9 +71,9 @@ src/
 
 ---
 
-## 3) TypeScript Rules of Thumb TypeScript Rules of Thumb
+## 3) TypeScript rules of thumb
 
-- `strict: true` (see tsconfig below). Always target the latest stable `lib` your runtime supports.
+- `strict: true`. Always target the latest stable `lib` your runtime supports.
 - Prefer **type aliases** for object shapes and unions; use `interface` when extending OO hierarchies or for public APIs that benefit from declaration merging.
 - Use **discriminated unions** for state machines and async states (e.g., `{ kind: 'idle' | 'loading' | 'error' | 'success' }`).
 - Add **explicit return types** for all exported functions and public class methods.
@@ -89,7 +85,7 @@ src/
 
 ---
 
-## 4) Error Handling & Logging
+## 4) Error handling & logging
 
 - Throw **domain-specific errors** (extending `Error` with `name` and `cause`); avoid throwing strings.
 - At boundaries (HTTP handlers, message consumers), map domain errors to transport responses.
@@ -106,7 +102,7 @@ export type Result<T, E extends Error = Error> = Ok<T> | Err<E>;
 
 ---
 
-## 5) Async & Concurrency
+## 5) Async & concurrency
 
 - Use `async/await`; avoid mixing with `.then()` chains.
 - Always `await` promises; never leave floating promises—wrap with `void` only when intentionally fire‑and‑forget and documented.
@@ -115,7 +111,7 @@ export type Result<T, E extends Error = Error> = Ok<T> | Err<E>;
 
 ---
 
-## 6) Testing Strategy
+## 6) Testing strategy
 
 - **Unit tests** for pure domain logic (fast, no I/O). 80–90% coverage here.
 - **Integration tests** for adapters (HTTP, DB); run in CI.
@@ -126,7 +122,7 @@ Naming: `should_<behavior>_when_<condition>()`.
 
 ---
 
-## 7) Documentation & Comments
+## 7) Documentation & comments
 
 - JSDoc on public APIs and exported types.
 - Document non-obvious invariants and decisions; delete stale comments.
@@ -136,7 +132,7 @@ Naming: `should_<behavior>_when_<condition>()`.
 
 ## 8) Tooling: ESLint, Prettier, TSConfig, VS Code
 
-### 8.1 VS Code settings (optional)
+### 8.1 VS Code settings
 
 `.vscode/settings.json`:
 
@@ -151,27 +147,14 @@ Naming: `should_<behavior>_when_<condition>()`.
 }
 ```
 
-**Scripts** (add to `package.json`):
-
-```json
-{
-    "scripts": {
-        "lint": "eslint .",
-        "lint:fix": "eslint . --fix",
-        "format": "prettier --write .",
-        "typecheck": "tsc -p tsconfig.json --noEmit"
-    }
-}
-```
-
 ---
 
-## 9) UI & ECharts (vanilla TS + SCSS)
+## 9) UI & ECharts (TS + SCSS)
 
 **View layer (no frameworks)**
 
 - Use small DOM utilities (e.g., `qs`, `on`, `toggleClass`) and event delegation.
-- Prefer **composition** over inheritance; each panel/dialog in `ui/` exposes `init(el)`, `render(state)`, and event hooks.
+- Prefer **composition** over inheritance; each panel/dialog in `ui/` exposes `init(element)`, `render(state)`, and event hooks.
 - Keep files ≤200 lines when possible; extract helpers.
 
 **SCSS architecture**
@@ -237,7 +220,7 @@ export function createMainChart(el: HTMLDivElement, themeName: string) {
 
 ---
 
-## 10) Data & Persistence (Offline‑first) API Layer
+## 10) Data & persistence (offline‑first) API layer
 
 - Centralize HTTP client configuration (base URL, interceptors, auth, retries).
 - All network functions return typed `Result<T, E>` or throw typed errors; no raw `any`.
@@ -245,7 +228,7 @@ export function createMainChart(el: HTMLDivElement, themeName: string) {
 
 ---
 
-## 11) Security & Configuration
+## 11) Security & configuration
 
 - No secrets stored; avoid PII in logs. Redact file names if needed.
 - Configuration via a typed config module; read from `import.meta.env` (Vite) when applicable.
@@ -254,7 +237,7 @@ export function createMainChart(el: HTMLDivElement, themeName: string) {
 
 ---
 
-## 12) Refactoring Playbook (step‑by‑step) Refactoring Playbook (step‑by‑step)
+## 12) Refactoring playbook (step‑by‑step)
 
 1. **Stabilize tooling**: Add `tsconfig`, ESLint, Prettier, VS Code settings; run `lint:fix`.
 2. **Turn on strictness**: Enable `strict` and progressively add `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`.
@@ -267,7 +250,7 @@ export function createMainChart(el: HTMLDivElement, themeName: string) {
 
 ---
 
-## 13) ADR (Architecture Decision Record) Template
+## 13) ADR (Architecture Decision Record) template
 
 ```
 # ADR <id>: <title>
@@ -289,7 +272,7 @@ Store ADRs in `docs/adr/` and keep them short (\~1 page).
 
 ---
 
-## 14) Pull Request Checklist
+## 14) Pull request checklist
 
 - [ ] Follows project structure & import rules (Section 2).
 - [ ] No `any`; exported APIs have explicit return types.
@@ -303,31 +286,22 @@ Store ADRs in `docs/adr/` and keep them short (\~1 page).
 
 ---
 
-## 15) Prompt Library (copy‑paste into Copilot Chat)
+## 15) Prompt library
 
 - **Global rewrite**: “Refactor this file to comply with the Engineering Guide (Sections 1–3, 9–11). Remove `any`, add explicit return types, extract side effects to `platform/`, and keep domain logic pure.”
-
 - **Module boundaries**: “List and fix imports violating boundaries (`ui`↔`domain`↔`charts`↔`platform`). Propose file moves and minimal diffs.”
-
 - **ECharts**: “Convert to the modular ECharts API, importing only used components. Add progressive rendering and sampling. Create typed option builders and a minimap per Section 9.”
-
 - **SCSS & theming**: “Restructure styles into the directories in Section 9. Replace hard-coded colors/spacings with CSS variables from THEMING.md. Add container queries for panels.”
-
 - **Responsiveness & a11y**: “Audit for mobile: ensure 44×44 touch targets, visible focus, and keyboard support. Generate a checklist of fixes.”
-
 - **Offline-first**: “Introduce `platform/storage` IndexedDB wrapper with versioned schema and typed migrations. Add export/import and autosave with debouncing.”
-
 - **Workers**: “Move heavy computations (downsampling, parsing) to Web Workers with typed messages and benchmarks.”
-
 - **Vite**: “Add/adjust `vite.config.ts` aliases and SCSS globals; ensure build target es2022 and sourcemaps on. Propose PWA setup if desired.”
-
 - **Tests**: “Generate unit tests for pure domain functions and integration tests for storage adapter.”
-
 - **Docs**: “Add/refresh short JSDoc for exported APIs and a quickstart for local‑only data workflow.”
 
 ---
 
-## 16) Conventional Commits (optional but recommended) Conventional Commits (optional but recommended)
+## 16) Conventional Commits (optional but recommended)
 
 Use `feat:`, `fix:`, `refactor:`, `docs:`, `test:`, `chore:`. Include `BREAKING CHANGE:` footer for breaking API changes. Pair with Changesets to automate versions/changelogs.
 
