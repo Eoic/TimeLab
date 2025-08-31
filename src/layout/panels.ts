@@ -100,5 +100,20 @@ export function setupCollapsiblePanels(): void {
         togglePanel('collapse-bottom', statsPanel);
     });
 
+    const stackedQuery = window.matchMedia('(max-width: 1199px)');
+
+    const handleStackedChange = (matches: boolean): void => {
+        if (matches) {
+            root.classList.remove('collapse-left', 'collapse-right', 'collapse-bottom');
+            updateAriaAndIcons();
+            resizeChartSoon();
+        }
+    };
+
+    handleStackedChange(stackedQuery.matches);
+    stackedQuery.addEventListener('change', (event: MediaQueryListEvent) => {
+        handleStackedChange(event.matches);
+    });
+
     updateAriaAndIcons();
 }
