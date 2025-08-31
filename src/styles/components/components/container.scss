@@ -18,14 +18,14 @@
     block-size: 100dvh;
     overflow: hidden;
     align-self: flex-start;
-    grid-template-columns: repeat(12, 1fr);
+    grid-template-columns: minmax(0, 370px) 1fr minmax(0, 370px);
     grid-template-rows: auto auto minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
     grid-template-areas:
-        'header header header header header header header header header header header header'
-        'toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar'
-        'config config config chart  chart  chart  chart  chart  chart  labctrl labctrl labctrl'
-        'config config config chart  chart  chart  chart  chart  chart  labctrl labctrl labctrl'
-        'config config config stats  stats  stats  stats  stats  stats  labctrl labctrl labctrl';
+        'header header header'
+        'toolbar toolbar toolbar'
+        'config chart labctrl'
+        'config chart labctrl'
+        'config stats labctrl';
 
     .header {
         grid-area: header;
@@ -62,67 +62,67 @@
     /* Collapsed layout variants (desktop) */
     &.collapse-left {
         grid-template-areas:
-            'header header header header header header header header header header header header'
-            'toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar'
-            'chart  chart  chart  chart  chart  chart  chart  chart  chart  labctrl labctrl labctrl'
-            'chart  chart  chart  chart  chart  chart  chart  chart  chart  labctrl labctrl labctrl'
-            'stats  stats  stats  stats  stats  stats  stats  stats  stats  labctrl labctrl labctrl';
+            'header header header'
+            'toolbar toolbar toolbar'
+            'chart chart labctrl'
+            'chart chart labctrl'
+            'stats stats labctrl';
     }
 
     &.collapse-right {
         grid-template-areas:
-            'header header header header header header header header header header header header'
-            'toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar'
-            'config config config chart  chart  chart  chart  chart  chart  chart  chart  chart'
-            'config config config chart  chart  chart  chart  chart  chart  chart  chart  chart'
-            'config config config stats  stats  stats  stats  stats  stats  stats  stats  stats';
+            'header header header'
+            'toolbar toolbar toolbar'
+            'config chart chart'
+            'config chart chart'
+            'config stats stats';
     }
 
     &.collapse-left.collapse-right {
         grid-template-areas:
-            'header header header header header header header header header header header header'
-            'toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar'
-            'chart  chart  chart  chart  chart  chart  chart  chart  chart  chart  chart  chart'
-            'chart  chart  chart  chart  chart  chart  chart  chart  chart  chart  chart  chart'
-            'stats  stats  stats  stats  stats  stats  stats  stats  stats  stats  stats  stats';
+            'header header header'
+            'toolbar toolbar toolbar'
+            'chart chart chart'
+            'chart chart chart'
+            'stats stats stats';
     }
 
     /* All panels collapsed: maximize chart area across remaining rows */
     &.collapse-left.collapse-right.collapse-bottom {
         grid-template-areas:
-            'header header header header header header header header header header header header'
-            'toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar'
-            'chart  chart  chart  chart  chart  chart  chart  chart  chart  chart  chart  chart'
-            'chart  chart  chart  chart  chart  chart  chart  chart  chart  chart  chart  chart'
-            'chart  chart  chart  chart  chart  chart  chart  chart  chart  chart  chart  chart';
+            'header header header'
+            'toolbar toolbar toolbar'
+            'chart chart chart'
+            'chart chart chart'
+            'chart chart chart';
     }
 
     &.collapse-bottom {
         grid-template-areas:
-            'header header header header header header header header header header header header'
-            'toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar'
-            'config config config chart  chart  chart  chart  chart  chart  labctrl labctrl labctrl'
-            'config config config chart  chart  chart  chart  chart  chart  labctrl labctrl labctrl'
-            'config config config chart  chart  chart  chart  chart  chart  labctrl labctrl labctrl';
+            'header header header'
+            'toolbar toolbar toolbar'
+            'config chart labctrl'
+            'config chart labctrl'
+            'config chart labctrl';
     }
 
     /* Combined variants to ensure correct expansion when bottom is collapsed */
     &.collapse-left.collapse-bottom {
         grid-template-areas:
-            'header header header header header header header header header header header header'
-            'toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar'
-            'chart  chart  chart  chart  chart  chart  chart  chart  chart  labctrl labctrl labctrl'
-            'chart  chart  chart  chart  chart  chart  chart  chart  chart  labctrl labctrl labctrl'
-            'chart  chart  chart  chart  chart  chart  chart  chart  chart  labctrl labctrl labctrl';
+            'header header header'
+            'toolbar toolbar toolbar'
+            'chart chart labctrl'
+            'chart chart labctrl'
+            'chart chart labctrl';
     }
 
     &.collapse-right.collapse-bottom {
         grid-template-areas:
-            'header header header header header header header header header header header header'
-            'toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar toolbar'
-            'config config config chart  chart  chart  chart  chart  chart  chart  chart  chart'
-            'config config config chart  chart  chart  chart  chart  chart  chart  chart  chart'
-            'config config config chart  chart  chart  chart  chart  chart  chart  chart  chart';
+            'header header header'
+            'toolbar toolbar toolbar'
+            'config chart chart'
+            'config chart chart'
+            'config chart chart';
     }
 }
 
