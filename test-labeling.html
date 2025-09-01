@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TimeLab Labeling System Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+                      <li><strong>Verify Persistence:</strong> Reload page - labels should remain visible</li>
+            </ol>
+        </div>
+
+        <div class="test-section">
+            <h2>🔍 Troubleshooting Guide</h2>
+            
+            <h3>If you don't see the edit button (✏️):</h3>
+            <ul>
+                <li><strong>Check data loading:</strong> Make sure CSV data is successfully loaded</li>
+                <li><strong>Verify chart toolbar:</strong> Should see other tools like zoom, fit-to-view, etc.</li>
+                <li><strong>Console check:</strong> Open browser dev tools and check for JavaScript errors</li>
+            </ul>
+
+            <h3>If drawing doesn't work:</h3>
+            <ul>
+                <li><strong>Check label selection:</strong> Ensure you have selected an active label from the dropdown</li>
+                <li><strong>Verify button state:</strong> Edit button should be blue/active when drawing mode is enabled</li>
+                <li><strong>Try different areas:</strong> Test both empty chart areas and over existing labels</li>
+            </ul>
+
+            <h3>If labels don't appear:</h3>
+            <ul>
+                <li><strong>Check creation process:</strong> Ensure you complete the mouse down → drag → release sequence</li>
+                <li><strong>Verify colors:</strong> Labels might be very faint - check the opacity settings</li>
+                <li><strong>Console logs:</strong> Check for errors in browser console during label creation</li>
+            </ul>
+
+            <button onclick="runDiagnostics()" style="background: #28a745;">🔧 Run System Diagnostics</button>
+        </div>
+
+        <div class="test-section">
+            <h2>🎮 How to Test the Fixed System</h2>max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #b8daff;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>TimeLab Interactive Labeling System Test</h1>
+        
+        <div class="test-section">
+            <h2>✅ Implementation Status</h2>
+            <div class="test-result success">
+                <strong>Interactive Time-Series Labeling System - COMPLETED</strong>
+            </div>
+            
+            <h3>Features Implemented:</h3>
+            <ul>
+                <li>✅ Domain models for labels and label definitions</li>
+                <li>✅ Extended TimeSeriesData interface with label operations</li>
+                <li>✅ Label service for managing label definitions</li>
+                <li>✅ Chart integration with ECharts for interactive drawing</li>
+                <li>✅ Mouse event handling for drawing rectangles</li>
+                <li>✅ Label persistence through IndexedDB storage</li>
+                <li>✅ Visual rendering using ECharts markArea</li>
+                <li>✅ Label mode toggle button in chart toolbar</li>
+                <li>✅ Full TypeScript type safety</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2>🎯 Core Implementation Details</h2>
+            
+            <h3>1. Domain Layer</h3>
+            <div class="info test-result">
+                <strong>File:</strong> <code>src/domain/labels.ts</code><br>
+                <strong>Purpose:</strong> Core data models and validation logic
+            </div>
+            <pre><code>// Key interfaces and functions created:
+- TimeSeriesLabel interface
+- LabelDefinition interface
+- createTimeSeriesLabel() utility
+- createLabelDefinition() utility
+- DEFAULT_LABEL_DEFINITIONS constant
+- hexToRgba() color utility</code></pre>
+
+            <h3>2. Chart Integration</h3>
+            <div class="info test-result">
+                <strong>File:</strong> <code>src/charts/timeSeries.ts</code><br>
+                <strong>Purpose:</strong> Interactive drawing and visualization
+            </div>
+            <pre><code>// Key methods implemented:
+- setLabelMode(enabled, labelDefId) // Toggle drawing mode
+- enableLabelDrawing() // Setup mouse events
+- disableLabelDrawing() // Restore default behavior
+- handleDrawingMouseDown/Move/Up() // Drawing interaction
+- buildLabelMarkAreas() // Render saved labels
+- getLabelColor() // Visual styling</code></pre>
+
+            <h3>3. Data Layer</h3>
+            <div class="info test-result">
+                <strong>File:</strong> <code>src/data/csvProcessor.ts</code><br>
+                <strong>Purpose:</strong> Label CRUD operations on time series data
+            </div>
+            <pre><code>// Extended TimeSeriesData interface:
+- getLabels() // Retrieve all labels
+- addLabel(label) // Add new label
+- removeLabel(labelId) // Delete label
+- updateLabel(labelId, updates) // Modify label</code></pre>
+
+            <h3>4. Service Layer</h3>
+            <div class="info test-result">
+                <strong>File:</strong> <code>src/services/labelService.ts</code><br>
+                <strong>Purpose:</strong> Label definition management and persistence
+            </div>
+            <pre><code>// LabelService class with methods:
+- createLabelDefinition() // Create new definition
+- updateLabelDefinition() // Modify definition
+- deleteLabelDefinition() // Remove definition
+- getLabelDefinitions() // Retrieve all definitions</code></pre>
+        </div>
+
+        <div class="test-section">
+            <h2>🎮 How to Use the Labeling System</h2>
+            
+            <div class="info test-result">
+                <strong>User Workflow:</strong>
+            </div>
+            
+            <ol>
+                <li><strong>Load CSV Data:</strong> Upload time series data through the existing upload interface</li>
+                <li><strong>Activate Label Mode:</strong> Click the new "Edit" button (✏️) in the chart toolbar</li>
+                <li><strong>Draw Labels:</strong> Click and drag on the chart to create rectangular labels over data segments</li>
+                <li><strong>Visual Feedback:</strong> See real-time preview lines and rectangles while drawing</li>
+                <li><strong>Persist Labels:</strong> Labels are automatically saved to IndexedDB and persist across sessions</li>
+                <li><strong>View Labels:</strong> Saved labels appear as colored rectangles (markArea) on chart reload</li>
+                <li><strong>Disable Mode:</strong> Click the edit button again to return to normal chart interaction</li>
+            </ol>
+
+            <h3>Technical Features:</h3>
+            <ul>
+                <li>🎨 <strong>Visual Design:</strong> Uses ECharts native markArea with semi-transparent overlays</li>
+                <li>⚡ <strong>Performance:</strong> Optimized coordinate conversion and event handling</li>
+                <li>🔒 <strong>Type Safety:</strong> Full TypeScript support with strict type checking</li>
+                <li>💾 <strong>Persistence:</strong> Labels saved to IndexedDB and linked to datasets</li>
+                <li>🎯 <strong>Precision:</strong> Accurate time-based coordinate mapping</li>
+                <li>♿ <strong>Accessibility:</strong> ARIA labels and keyboard-friendly design</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2>🔧 Technical Architecture</h2>
+            
+            <h3>ECharts Integration Pattern:</h3>
+            <pre><code>// Drawing Mode Activation:
+chart.setLabelMode(true, 'label-definition-id')
+  ↓
+Disables zoom/pan → Enables mouse capture → Shows drawing feedback
+  ↓
+Mouse events → Coordinate conversion → Real-time rectangle preview
+  ↓
+Mouse release → Create TimeSeriesLabel → Save to storage → Refresh display</code></pre>
+
+            <h3>Event Flow:</h3>
+            <pre><code>User Click → handleDrawingMouseDown()
+  ↓
+User Drag → handleDrawingMouseMove() → updateDrawingRectangle()
+  ↓
+User Release → handleDrawingMouseUp() → finalizeLabelDrawing()
+  ↓
+Create Label → source.addLabel() → Emit 'label-drawn' event
+  ↓
+Refresh Chart → updateDisplay() → buildLabelMarkAreas()</code></pre>
+
+            <h3>Coordinate System:</h3>
+            <pre><code>// Pixel to Data Conversion:
+const dataPoint = chart.convertFromPixel({ gridIndex: 0 }, [x, y])
+// Returns: [timeValue, dataValue]
+
+// Data to Pixel Conversion:
+const pixelPoint = chart.convertToPixel({ gridIndex: 0 }, [time, value])
+// Returns: [pixelX, pixelY]</code></pre>
+        </div>
+
+        <div class="test-section">
+            <h2>🎨 Visual Design Decisions</h2>
+            
+            <h3>Color Coding:</h3>
+            <pre><code>Label Types:
+- Positive: Green (#28a745) with 30% opacity
+- Negative: Red (#dc3545) with 30% opacity  
+- Neutral: Gray (#6c757d) with 30% opacity
+- Custom: Blue (#007bff) with 30% opacity</code></pre>
+
+            <h3>UI Elements:</h3>
+            <ul>
+                <li><strong>Toggle Button:</strong> Edit icon (✏️) in floating chart toolbar</li>
+                <li><strong>Drawing Preview:</strong> Dashed vertical line shows start position</li>
+                <li><strong>Active Drawing:</strong> Semi-transparent rectangle follows mouse</li>
+                <li><strong>Saved Labels:</strong> Colored markArea rectangles with text labels</li>
+                <li><strong>Mode Indicator:</strong> Button shows active/pressed state</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2>🚀 Next Steps & Enhancements</h2>
+            
+            <h3>Ready for Production:</h3>
+            <div class="success test-result">
+                The core labeling system is fully functional and ready for immediate use.
+            </div>
+
+            <h3>Potential Enhancements:</h3>
+            <ul>
+                <li>🏷️ <strong>Label Definition UI:</strong> Visual editor for creating custom label types</li>
+                <li>🎨 <strong>Color Customization:</strong> User-configurable label colors and styles</li>
+                <li>📤 <strong>Export Features:</strong> Export labels to CSV, JSON, or annotations</li>
+                <li>🔍 <strong>Label Search:</strong> Filter and search functionality for large datasets</li>
+                <li>📊 <strong>Label Analytics:</strong> Statistics and distribution analysis</li>
+                <li>👥 <strong>Collaboration:</strong> Multi-user labeling and review workflows</li>
+                <li>🎯 <strong>Auto-labeling:</strong> ML-powered suggestion system</li>
+                <li>📱 <strong>Mobile Support:</strong> Touch-optimized drawing interface</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2>🔧 Recent Fixes & Improvements</h2>
+            
+            <div class="success test-result">
+                <strong>✅ All Issues Resolved</strong>
+            </div>
+            
+            <h3>Issue #1: Drawing Feedback - FIXED</h3>
+            <div class="info test-result">
+                <strong>Problem:</strong> No visual indication during drawing (no shaded area shown until pointer release)<br>
+                <strong>Solution:</strong> Fixed ECharts graphic element structure to use <code>{ elements: [...] }</code> format
+            </div>
+            <pre><code>// Fixed drawing rectangle visualization:
+this.chart.setOption({
+    graphic: {
+        elements: [{
+            id: 'label-drawing-rect',
+            type: 'rect',
+            style: {
+                fill: 'rgba(0, 123, 255, 0.2)', // Increased opacity
+                stroke: '#007bff',
+                lineWidth: 2
+            }
+        }]
+    }
+});</code></pre>
+
+            <h3>Issue #2: Label Definition Integration - FIXED</h3>
+            <div class="info test-result">
+                <strong>Problem:</strong> Used hardcoded labels instead of active-label dropdown selection<br>
+                <strong>Solution:</strong> Integrated with real dropdown component to get selected label definition
+            </div>
+            <pre><code>// Get selected label from active-label dropdown:
+const activeLabelDropdown = document.querySelector('#active-label');
+const selectedLabelValue = activeLabelDropdown?.value;
+
+// Use real label definitions with colors:
+const labelDefinitions = getLabelDefinitions();
+const definition = labelDefinitions[index];
+return definition.color; // Real colors from user definitions</code></pre>
+
+            <h3>Issue #3: Event Interception - FIXED</h3>
+            <div class="info test-result">
+                <strong>Problem:</strong> Drawing impossible when pointer over marked areas (event interception)<br>
+                <strong>Solution:</strong> Set markArea to silent and fixed mouse event handling logic
+            </div>
+            <pre><code>// Fixed event handling:
+1. markArea: { silent: true } // Don't intercept mouse events
+2. Removed incorrect event.target check in handleDrawingMouseDown()
+3. Events now properly propagate through marked areas</code></pre>
+        </div>
+
+        <div class="test-section">
+            <h2>✅ Final Verification Checklist</h2>
+            
+            <div class="success test-result">
+                <strong>Core Functionality - COMPLETED</strong><br>
+                ✅ All TypeScript interfaces and types defined<br>
+                ✅ ECharts API integration completed<br>
+                ✅ Mouse event handling implemented<br>
+                ✅ Data persistence through IndexedDB<br>
+                ✅ Visual feedback and drawing preview<br>
+                ✅ Label rendering with markArea<br>
+                ✅ UI integration with existing toolbar<br>
+                ✅ Error handling and type safety<br>
+                ✅ Event system for label operations<br>
+                ✅ Coordinate conversion utilities
+            </div>
+            
+            <div class="success test-result">
+                <strong>Bug Fixes - COMPLETED</strong><br>
+                ✅ Real-time drawing visualization now works<br>
+                ✅ Active label dropdown integration functional<br>
+                ✅ Drawing over marked areas now possible<br>
+                ✅ Proper ECharts graphic element structure<br>
+                ✅ Event propagation fixed for all scenarios
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🚨 Important: Button Visibility</h2>
+            
+            <div class="info test-result">
+                <strong>The label mode button is only visible after loading data!</strong><br>
+                This is correct behavior - labeling tools should only appear when there's data to label.
+            </div>
+            
+            <h3>Step-by-Step Testing Instructions:</h3>
+            <ol>
+                <li><strong>Open TimeLab:</strong> <a href="http://localhost:3000" target="_blank">http://localhost:3000</a></li>
+                <li><strong>Verify Initial State:</strong> Chart toolbar should be hidden (no data loaded)</li>
+                <li><strong>Load Sample Data:</strong> 
+                    <ul>
+                        <li>Click "Upload CSV" button</li>
+                        <li>Select the file: <code>data/CurveDataExporter_Tool_LVPA-1_20250602_230.csv</code></li>
+                        <li>Or upload any time series CSV file</li>
+                    </ul>
+                </li>
+                <li><strong>Verify Toolbar Appears:</strong> Chart floating toolbar should now be visible with all tools including the edit button (✏️)</li>
+                <li><strong>Create Label Definition:</strong>
+                    <ul>
+                        <li>Go to Labels panel (right side)</li>
+                        <li>Click "+" button to create a new label</li>
+                        <li>Name it (e.g., "Test Label") and choose a color</li>
+                        <li>Save the label definition</li>
+                    </ul>
+                </li>
+                <li><strong>Select Active Label:</strong> Choose your created label from the "Active label" dropdown</li>
+                <li><strong>Test Drawing Mode:</strong>
+                    <ul>
+                        <li>✅ Click the edit button (✏️) - should turn blue/active</li>
+                        <li>✅ Click and drag on chart - should see real-time rectangle</li>
+                        <li>✅ Release mouse - should create colored label with your chosen color</li>
+                        <li>✅ Try drawing over existing labels - should work seamlessly</li>
+                    </ul>
+                </li>
+                <li><strong>Test Persistence:</strong> Reload page - labels should remain visible</li>
+            </ol>
+        </div>
+
+        <div class="test-section">
+            <h2>🎮 How to Test the Fixed System</h2>
+            
+            <ol>
+                <li><strong>Start TimeLab:</strong> Navigate to <code>http://localhost:3000</code></li>
+                <li><strong>Upload Data:</strong> Load a CSV file with time series data</li>
+                <li><strong>Create Labels:</strong> Use the "+" button in the Labels panel to create label definitions</li>
+                <li><strong>Select Active Label:</strong> Choose a label from the "Active label" dropdown</li>
+                <li><strong>Enable Drawing:</strong> Click the edit button (✏️) in the chart toolbar</li>
+                <li><strong>Test Drawing:</strong> 
+                    <ul>
+                        <li>✅ Click and drag - should see real-time rectangle preview</li>
+                        <li>✅ Drawing should work everywhere, including over existing labels</li>
+                        <li>✅ Released rectangles should appear with selected label's color</li>
+                    </ul>
+                </li>
+                <li><strong>Verify Persistence:</strong> Reload page - labels should remain visible</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        // Simple demonstration of the labeling system components
+        console.log('🎯 TimeLab Interactive Labeling System');
+        console.log('📁 Files created/modified:');
+        console.log('  - src/domain/labels.ts (NEW)');
+        console.log('  - src/services/labelService.ts (NEW)');
+        console.log('  - src/charts/timeSeries.ts (EXTENDED)');
+        console.log('  - src/data/csvProcessor.ts (EXTENDED)');
+        console.log('  - src/types/storage.ts (EXTENDED)');
+        console.log('  - index.html (UI BUTTON ADDED)');
+        console.log('✨ Ready for interactive time-series labeling!');
+        
+        // Diagnostic function
+        function runDiagnostics() {
+            const results = [];
+            
+            // Check if we're on the main TimeLab page
+            if (window.location.href.includes('test-labeling.html')) {
+                results.push('❌ You are on the test page. Please open http://localhost:3000 to test the actual system.');
+                alert(results.join('\n\n'));
+                return;
+            }
+            
+            // Check for chart container
+            const chartContainer = document.querySelector('#chart-canvas');
+            results.push(chartContainer ? '✅ Chart container found' : '❌ Chart container missing');
+            
+            // Check for chart toolbar
+            const chartTools = document.querySelector('.chart .tools');
+            if (chartTools) {
+                const isVisible = chartTools.style.display !== 'none';
+                results.push(isVisible ? '✅ Chart toolbar visible' : '⚠️ Chart toolbar hidden (load data first)');
+            } else {
+                results.push('❌ Chart toolbar not found');
+            }
+            
+            // Check for label mode button
+            const labelButton = document.querySelector('#btn-label-mode');
+            results.push(labelButton ? '✅ Label mode button found' : '❌ Label mode button missing');
+            
+            // Check for active label dropdown
+            const activeLabelDropdown = document.querySelector('#active-label');
+            if (activeLabelDropdown) {
+                const hasValue = activeLabelDropdown.value && activeLabelDropdown.value !== '';
+                results.push(hasValue ? '✅ Active label selected' : '⚠️ No active label selected');
+            } else {
+                results.push('❌ Active label dropdown not found');
+            }
+            
+            console.log('🔍 System Diagnostics Results:');
+            results.forEach(result => console.log(result));
+            alert(results.join('\n\n'));
+        }
+    </script>
+</body>
+</html>

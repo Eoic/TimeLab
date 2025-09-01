@@ -15,6 +15,18 @@ export interface LabelDefinition extends IDBRecord {
 }
 
 /**
+ * Time series label applied to a dataset
+ */
+export interface TimeSeriesLabel extends IDBRecord {
+    startTime: number;
+    endTime: number;
+    labelDefId: string;
+    datasetId: string;
+    createdAt: number;
+    updatedAt: number;
+}
+
+/**
  * History entry stored in IndexedDB
  */
 export interface HistoryEntry extends IDBRecord {

@@ -3,6 +3,7 @@
  */
 
 import type { TimeSeriesData } from '../charts/timeSeries';
+import type { TimeSeriesLabel } from '../domain/labels';
 import type { TDataFile } from '../uploads';
 
 /**
@@ -15,6 +16,7 @@ export class CSVTimeSeriesData implements TimeSeriesData {
     private parsedData: ReadonlyArray<readonly number[]> = [];
     private labeled = false;
     private sourceFile: TDataFile;
+    private labels: TimeSeriesLabel[] = [];
 
     constructor(file: TDataFile) {
         this.id = file.id;
@@ -63,6 +65,49 @@ export class CSVTimeSeriesData implements TimeSeriesData {
         // The uploads system will handle persistence
         const event = new CustomEvent('timelab:labeledStateChanged', {
             detail: { fileId: this.sourceFile.id, labeled },
+        });
+        window.dispatchEvent(event);
+    }
+
+    getLabels(): ReadonlyArray<TimeSeriesLabel> {
+        return [...this.labels];
+    }
+
+    addLabel(label: TimeSeriesLabel): void {
+        this.labels.push(label);
+        // Trigger persistence - this will be handled by a label service later
+        this.notifyLabelsChanged();
+    }
+
+    removeLabel(labelId: string): void {
+        const index = this.labels.findIndex(label => label.id === labelId);
+        if (index >= 0) {
+            this.labels.splice(index, 1);
+            this.notifyLabelsChanged();
+        }
+    }
+
+    updateLabel(labelId: string, updates: Partial<Omit<TimeSeriesLabel, 'id' | 'datasetId' | 'createdAt'>>): void {
+        const index = this.labels.findIndex(label => label.id === labelId);
+        if (index >= 0 && this.labels[index]) {
+            const existingLabel = this.labels[index];
+            const updatedLabel: TimeSeriesLabel = { 
+                id: existingLabel.id,
+                datasetId: existingLabel.datasetId,
+                createdAt: existingLabel.createdAt,
+                startTime: updates.startTime ?? existingLabel.startTime,
+                endTime: updates.endTime ?? existingLabel.endTime,
+                labelDefId: updates.labelDefId ?? existingLabel.labelDefId,
+                updatedAt: Date.now() 
+            };
+            this.labels[index] = updatedLabel;
+            this.notifyLabelsChanged();
+        }
+    }
+
+    private notifyLabelsChanged(): void {
+        const event = new CustomEvent('timelab:labelsChanged', {
+            detail: { datasetId: this.id, labels: this.getLabels() },
         });
         window.dispatchEvent(event);
     }

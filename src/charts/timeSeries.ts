@@ -1,4 +1,6 @@
 import { installModalFocusTrap } from '../ui/dom';
+import { getLabelDefinitions } from '../ui/dropdowns';
+import type { TimeSeriesLabel } from '../domain/labels';
 
 import { init, type EChartOption, type ECharts } from './echarts';
 
@@ -17,6 +19,11 @@ export interface TimeSeriesData {
     getData(xColumn: string, yColumn: string): ReadonlyArray<readonly [number, number]>;
     isLabeled(): boolean;
     setLabeled(labeled: boolean): void;
+    // Label management methods
+    getLabels(): ReadonlyArray<TimeSeriesLabel>;
+    addLabel(label: TimeSeriesLabel): void;
+    removeLabel(labelId: string): void;
+    updateLabel(labelId: string, updates: Partial<Omit<TimeSeriesLabel, 'id' | 'datasetId' | 'createdAt'>>): void;
 }
 
 /**
@@ -26,6 +33,9 @@ export interface TimeSeriesEvents {
     'series-changed': { currentIndex: number; total: number };
     'label-changed': { index: number; labeled: boolean };
     'columns-available': { columns: readonly string[] };
+    'label-drawn': { label: TimeSeriesLabel };
+    'label-removed': { labelId: string };
+    'label-mode-changed': { enabled: boolean };
 }
 
 /**
@@ -71,6 +81,13 @@ export class TimeSeriesChart {
     private chartConfigCleanup: (() => void) | null = null;
     private lastConfig: TimeSeriesConfig | null = null;
     private currentData: ReadonlyArray<readonly [number | string, number]> = [];
+    
+        // Label drawing state
+    private labelMode: boolean = false;
+    private isDrawing: boolean = false;
+    private drawStartX: number | null = null;
+    private currentLabelDefId: string | null = null;
+    
     private readonly handleZoomEvent = (params: DataZoomEvent): void => {
         this.updateYAxisFromZoom(params.start, params.end);
     };
@@ -403,6 +420,399 @@ export class TimeSeriesChart {
     }
 
     /**
+     * Enable or disable label drawing mode
+     */
+    setLabelMode(enabled: boolean, labelDefId?: string): void {
+        this.labelMode = enabled;
+        this.currentLabelDefId = labelDefId || null;
+        
+        if (this.chart) {
+            if (enabled) {
+                this.enableLabelDrawing();
+            } else {
+                this.disableLabelDrawing();
+            }
+        }
+        
+        this.emit('label-mode-changed', { enabled });
+    }
+
+    /**
+     * Check if label mode is currently enabled
+     */
+    isLabelModeEnabled(): boolean {
+        return this.labelMode;
+    }
+
+    /**
+     * Enable interactive label drawing
+     */
+    private enableLabelDrawing(): void {
+        if (!this.chart) return;
+
+        // Disable default interactions (zoom/pan)
+        this.chart.setOption({
+            dataZoom: [
+                { disabled: true },
+                { disabled: true }
+            ]
+        });
+
+        // Setup drawing event listeners
+        this.setupLabelDrawingEvents();
+    }
+
+    /**
+     * Disable interactive label drawing and restore default interactions
+     */
+    private disableLabelDrawing(): void {
+        if (!this.chart) return;
+
+        // Re-enable default interactions
+        this.chart.setOption({
+            dataZoom: [
+                { disabled: false },
+                { disabled: false }
+            ]
+        });
+
+        // Remove drawing graphics
+        this.clearDrawingGraphics();
+        
+        // Reset drawing state
+        this.isDrawing = false;
+        this.drawStartX = null;
+        this.clearDrawingGraphics();
+    }
+
+    /**
+     * Setup event listeners for label drawing
+     */
+    private setupLabelDrawingEvents(): void {
+        if (!this.chart) return;
+
+        // Listen to mouse events for drawing
+        (this.chart as any).getZr().on('mousedown', this.handleDrawingMouseDown.bind(this));
+        (this.chart as any).getZr().on('mousemove', this.handleDrawingMouseMove.bind(this));
+        (this.chart as any).getZr().on('mouseup', this.handleDrawingMouseUp.bind(this));
+    }
+
+    /**
+     * Handle mouse down for label drawing
+     */
+    private handleDrawingMouseDown(event: any): void {
+        if (!this.chart || !this.labelMode) return;
+        
+        // Allow drawing anywhere in the chart area
+        // The event comes from the zrender canvas, so we can proceed
+        const pixelPoint = [event.offsetX, event.offsetY];
+        const dataPoint = (this.chart as any).convertFromPixel({ gridIndex: 0 }, pixelPoint);
+        
+        if (dataPoint && dataPoint[0] !== null) {
+            this.isDrawing = true;
+            this.drawStartX = dataPoint[0] as number;
+            this.showStartLine(pixelPoint[0]);
+        }
+    }
+
+    /**
+     * Handle mouse move for label drawing
+     */
+    private handleDrawingMouseMove(event: any): void {
+        if (!this.chart || !this.labelMode) return;
+        
+        const pixelPoint = [event.offsetX, event.offsetY];
+        
+        if (this.isDrawing && this.drawStartX !== null) {
+            // Update drawing rectangle
+            this.updateDrawingRectangle(pixelPoint);
+        } else {
+            // Show preview line when hovering
+            this.showStartLine(pixelPoint[0]);
+        }
+    }
+
+    /**
+     * Handle mouse up to finalize label drawing
+     */
+    private handleDrawingMouseUp(event: any): void {
+        if (!this.chart || !this.labelMode || !this.isDrawing || this.drawStartX === null) return;
+        
+        const pixelPoint = [event.offsetX, event.offsetY];
+        const dataPoint = (this.chart as any).convertFromPixel({ gridIndex: 0 }, pixelPoint);
+        
+        if (dataPoint && dataPoint[0] !== null) {
+            const endX = dataPoint[0] as number;
+            this.finalizeLabelDrawing(this.drawStartX, endX);
+        }
+        
+        // Reset drawing state
+        this.isDrawing = false;
+        this.drawStartX = null;
+        this.clearDrawingGraphics();
+    }
+
+    /**
+     * Show a vertical line to indicate drawing start position
+     */
+    private showStartLine(pixelX: number): void {
+        if (!this.chart) return;
+        
+        const gridRect = this.getGridRect();
+        if (!gridRect) return;
+        
+        this.chart.setOption({
+            graphic: {
+                elements: [{
+                    id: 'label-start-line',
+                    type: 'line',
+                    shape: {
+                        x1: pixelX,
+                        y1: gridRect.y,
+                        x2: pixelX,
+                        y2: gridRect.y + gridRect.height
+                    },
+                    style: {
+                        stroke: '#666',
+                        lineWidth: 1,
+                        lineDash: [4, 4]
+                    },
+                    silent: true,
+                    z: 100
+                }]
+            }
+        });
+    }
+
+    /**
+     * Update the drawing rectangle as user drags
+     */
+    private updateDrawingRectangle(pixelPoint: number[]): void {
+        if (!this.chart || this.drawStartX === null) return;
+        
+        const startPixel = (this.chart as any).convertToPixel({ gridIndex: 0 }, [this.drawStartX, 0]);
+        const gridRect = this.getGridRect();
+        
+        if (!startPixel || !gridRect || typeof startPixel[0] !== 'number' || typeof pixelPoint[0] !== 'number') return;
+        
+        const startX = startPixel[0] as number;
+        const currentX = pixelPoint[0] as number;
+        const x = Math.min(startX, currentX);
+        const width = Math.abs(currentX - startX);
+        
+        this.chart.setOption({
+            graphic: {
+                elements: [{
+                    id: 'label-drawing-rect',
+                    type: 'rect',
+                    shape: {
+                        x,
+                        y: gridRect.y,
+                        width,
+                        height: gridRect.height
+                    },
+                    style: {
+                        fill: 'rgba(0, 123, 255, 0.2)',
+                        stroke: '#007bff',
+                        lineWidth: 2
+                    },
+                    silent: true,
+                    z: 99
+                }]
+            }
+        });
+    }
+
+    /**
+     * Get chart grid rectangle area
+     */
+    private getGridRect(): { x: number; y: number; width: number; height: number } | null {
+        if (!this.chart) return null;
+        
+        try {
+            // Try to get grid component area from chart model
+            const model = (this.chart as any).getModel();
+            const gridComponent = model.getComponent('grid', 0);
+            if (gridComponent && gridComponent.coordinateSystem) {
+                return gridComponent.coordinateSystem.getArea();
+            }
+        } catch (error) {
+            console.warn('Could not get grid area:', error);
+        }
+        
+        // Fallback: estimate from chart container
+        const container = this.chart.getDom();
+        if (container) {
+            const rect = container.getBoundingClientRect();
+            return {
+                x: rect.width * 0.1, // Approximate left margin
+                y: rect.height * 0.1, // Approximate top margin
+                width: rect.width * 0.8, // Approximate chart width
+                height: rect.height * 0.8 // Approximate chart height
+            };
+        }
+        
+        return null;
+    }
+
+    /**
+     * Finalize the label drawing and create the label
+     */
+    private finalizeLabelDrawing(startX: number, endX: number): void {
+        const source = this.getCurrentSource();
+        if (!source || !this.currentLabelDefId) return;
+        
+        // Ensure proper order
+        const actualStartX = Math.min(startX, endX);
+        const actualEndX = Math.max(startX, endX);
+        
+        // Create the label
+        try {
+            const label: TimeSeriesLabel = {
+                id: crypto.randomUUID(),
+                startTime: actualStartX,
+                endTime: actualEndX,
+                labelDefId: this.currentLabelDefId,
+                datasetId: source.id,
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+            };
+            
+            // Add to data source
+            source.addLabel(label);
+            
+            // Emit event
+            this.emit('label-drawn', { label });
+            
+            // Refresh display to show the new label
+            if (this.lastConfig) {
+                this.updateDisplay(this.lastConfig);
+            }
+        } catch (error) {
+            console.error('Failed to create label:', error);
+        }
+    }
+
+    /**
+     * Clear all drawing graphics
+     */
+    private clearDrawingGraphics(): void {
+        if (!this.chart) return;
+        
+        this.chart.setOption({
+            graphic: {
+                elements: [{
+                    id: 'label-start-line',
+                    $action: 'remove'
+                }, {
+                    id: 'label-drawing-rect',
+                    $action: 'remove'
+                }]
+            }
+        });
+    }
+
+    /**
+     * Build markArea configuration for displaying labels
+     */
+    private buildLabelMarkAreas(): EChartOption.SeriesLine['markArea'] | undefined {
+        const source = this.getCurrentSource();
+        if (!source) return undefined;
+
+        const labels = source.getLabels();
+        if (labels.length === 0) return undefined;
+
+        // Create markArea data for each label
+        const markAreaData = labels.map(label => [
+            {
+                xAxis: label.startTime,
+                itemStyle: {
+                    color: this.getLabelColor(label.labelDefId, 0.3),
+                },
+                label: {
+                    show: true,
+                    position: 'insideTopLeft',
+                    formatter: () => {
+                        // You can customize the label text here
+                        return this.getLabelName(label.labelDefId);
+                    }
+                }
+            },
+            {
+                xAxis: label.endTime,
+            }
+        ]);
+
+        return {
+            silent: true, // Don't intercept mouse events - allow drawing over labels
+            data: markAreaData as any
+        };
+    }
+
+    /**
+     * Get display color for a label definition
+     */
+    private getLabelColor(labelDefId: string, opacity: number = 1): string {
+        // Parse the label ID format: "label-{index}"
+        const match = labelDefId.match(/^label-(\d+)$/);
+        if (match && match[1]) {
+            const index = parseInt(match[1], 10);
+            const labelDefinitions = getLabelDefinitions();
+            const definition = labelDefinitions[index];
+            if (definition) {
+                // Convert hex to rgba with opacity
+                const hex = definition.color.replace('#', '');
+                const r = parseInt(hex.substr(0, 2), 16);
+                const g = parseInt(hex.substr(2, 2), 16);
+                const b = parseInt(hex.substr(4, 2), 16);
+                return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+            }
+        }
+        
+        // Fallback for hardcoded labels or invalid IDs
+        const colors: Record<string, string> = {
+            'default-positive': '#28a745',
+            'default-negative': '#dc3545',
+            'default-neutral': '#6c757d'
+        };
+        
+        const baseColor = colors[labelDefId] || '#007bff';
+        
+        // Convert hex to rgba with opacity
+        const hex = baseColor.replace('#', '');
+        const r = parseInt(hex.substr(0, 2), 16);
+        const g = parseInt(hex.substr(2, 2), 16);
+        const b = parseInt(hex.substr(4, 2), 16);
+        
+        return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+    }
+
+    /**
+     * Get display name for a label definition
+     */
+    private getLabelName(labelDefId: string): string {
+        // Parse the label ID format: "label-{index}"
+        const match = labelDefId.match(/^label-(\d+)$/);
+        if (match && match[1]) {
+            const index = parseInt(match[1], 10);
+            const labelDefinitions = getLabelDefinitions();
+            const definition = labelDefinitions[index];
+            if (definition) {
+                return definition.name;
+            }
+        }
+        
+        // Fallback for hardcoded labels or invalid IDs
+        const names: Record<string, string> = {
+            'default-positive': 'Positive',
+            'default-negative': 'Negative',
+            'default-neutral': 'Neutral'
+        };
+        
+        return names[labelDefId] || labelDefId;
+    }
+
+    /**
      * Update chart display with current configuration
      */
     updateDisplay(config: TimeSeriesConfig): void {
@@ -480,6 +890,9 @@ export class TimeSeriesChart {
             } as unknown as EChartOption.SeriesLine['markLine'];
         }
 
+        // Configure label areas
+        const markArea = this.buildLabelMarkAreas();
+
         // Configure tooltip
         const tooltip =
             tooltipMode === 'none'
@@ -504,6 +917,7 @@ export class TimeSeriesChart {
                         lineStyle: { width: lineWidth },
                         areaStyle: showArea ? {} : undefined,
                         markLine,
+                        markArea,
                         data: [...seriesData] as Array<[number | string, number]>,
                     },
                 ],
@@ -741,6 +1155,7 @@ function bindUIControls(chart: TimeSeriesChart): void {
     const elPrev = document.getElementById('series-prev') as HTMLButtonElement | null;
     const elNext = document.getElementById('series-next') as HTMLButtonElement | null;
     const btnToggleLabeled = document.getElementById('toggle-labeled') as HTMLButtonElement | null;
+    const btnLabelMode = document.getElementById('btn-label-mode') as HTMLButtonElement | null;
 
     elPrev?.addEventListener('click', () => {
         chart.previousSeries();
@@ -750,6 +1165,37 @@ function bindUIControls(chart: TimeSeriesChart): void {
     });
     btnToggleLabeled?.addEventListener('click', () => {
         chart.toggleLabeled();
+    });
+    
+    // Label mode toggle
+    btnLabelMode?.addEventListener('click', () => {
+        const isEnabled = chart.isLabelModeEnabled();
+        const newState = !isEnabled;
+        
+        // Update button state
+        btnLabelMode.setAttribute('aria-pressed', newState.toString());
+        btnLabelMode.classList.toggle('active', newState);
+        
+        if (newState) {
+            // Get selected label from active-label dropdown
+            const activeLabelDropdown = document.querySelector<any>('#active-label');
+            const selectedLabelValue = activeLabelDropdown?.value || null;
+            
+            if (!selectedLabelValue || selectedLabelValue === '') {
+                // No label selected, show error or create default
+                console.warn('No active label selected for drawing mode');
+                // Revert button state
+                btnLabelMode.setAttribute('aria-pressed', 'false');
+                btnLabelMode.classList.remove('active');
+                return;
+            }
+            
+            // Enable label mode with selected label definition
+            chart.setLabelMode(true, selectedLabelValue);
+        } else {
+            // Disable label mode
+            chart.setLabelMode(false);
+        }
     });
 
     // Bind axis dropdown changes
