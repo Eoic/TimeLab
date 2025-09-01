@@ -102,6 +102,8 @@ export class TimeSeriesChart {
         overlay.style.position = 'absolute';
         overlay.style.inset = '0';
         overlay.style.pointerEvents = 'none';
+        overlay.style.zIndex = '10';
+        overlay.style.touchAction = 'none';
         container.appendChild(overlay);
         overlay.addEventListener('pointerdown', this.handleLabelStart);
         overlay.addEventListener('pointermove', this.handleLabelMove);
@@ -461,6 +463,9 @@ export class TimeSeriesChart {
         if (!this.labelMode || !this.labelOverlay) {
             return;
         }
+        e.stopPropagation();
+        e.preventDefault();
+        this.labelOverlay.setPointerCapture(e.pointerId);
         this.labelStartX = e.offsetX;
         const def = this.getActiveLabelDefinition();
         if (!def) {
@@ -480,6 +485,8 @@ export class TimeSeriesChart {
         if (!this.labelMode || this.labelStartX === null || !this.activeLabelRect) {
             return;
         }
+        e.stopPropagation();
+        e.preventDefault();
         const currentX = e.offsetX;
         const left = Math.min(this.labelStartX, currentX);
         const width = Math.abs(currentX - this.labelStartX);
@@ -491,6 +498,11 @@ export class TimeSeriesChart {
         if (!this.labelMode || this.labelStartX === null || !this.chart || !this.activeLabelRect) {
             this.cleanupActiveRect();
             return;
+        }
+        e.stopPropagation();
+        e.preventDefault();
+        if (this.labelOverlay) {
+            this.labelOverlay.releasePointerCapture(e.pointerId);
         }
         const endX = e.offsetX;
         const startPx = this.labelStartX;
