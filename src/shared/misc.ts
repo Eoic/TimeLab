@@ -16,3 +16,12 @@ export const formatBytes = (bytes: number): string => {
 
     return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB';
 };
+
+export function hexToRgba(hex: string, alpha: number): string {
+    const normalized = hex.replace('#', '');
+    const bigint = parseInt(normalized, 16);
+    const r = (bigint >> 16) & 255;
+    const g = (bigint >> 8) & 255;
+    const b = bigint & 255;
+    return 'rgba(' + String(r) + ', ' + String(g) + ', ' + String(b) + ', ' + String(alpha) + ')';
+}
