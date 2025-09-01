@@ -105,7 +105,6 @@ export class TimeSeriesChart {
         overlay.style.pointerEvents = 'none';
         overlay.style.zIndex = '10';
         overlay.style.touchAction = 'none';
-        container.appendChild(overlay);
         overlay.addEventListener('pointerdown', this.handleLabelStart);
         overlay.addEventListener('pointermove', this.handleLabelMove);
         overlay.addEventListener('pointerup', this.handleLabelEnd);
@@ -145,6 +144,11 @@ export class TimeSeriesChart {
         void init(container as HTMLDivElement).then((chartInstance) => {
             this.chart = chartInstance;
             chartInstance.setOption(option);
+
+            // Reattach overlay after ECharts wipes the container
+            if (this.labelOverlay) {
+                container.appendChild(this.labelOverlay);
+            }
 
             // Create empty state element AFTER chart is ready
             this.createEmptyStateElement();
