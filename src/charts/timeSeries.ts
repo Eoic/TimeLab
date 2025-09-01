@@ -1,3 +1,6 @@
+import type { TimeSeriesLabel } from '@domain/timeSeries';
+import { hexToRgba, uuid } from '@shared/misc';
+
 import { installModalFocusTrap } from '../ui/dom';
 
 import { init, type EChartOption, type ECharts } from './echarts';
@@ -5,6 +8,17 @@ import { init, type EChartOption, type ECharts } from './echarts';
 interface DataZoomEvent {
     readonly start?: number;
     readonly end?: number;
+}
+
+interface LabelOption {
+    readonly value: string;
+    readonly label: string;
+    readonly color?: string;
+}
+
+interface LabelDropdownEl extends HTMLElement {
+    value: string;
+    options: LabelOption[];
 }
 
 /**
@@ -17,6 +31,8 @@ export interface TimeSeriesData {
     getData(xColumn: string, yColumn: string): ReadonlyArray<readonly [number, number]>;
     isLabeled(): boolean;
     setLabeled(labeled: boolean): void;
+    getLabels(): ReadonlyArray<TimeSeriesLabel>;
+    addLabel(label: TimeSeriesLabel): void;
 }
 
 /**
@@ -71,6 +87,11 @@ export class TimeSeriesChart {
     private chartConfigCleanup: (() => void) | null = null;
     private lastConfig: TimeSeriesConfig | null = null;
     private currentData: ReadonlyArray<readonly [number | string, number]> = [];
+    private labelMode = false;
+    private labelOverlay: HTMLDivElement | null = null;
+    private labelStartX: number | null = null;
+    private activeLabelRect: HTMLDivElement | null = null;
+    private activeLabelLine: HTMLDivElement | null = null;
     private readonly handleZoomEvent = (params: DataZoomEvent): void => {
         this.updateYAxisFromZoom(params.start, params.end);
     };
@@ -111,6 +132,9 @@ export class TimeSeriesChart {
         void init(container as HTMLDivElement).then((chartInstance) => {
             this.chart = chartInstance;
             chartInstance.setOption(option);
+
+            // Overlay must be created after chart initialization to avoid removal
+            this.setupLabelOverlay();
 
             // Create empty state element AFTER chart is ready
             this.createEmptyStateElement();
@@ -160,6 +184,31 @@ export class TimeSeriesChart {
             }, 150); // Slightly longer delay for panel animations
         };
         window.addEventListener('timelab:layoutChanged', this.layoutChangeHandler);
+    }
+
+    /**
+     * Create overlay element used for interactive labeling
+     */
+    private setupLabelOverlay(): void {
+        const overlay = document.createElement('div');
+        overlay.style.position = 'absolute';
+        overlay.style.inset = '0';
+        overlay.style.pointerEvents = 'none';
+        overlay.style.zIndex = '10';
+        overlay.style.touchAction = 'none';
+        overlay.addEventListener('pointerdown', this.handleLabelStart);
+        overlay.addEventListener('pointermove', this.handleLabelMove);
+        overlay.addEventListener('pointerup', this.handleLabelEnd);
+        overlay.addEventListener('pointerleave', this.handleLabelEnd);
+        overlay.addEventListener('wheel', this.blockWheel, { passive: false });
+
+        const containerStyle = window.getComputedStyle(this.container);
+        if (containerStyle.position === 'static') {
+            this.container.style.position = 'relative';
+        }
+
+        this.container.appendChild(overlay);
+        this.labelOverlay = overlay;
     }
 
     /**
@@ -402,6 +451,155 @@ export class TimeSeriesChart {
         }
     }
 
+    toggleLabelMode(): boolean {
+        this.labelMode = !this.labelMode;
+        if (this.labelOverlay) {
+            this.labelOverlay.style.pointerEvents = this.labelMode ? 'auto' : 'none';
+        }
+        if (!this.labelMode) {
+            this.cleanupActiveRect();
+        }
+        return this.labelMode;
+    }
+
+    private getActiveLabelDefinition(): { name: string; color: string } | null {
+        const dropdown = document.getElementById('active-label') as LabelDropdownEl | null;
+        if (!dropdown) {
+            return null;
+        }
+        const val = dropdown.value;
+        const opt = dropdown.options.find((o) => o.value === val);
+        if (!opt || !opt.color) {
+            return null;
+        }
+        return { name: opt.label, color: opt.color };
+    }
+
+    private blockWheel = (e: WheelEvent): void => {
+        if (!this.labelMode) {
+            return;
+        }
+        e.stopPropagation();
+        e.preventDefault();
+    };
+
+    private handleLabelStart = (e: PointerEvent): void => {
+        if (!this.labelMode || !this.labelOverlay) {
+            return;
+        }
+
+        const def = this.getActiveLabelDefinition();
+        if (!def) {
+            return;
+        }
+
+        e.stopPropagation();
+        e.preventDefault();
+        this.labelOverlay.setPointerCapture(e.pointerId);
+
+        const startX = e.offsetX;
+        this.labelStartX = startX;
+
+        const line = document.createElement('div');
+        line.style.position = 'absolute';
+        line.style.top = '0';
+        line.style.bottom = '0';
+        line.style.left = String(startX) + 'px';
+        line.style.width = '1px';
+        line.style.background = def.color;
+        line.style.pointerEvents = 'none';
+        this.labelOverlay.appendChild(line);
+        this.activeLabelLine = line;
+
+        const rect = document.createElement('div');
+        rect.style.position = 'absolute';
+        rect.style.top = '0';
+        rect.style.bottom = '0';
+        rect.style.left = String(startX) + 'px';
+        rect.style.background = hexToRgba(def.color, 0.3);
+        rect.style.pointerEvents = 'none';
+        this.labelOverlay.appendChild(rect);
+        this.activeLabelRect = rect;
+    };
+
+    private handleLabelMove = (e: PointerEvent): void => {
+        if (!this.labelMode || this.labelStartX === null || !this.activeLabelRect) {
+            return;
+        }
+
+        e.stopPropagation();
+        e.preventDefault();
+
+        const currentX = e.offsetX;
+        const left = Math.min(this.labelStartX, currentX);
+        const width = Math.abs(currentX - this.labelStartX);
+        this.activeLabelRect.style.left = String(left) + 'px';
+        this.activeLabelRect.style.width = String(width) + 'px';
+    };
+
+    private handleLabelEnd = (e: PointerEvent): void => {
+        if (
+            !this.labelMode ||
+            this.labelStartX === null ||
+            !this.chart ||
+            !this.activeLabelRect ||
+            !this.activeLabelLine
+        ) {
+            this.cleanupActiveRect();
+            return;
+        }
+
+        e.stopPropagation();
+        e.preventDefault();
+
+        if (this.labelOverlay) {
+            this.labelOverlay.releasePointerCapture(e.pointerId);
+        }
+
+        const endX = e.offsetX;
+        const startPx = this.labelStartX;
+        const start = this.chart.convertFromPixel({ xAxisIndex: 0 }, [
+            Math.min(startPx, endX),
+            0,
+        ])[0] as number;
+        const end = this.chart.convertFromPixel({ xAxisIndex: 0 }, [
+            Math.max(startPx, endX),
+            0,
+        ])[0] as number;
+
+        this.cleanupActiveRect();
+
+        const def = this.getActiveLabelDefinition();
+        if (!def || start === end) {
+            return;
+        }
+
+        const label: TimeSeriesLabel = {
+            id: uuid(),
+            name: def.name,
+            startTime: Math.min(start, end),
+            endTime: Math.max(start, end),
+            color: def.color,
+        };
+        const source = this.getCurrentSource();
+        source?.addLabel(label);
+        if (this.lastConfig) {
+            this.updateDisplay(this.lastConfig);
+        }
+    };
+
+    private cleanupActiveRect(): void {
+        if (this.activeLabelRect && this.labelOverlay) {
+            this.labelOverlay.removeChild(this.activeLabelRect);
+        }
+        if (this.activeLabelLine && this.labelOverlay) {
+            this.labelOverlay.removeChild(this.activeLabelLine);
+        }
+        this.activeLabelRect = null;
+        this.activeLabelLine = null;
+        this.labelStartX = null;
+    }
+
     /**
      * Update chart display with current configuration
      */
@@ -425,6 +623,7 @@ export class TimeSeriesChart {
         }
 
         const data = source.getData(config.xColumn, config.yColumn);
+        const labels = source.getLabels();
 
         // Apply configuration with defaults
         const xType = config.xType || 'category';
@@ -489,6 +688,16 @@ export class TimeSeriesChart {
                       axisPointer: { type: 'cross' as const, snap },
                   };
 
+        const markArea =
+            labels.length > 0
+                ? ({
+                      data: labels.map((l) => [
+                          { xAxis: l.startTime, itemStyle: { color: hexToRgba(l.color, 0.3) } },
+                          { xAxis: l.endTime },
+                      ]),
+                  } as unknown as EChartOption.SeriesLine['markArea'])
+                : undefined;
+
         this.chart.setOption(
             {
                 tooltip,
@@ -504,6 +713,7 @@ export class TimeSeriesChart {
                         lineStyle: { width: lineWidth },
                         areaStyle: showArea ? {} : undefined,
                         markLine,
+                        markArea,
                         data: [...seriesData] as Array<[number | string, number]>,
                     },
                 ],
@@ -612,6 +822,15 @@ export class TimeSeriesChart {
         if (this.emptyStateElement) {
             this.emptyStateElement.remove();
             this.emptyStateElement = null;
+        }
+        if (this.labelOverlay) {
+            this.labelOverlay.removeEventListener('pointerdown', this.handleLabelStart);
+            this.labelOverlay.removeEventListener('pointermove', this.handleLabelMove);
+            this.labelOverlay.removeEventListener('pointerup', this.handleLabelEnd);
+            this.labelOverlay.removeEventListener('pointerleave', this.handleLabelEnd);
+            this.labelOverlay.removeEventListener('wheel', this.blockWheel);
+            this.labelOverlay.remove();
+            this.labelOverlay = null;
         }
     }
 
@@ -741,6 +960,7 @@ function bindUIControls(chart: TimeSeriesChart): void {
     const elPrev = document.getElementById('series-prev') as HTMLButtonElement | null;
     const elNext = document.getElementById('series-next') as HTMLButtonElement | null;
     const btnToggleLabeled = document.getElementById('toggle-labeled') as HTMLButtonElement | null;
+    const btnLabelMode = document.getElementById('btn-label-mode') as HTMLButtonElement | null;
 
     elPrev?.addEventListener('click', () => {
         chart.previousSeries();
@@ -750,6 +970,11 @@ function bindUIControls(chart: TimeSeriesChart): void {
     });
     btnToggleLabeled?.addEventListener('click', () => {
         chart.toggleLabeled();
+    });
+
+    btnLabelMode?.addEventListener('click', () => {
+        const active = chart.toggleLabelMode();
+        btnLabelMode.setAttribute('aria-pressed', String(active));
     });
 
     // Bind axis dropdown changes
