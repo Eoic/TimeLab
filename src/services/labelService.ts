@@ -3,12 +3,12 @@
  * Handles persistence to IndexedDB and provides reactive updates
  */
 
-import { getAllRecords, saveRecord, deleteRecord, STORE_LABELS } from '../platform/storage';
 import { DEFAULT_LABEL_DEFINITIONS, createLabelDefinition } from '../domain/labels';
 import type { LabelDefinition, TimeSeriesLabel } from '../domain/labels';
-import type { LabelDefinition as StoredLabelDefinition } from '../types/storage';
+import { getAllRecords, saveRecord, deleteRecord, STORE_LABELS } from '../platform/storage';
 import type { Result } from '../shared';
 import { StorageError, ok, err } from '../shared';
+import type { LabelDefinition as StoredLabelDefinition } from '../types/storage';
 
 /**
  * Service for managing label definitions and operations
@@ -75,7 +75,10 @@ export class LabelService {
     /**
      * Create and save a new label definition
      */
-    async createLabelDefinition(name: string, color: string): Promise<Result<LabelDefinition, StorageError>> {
+    async createLabelDefinition(
+        name: string,
+        color: string
+    ): Promise<Result<LabelDefinition, StorageError>> {
         try {
             const definition = createLabelDefinition(name, color);
             const result = await this.saveLabelDefinition(definition);
@@ -93,7 +96,7 @@ export class LabelService {
      * Update an existing label definition
      */
     async updateLabelDefinition(
-        id: string, 
+        id: string,
         updates: Partial<Omit<LabelDefinition, 'id' | 'createdAt'>>
     ): Promise<Result<LabelDefinition, StorageError>> {
         const existing = this.labelDefinitions.get(id);
@@ -131,13 +134,15 @@ export class LabelService {
     /**
      * Save a label definition to storage
      */
-    private async saveLabelDefinition(definition: LabelDefinition): Promise<Result<void, StorageError>> {
+    private async saveLabelDefinition(
+        definition: LabelDefinition
+    ): Promise<Result<void, StorageError>> {
         // Create IDBRecord-compatible object
         const storedDef = {
             ...definition,
             // Ensure all properties are stored as unknown for IDBRecord compatibility
         } as StoredLabelDefinition;
-        
+
         const result = await saveRecord(storedDef, STORE_LABELS);
         if (result.ok) {
             this.labelDefinitions.set(definition.id, definition);
@@ -150,7 +155,7 @@ export class LabelService {
      */
     onDefinitionsChanged(listener: (defs: readonly LabelDefinition[]) => void): () => void {
         this.listeners.push(listener);
-        
+
         // Return unsubscribe function
         return () => {
             const index = this.listeners.indexOf(listener);
@@ -165,7 +170,9 @@ export class LabelService {
      */
     private notifyListeners(): void {
         const definitions = this.getLabelDefinitions();
-        this.listeners.forEach(listener => listener(definitions));
+        this.listeners.forEach((listener) => {
+            listener(definitions);
+        });
     }
 
     /**
@@ -192,7 +199,7 @@ export class LabelService {
     removeLabelFromDataset(datasetId: string, labelId: string): void {
         const labels = this.timeSeriesLabels.get(datasetId);
         if (labels) {
-            const index = labels.findIndex(l => l.id === labelId);
+            const index = labels.findIndex((l) => l.id === labelId);
             if (index >= 0) {
                 labels.splice(index, 1);
                 // TODO: Persist to IndexedDB

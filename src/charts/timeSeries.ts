@@ -1,6 +1,6 @@
+import type { TimeSeriesLabel } from '../domain/labels';
 import { installModalFocusTrap } from '../ui/dom';
 import { getLabelDefinitions } from '../ui/dropdowns';
-import type { TimeSeriesLabel } from '../domain/labels';
 
 import { init, type EChartOption, type ECharts } from './echarts';
 
@@ -23,7 +23,10 @@ export interface TimeSeriesData {
     getLabels(): ReadonlyArray<TimeSeriesLabel>;
     addLabel(label: TimeSeriesLabel): void;
     removeLabel(labelId: string): void;
-    updateLabel(labelId: string, updates: Partial<Omit<TimeSeriesLabel, 'id' | 'datasetId' | 'createdAt'>>): void;
+    updateLabel(
+        labelId: string,
+        updates: Partial<Omit<TimeSeriesLabel, 'id' | 'datasetId' | 'createdAt'>>
+    ): void;
 }
 
 /**
@@ -81,13 +84,14 @@ export class TimeSeriesChart {
     private chartConfigCleanup: (() => void) | null = null;
     private lastConfig: TimeSeriesConfig | null = null;
     private currentData: ReadonlyArray<readonly [number | string, number]> = [];
-    
-        // Label drawing state
-    private labelMode: boolean = false;
-    private isDrawing: boolean = false;
+
+    // Label drawing state
+    private labelMode = false;
+    private isDrawing = false;
     private drawStartX: number | null = null;
     private currentLabelDefId: string | null = null;
-    
+    private drawingCanvas: HTMLCanvasElement | null = null; // Canvas overlay for real-time drawing
+
     private readonly handleZoomEvent = (params: DataZoomEvent): void => {
         this.updateYAxisFromZoom(params.start, params.end);
     };
@@ -147,6 +151,7 @@ export class TimeSeriesChart {
         const onResize = () => {
             if (this.chart) {
                 this.chart.resize();
+                this.resizeDrawingCanvas(); // Resize canvas overlay too
             }
         };
         window.addEventListener('resize', onResize);
@@ -160,6 +165,7 @@ export class TimeSeriesChart {
             this.resizeTimeout = window.setTimeout(() => {
                 if (this.chart) {
                     this.chart.resize();
+                    this.resizeDrawingCanvas(); // Resize canvas overlay too
                 }
             }, 100);
         });
@@ -173,6 +179,7 @@ export class TimeSeriesChart {
             this.resizeTimeout = window.setTimeout(() => {
                 if (this.chart) {
                     this.chart.resize();
+                    this.resizeDrawingCanvas(); // Resize canvas overlay too
                 }
             }, 150); // Slightly longer delay for panel animations
         };
@@ -425,7 +432,7 @@ export class TimeSeriesChart {
     setLabelMode(enabled: boolean, labelDefId?: string): void {
         this.labelMode = enabled;
         this.currentLabelDefId = labelDefId || null;
-        
+
         if (this.chart) {
             if (enabled) {
                 this.enableLabelDrawing();
@@ -433,8 +440,15 @@ export class TimeSeriesChart {
                 this.disableLabelDrawing();
             }
         }
-        
+
         this.emit('label-mode-changed', { enabled });
+    }
+
+    /**
+     * Update the current label definition (when switching active label while in label mode)
+     */
+    setCurrentLabelDefinition(labelDefId: string | null): void {
+        this.currentLabelDefId = labelDefId;
     }
 
     /**
@@ -444,22 +458,89 @@ export class TimeSeriesChart {
         return this.labelMode;
     }
 
+    // Label highlighting state
+    private highlightedLabelId: string | null = null;
+
+    /**
+     * Highlight a specific label on the chart
+     */
+    highlightLabel(labelId: string | null): void {
+        this.highlightedLabelId = labelId;
+
+        // Refresh the chart to apply highlighting
+        if (this.lastConfig) {
+            this.updateDisplay(this.lastConfig);
+        }
+    }
+
+    /**
+     * Clear any label highlighting
+     */
+    clearLabelHighlight(): void {
+        this.highlightLabel(null);
+    }
+
     /**
      * Enable interactive label drawing
      */
     private enableLabelDrawing(): void {
         if (!this.chart) return;
 
-        // Disable default interactions (zoom/pan)
+        // Disable default interactions (zoom/pan) and tooltip/crosshair completely
         this.chart.setOption({
-            dataZoom: [
-                { disabled: true },
-                { disabled: true }
-            ]
+            dataZoom: [{ disabled: true }, { disabled: true }],
+            tooltip: {
+                show: false, // Completely hide tooltip
+            },
+            axisPointer: {
+                show: false, // Disable axis pointer globally
+            },
         });
+
+        // Setup canvas overlay for real-time drawing
+        this.setupDrawingCanvas();
 
         // Setup drawing event listeners
         this.setupLabelDrawingEvents();
+    }
+
+    /**
+     * Setup canvas overlay for real-time drawing feedback
+     */
+    private setupDrawingCanvas(): void {
+        if (!this.chart) return;
+
+        const chartContainer = this.chart.getDom();
+        if (!chartContainer) return;
+
+        // Create canvas overlay
+        this.drawingCanvas = document.createElement('canvas');
+        this.drawingCanvas.style.position = 'absolute';
+        this.drawingCanvas.style.top = '0';
+        this.drawingCanvas.style.left = '0';
+        this.drawingCanvas.style.pointerEvents = 'none'; // Allow mouse events to pass through
+        this.drawingCanvas.style.zIndex = '1000';
+
+        // Size the canvas to match the chart
+        this.resizeDrawingCanvas();
+
+        // Add to container
+        chartContainer.style.position = 'relative';
+        chartContainer.appendChild(this.drawingCanvas);
+    }
+
+    /**
+     * Resize the drawing canvas to match the chart container
+     */
+    private resizeDrawingCanvas(): void {
+        if (!this.chart || !this.drawingCanvas) return;
+
+        const chartContainer = this.chart.getDom();
+        if (!chartContainer) return;
+
+        const containerRect = chartContainer.getBoundingClientRect();
+        this.drawingCanvas.width = containerRect.width;
+        this.drawingCanvas.height = containerRect.height;
     }
 
     /**
@@ -468,21 +549,39 @@ export class TimeSeriesChart {
     private disableLabelDrawing(): void {
         if (!this.chart) return;
 
-        // Re-enable default interactions
+        // Re-enable default interactions and restore tooltip/crosshair
         this.chart.setOption({
-            dataZoom: [
-                { disabled: false },
-                { disabled: false }
-            ]
+            dataZoom: [{ disabled: false }, { disabled: false }],
+            tooltip: {
+                show: true, // Re-enable tooltip
+                trigger: 'axis',
+                axisPointer: { type: 'cross' }, // Restore crosshair
+            },
+            axisPointer: {
+                show: true, // Re-enable axis pointer globally
+            },
         });
 
         // Remove drawing graphics
         this.clearDrawingGraphics();
-        
+
+        // Clean up canvas overlay
+        this.cleanupDrawingCanvas();
+
         // Reset drawing state
         this.isDrawing = false;
         this.drawStartX = null;
         this.clearDrawingGraphics();
+    }
+
+    /**
+     * Clean up the drawing canvas overlay
+     */
+    private cleanupDrawingCanvas(): void {
+        if (this.drawingCanvas && this.drawingCanvas.parentElement) {
+            this.drawingCanvas.parentElement.removeChild(this.drawingCanvas);
+            this.drawingCanvas = null;
+        }
     }
 
     /**
@@ -502,16 +601,17 @@ export class TimeSeriesChart {
      */
     private handleDrawingMouseDown(event: any): void {
         if (!this.chart || !this.labelMode) return;
-        
+
         // Allow drawing anywhere in the chart area
         // The event comes from the zrender canvas, so we can proceed
         const pixelPoint = [event.offsetX, event.offsetY];
         const dataPoint = (this.chart as any).convertFromPixel({ gridIndex: 0 }, pixelPoint);
-        
+
         if (dataPoint && dataPoint[0] !== null) {
             this.isDrawing = true;
             this.drawStartX = dataPoint[0] as number;
-            this.showStartLine(pixelPoint[0]);
+            // Show initial canvas line at the start position
+            this.showCanvasPreviewLine(pixelPoint[0]);
         }
     }
 
@@ -520,16 +620,170 @@ export class TimeSeriesChart {
      */
     private handleDrawingMouseMove(event: any): void {
         if (!this.chart || !this.labelMode) return;
-        
+
         const pixelPoint = [event.offsetX, event.offsetY];
-        
+
         if (this.isDrawing && this.drawStartX !== null) {
-            // Update drawing rectangle
-            this.updateDrawingRectangle(pixelPoint);
+            // Update drawing rectangle using canvas overlay for real-time feedback
+            this.updateDrawingCanvasRectangle(pixelPoint);
         } else {
-            // Show preview line when hovering
-            this.showStartLine(pixelPoint[0]);
+            // Show preview line when hovering using canvas
+            this.showCanvasPreviewLine(pixelPoint[0]);
         }
+    }
+
+    /**
+     * Show a solid vertical line indicator using canvas
+     */
+    private showCanvasPreviewLine(pixelX: number): void {
+        if (!this.chart || !this.drawingCanvas) return;
+
+        const chartArea = this.getChartPlottingArea();
+        if (!chartArea) return;
+
+        const ctx = this.drawingCanvas.getContext('2d');
+        if (!ctx) return;
+
+        // Clear canvas
+        ctx.clearRect(0, 0, this.drawingCanvas.width, this.drawingCanvas.height);
+
+        // Convert pixel position to data position and snap to nearest data point
+        const dataPoint = (this.chart as any).convertFromPixel({ gridIndex: 0 }, [
+            pixelX,
+            chartArea.y,
+        ]);
+        if (!dataPoint || dataPoint[0] === null) return;
+
+        // Convert snapped data position back to pixel for precise drawing
+        const snappedPixel = (this.chart as any).convertToPixel({ gridIndex: 0 }, [
+            dataPoint[0],
+            0,
+        ]);
+        if (!snappedPixel || typeof snappedPixel[0] !== 'number') return;
+
+        const snappedX = snappedPixel[0];
+
+        // Get the color for the current label definition (solid, no transparency)
+        const lineColor = this.currentLabelDefId
+            ? this.getLabelColor(this.currentLabelDefId, 1.0)
+            : '#007bff';
+
+        // Draw solid vertical line at snapped position
+        ctx.strokeStyle = lineColor;
+        ctx.lineWidth = 2;
+        ctx.setLineDash([]); // Solid line, no dashes
+
+        ctx.beginPath();
+        ctx.moveTo(snappedX, chartArea.y);
+        ctx.lineTo(snappedX, chartArea.y + chartArea.height);
+        ctx.stroke();
+    }
+
+    /**
+     * Update the drawing rectangle on canvas overlay (real-time)
+     */
+    private updateDrawingCanvasRectangle(pixelPoint: number[]): void {
+        if (!this.chart || !this.drawingCanvas || this.drawStartX === null) return;
+
+        // Get snapped pixel coordinates for both start and current positions
+        const startPixel = (this.chart as any).convertToPixel({ gridIndex: 0 }, [
+            this.drawStartX,
+            0,
+        ]);
+
+        // Snap the current position to data points too
+        const currentDataPoint = (this.chart as any).convertFromPixel({ gridIndex: 0 }, pixelPoint);
+        if (!currentDataPoint || currentDataPoint[0] === null) return;
+
+        const currentSnappedPixel = (this.chart as any).convertToPixel({ gridIndex: 0 }, [
+            currentDataPoint[0],
+            0,
+        ]);
+
+        // Get the actual chart plotting area (where data is displayed)
+        const chartArea = this.getChartPlottingArea();
+
+        if (
+            !startPixel ||
+            !currentSnappedPixel ||
+            !chartArea ||
+            typeof startPixel[0] !== 'number' ||
+            typeof currentSnappedPixel[0] !== 'number'
+        ) {
+            return;
+        }
+
+        const ctx = this.drawingCanvas.getContext('2d');
+        if (!ctx) return;
+
+        // Clear canvas
+        ctx.clearRect(0, 0, this.drawingCanvas.width, this.drawingCanvas.height);
+
+        const startX = startPixel[0];
+        const currentX = currentSnappedPixel[0];
+        const x = Math.min(startX, currentX);
+        const width = Math.abs(currentX - startX);
+
+        // Get colors for the current label definition
+        const labelColor = this.currentLabelDefId
+            ? this.getLabelColor(this.currentLabelDefId, 0.3)
+            : 'rgba(0, 123, 255, 0.2)';
+        const strokeColor = this.currentLabelDefId
+            ? this.getLabelColor(this.currentLabelDefId, 1.0)
+            : '#007bff';
+
+        // Draw rectangle on canvas - use exact chart plotting area dimensions
+        ctx.fillStyle = labelColor;
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = 2;
+
+        ctx.fillRect(x, chartArea.y, width, chartArea.height);
+        ctx.strokeRect(x, chartArea.y, width, chartArea.height);
+    }
+
+    /**
+     * Get the actual chart plotting area where data is displayed
+     */
+    private getChartPlottingArea(): { x: number; y: number; width: number; height: number } | null {
+        if (!this.chart) return null;
+
+        try {
+            // Get container dimensions
+            const container = this.chart.getDom();
+            const containerWidth = container.clientWidth;
+            const containerHeight = container.clientHeight;
+
+            // Use the actual grid configuration with minimal buffers for precision
+            // grid: { left: 40, right: 16, top: 16, bottom: 65 }
+            const left = 42; // Y-axis area + minimal buffer
+            const top = 18; // Title/legend area + minimal buffer
+            const right = 18; // Right margin + minimal buffer
+            const bottom = 67; // X-axis + dataZoom area + minimal buffer
+
+            // Calculate the actual plotting area
+            const plottingWidth = containerWidth - left - right;
+            const plottingHeight = containerHeight - top - bottom;
+
+            return {
+                x: Math.round(left),
+                y: Math.round(top),
+                width: Math.round(plottingWidth),
+                height: Math.round(plottingHeight),
+            };
+        } catch (_error) {
+            // Failed to get precise chart area, use fallback
+        }
+
+        // Conservative fallback using the same grid values
+        const container = this.chart.getDom();
+        const rect = container.getBoundingClientRect();
+
+        return {
+            x: 42, // Match updated left margin
+            y: 18, // Match updated top margin
+            width: rect.width - 60, // left + right = 42 + 18
+            height: rect.height - 85, // top + bottom = 18 + 67
+        };
     }
 
     /**
@@ -537,122 +791,25 @@ export class TimeSeriesChart {
      */
     private handleDrawingMouseUp(event: any): void {
         if (!this.chart || !this.labelMode || !this.isDrawing || this.drawStartX === null) return;
-        
+
         const pixelPoint = [event.offsetX, event.offsetY];
         const dataPoint = (this.chart as any).convertFromPixel({ gridIndex: 0 }, pixelPoint);
-        
+
         if (dataPoint && dataPoint[0] !== null) {
             const endX = dataPoint[0] as number;
             this.finalizeLabelDrawing(this.drawStartX, endX);
         }
-        
+
+        // Clear the drawing canvas
+        if (this.drawingCanvas) {
+            const ctx = this.drawingCanvas.getContext('2d');
+            ctx?.clearRect(0, 0, this.drawingCanvas.width, this.drawingCanvas.height);
+        }
+
         // Reset drawing state
         this.isDrawing = false;
         this.drawStartX = null;
         this.clearDrawingGraphics();
-    }
-
-    /**
-     * Show a vertical line to indicate drawing start position
-     */
-    private showStartLine(pixelX: number): void {
-        if (!this.chart) return;
-        
-        const gridRect = this.getGridRect();
-        if (!gridRect) return;
-        
-        this.chart.setOption({
-            graphic: {
-                elements: [{
-                    id: 'label-start-line',
-                    type: 'line',
-                    shape: {
-                        x1: pixelX,
-                        y1: gridRect.y,
-                        x2: pixelX,
-                        y2: gridRect.y + gridRect.height
-                    },
-                    style: {
-                        stroke: '#666',
-                        lineWidth: 1,
-                        lineDash: [4, 4]
-                    },
-                    silent: true,
-                    z: 100
-                }]
-            }
-        });
-    }
-
-    /**
-     * Update the drawing rectangle as user drags
-     */
-    private updateDrawingRectangle(pixelPoint: number[]): void {
-        if (!this.chart || this.drawStartX === null) return;
-        
-        const startPixel = (this.chart as any).convertToPixel({ gridIndex: 0 }, [this.drawStartX, 0]);
-        const gridRect = this.getGridRect();
-        
-        if (!startPixel || !gridRect || typeof startPixel[0] !== 'number' || typeof pixelPoint[0] !== 'number') return;
-        
-        const startX = startPixel[0] as number;
-        const currentX = pixelPoint[0] as number;
-        const x = Math.min(startX, currentX);
-        const width = Math.abs(currentX - startX);
-        
-        this.chart.setOption({
-            graphic: {
-                elements: [{
-                    id: 'label-drawing-rect',
-                    type: 'rect',
-                    shape: {
-                        x,
-                        y: gridRect.y,
-                        width,
-                        height: gridRect.height
-                    },
-                    style: {
-                        fill: 'rgba(0, 123, 255, 0.2)',
-                        stroke: '#007bff',
-                        lineWidth: 2
-                    },
-                    silent: true,
-                    z: 99
-                }]
-            }
-        });
-    }
-
-    /**
-     * Get chart grid rectangle area
-     */
-    private getGridRect(): { x: number; y: number; width: number; height: number } | null {
-        if (!this.chart) return null;
-        
-        try {
-            // Try to get grid component area from chart model
-            const model = (this.chart as any).getModel();
-            const gridComponent = model.getComponent('grid', 0);
-            if (gridComponent && gridComponent.coordinateSystem) {
-                return gridComponent.coordinateSystem.getArea();
-            }
-        } catch (error) {
-            console.warn('Could not get grid area:', error);
-        }
-        
-        // Fallback: estimate from chart container
-        const container = this.chart.getDom();
-        if (container) {
-            const rect = container.getBoundingClientRect();
-            return {
-                x: rect.width * 0.1, // Approximate left margin
-                y: rect.height * 0.1, // Approximate top margin
-                width: rect.width * 0.8, // Approximate chart width
-                height: rect.height * 0.8 // Approximate chart height
-            };
-        }
-        
-        return null;
     }
 
     /**
@@ -661,11 +818,20 @@ export class TimeSeriesChart {
     private finalizeLabelDrawing(startX: number, endX: number): void {
         const source = this.getCurrentSource();
         if (!source || !this.currentLabelDefId) return;
-        
+
         // Ensure proper order
         const actualStartX = Math.min(startX, endX);
         const actualEndX = Math.max(startX, endX);
-        
+
+        // Prevent creating labels that are too narrow (1 point wide or less)
+        const labelWidth = Math.abs(actualEndX - actualStartX);
+        const minLabelWidth = 1; // Minimum time difference to create a meaningful label
+
+        if (labelWidth < minLabelWidth) {
+            console.log('Label too narrow, minimum width required:', minLabelWidth);
+            return; // Don't create the label
+        }
+
         // Create the label
         try {
             const label: TimeSeriesLabel = {
@@ -677,13 +843,13 @@ export class TimeSeriesChart {
                 createdAt: Date.now(),
                 updatedAt: Date.now(),
             };
-            
+
             // Add to data source
             source.addLabel(label);
-            
+
             // Emit event
             this.emit('label-drawn', { label });
-            
+
             // Refresh display to show the new label
             if (this.lastConfig) {
                 this.updateDisplay(this.lastConfig);
@@ -698,17 +864,20 @@ export class TimeSeriesChart {
      */
     private clearDrawingGraphics(): void {
         if (!this.chart) return;
-        
+
         this.chart.setOption({
             graphic: {
-                elements: [{
-                    id: 'label-start-line',
-                    $action: 'remove'
-                }, {
-                    id: 'label-drawing-rect',
-                    $action: 'remove'
-                }]
-            }
+                elements: [
+                    {
+                        id: 'label-start-line',
+                        $action: 'remove',
+                    },
+                    {
+                        id: 'label-drawing-rect',
+                        $action: 'remove',
+                    },
+                ],
+            },
         });
     }
 
@@ -723,43 +892,52 @@ export class TimeSeriesChart {
         if (labels.length === 0) return undefined;
 
         // Create markArea data for each label
-        const markAreaData = labels.map(label => [
-            {
-                xAxis: label.startTime,
-                itemStyle: {
-                    color: this.getLabelColor(label.labelDefId, 0.3),
+        const markAreaData = labels.map((label) => {
+            const isHighlighted = this.highlightedLabelId === label.id;
+            const opacity = isHighlighted ? 0.6 : 0.3; // Higher opacity for highlighted labels
+
+            return [
+                {
+                    xAxis: label.startTime,
+                    itemStyle: {
+                        color: this.getLabelColor(label.labelDefId, opacity),
+                        borderColor: isHighlighted
+                            ? this.getLabelColor(label.labelDefId, 1.0)
+                            : undefined,
+                        borderWidth: isHighlighted ? 2 : 0,
+                    },
+                    label: {
+                        show: true,
+                        position: 'insideTopLeft',
+                        formatter: () => {
+                            // You can customize the label text here
+                            return this.getLabelName(label.labelDefId);
+                        },
+                    },
                 },
-                label: {
-                    show: true,
-                    position: 'insideTopLeft',
-                    formatter: () => {
-                        // You can customize the label text here
-                        return this.getLabelName(label.labelDefId);
-                    }
-                }
-            },
-            {
-                xAxis: label.endTime,
-            }
-        ]);
+                {
+                    xAxis: label.endTime,
+                },
+            ];
+        });
 
         return {
             silent: true, // Don't intercept mouse events - allow drawing over labels
-            data: markAreaData as any
+            data: markAreaData as any,
         };
     }
 
     /**
      * Get display color for a label definition
      */
-    private getLabelColor(labelDefId: string, opacity: number = 1): string {
+    private getLabelColor(labelDefId: string, opacity = 1): string {
         // Parse the label ID format: "label-{index}"
         const match = labelDefId.match(/^label-(\d+)$/);
         if (match && match[1]) {
             const index = parseInt(match[1], 10);
             const labelDefinitions = getLabelDefinitions();
             const definition = labelDefinitions[index];
-            if (definition) {
+            if (definition && definition.color && typeof definition.color === 'string') {
                 // Convert hex to rgba with opacity
                 const hex = definition.color.replace('#', '');
                 const r = parseInt(hex.substr(0, 2), 16);
@@ -768,22 +946,22 @@ export class TimeSeriesChart {
                 return `rgba(${r}, ${g}, ${b}, ${opacity})`;
             }
         }
-        
+
         // Fallback for hardcoded labels or invalid IDs
         const colors: Record<string, string> = {
             'default-positive': '#28a745',
             'default-negative': '#dc3545',
-            'default-neutral': '#6c757d'
+            'default-neutral': '#6c757d',
         };
-        
+
         const baseColor = colors[labelDefId] || '#007bff';
-        
+
         // Convert hex to rgba with opacity
         const hex = baseColor.replace('#', '');
         const r = parseInt(hex.substr(0, 2), 16);
         const g = parseInt(hex.substr(2, 2), 16);
         const b = parseInt(hex.substr(4, 2), 16);
-        
+
         return `rgba(${r}, ${g}, ${b}, ${opacity})`;
     }
 
@@ -801,14 +979,14 @@ export class TimeSeriesChart {
                 return definition.name;
             }
         }
-        
+
         // Fallback for hardcoded labels or invalid IDs
         const names: Record<string, string> = {
             'default-positive': 'Positive',
             'default-negative': 'Negative',
-            'default-neutral': 'Neutral'
+            'default-neutral': 'Neutral',
         };
-        
+
         return names[labelDefId] || labelDefId;
     }
 
@@ -1166,21 +1344,21 @@ function bindUIControls(chart: TimeSeriesChart): void {
     btnToggleLabeled?.addEventListener('click', () => {
         chart.toggleLabeled();
     });
-    
+
     // Label mode toggle
     btnLabelMode?.addEventListener('click', () => {
         const isEnabled = chart.isLabelModeEnabled();
         const newState = !isEnabled;
-        
+
         // Update button state
         btnLabelMode.setAttribute('aria-pressed', newState.toString());
         btnLabelMode.classList.toggle('active', newState);
-        
+
         if (newState) {
             // Get selected label from active-label dropdown
             const activeLabelDropdown = document.querySelector<any>('#active-label');
             const selectedLabelValue = activeLabelDropdown?.value || null;
-            
+
             if (!selectedLabelValue || selectedLabelValue === '') {
                 // No label selected, show error or create default
                 console.warn('No active label selected for drawing mode');
@@ -1189,7 +1367,7 @@ function bindUIControls(chart: TimeSeriesChart): void {
                 btnLabelMode.classList.remove('active');
                 return;
             }
-            
+
             // Enable label mode with selected label definition
             chart.setLabelMode(true, selectedLabelValue);
         } else {
@@ -1197,6 +1375,18 @@ function bindUIControls(chart: TimeSeriesChart): void {
             chart.setLabelMode(false);
         }
     });
+
+    // Listen for changes to the active label dropdown
+    const activeLabelDropdown = document.querySelector('#active-label');
+    if (activeLabelDropdown) {
+        activeLabelDropdown.addEventListener('change', () => {
+            // If label mode is currently enabled, update the current label definition
+            if (chart.isLabelModeEnabled()) {
+                const selectedLabelValue = (activeLabelDropdown as HTMLSelectElement).value || null;
+                chart.setCurrentLabelDefinition(selectedLabelValue);
+            }
+        });
+    }
 
     // Bind axis dropdown changes
     const xDropdown = document.querySelector('#x-axis');

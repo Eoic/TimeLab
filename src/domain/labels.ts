@@ -57,22 +57,20 @@ export const DEFAULT_LABEL_DEFINITIONS: readonly LabelDefinition[] = [
  * Validation helpers
  */
 export function isValidTimeRange(startTime: number, endTime: number): boolean {
-    return Number.isFinite(startTime) && 
-           Number.isFinite(endTime) && 
-           startTime < endTime;
+    return Number.isFinite(startTime) && Number.isFinite(endTime) && startTime < endTime;
 }
 
 export function validateLabelDefinition(def: Partial<LabelDefinition>): string[] {
     const errors: string[] = [];
-    
+
     if (!def.name || def.name.trim().length === 0) {
         errors.push('Name is required');
     }
-    
+
     if (!def.color || !/^#[0-9a-fA-F]{6}$/.test(def.color)) {
         errors.push('Valid hex color is required');
     }
-    
+
     return errors;
 }
 
@@ -80,15 +78,15 @@ export function validateLabelDefinition(def: Partial<LabelDefinition>): string[]
  * Create a new label with generated ID and timestamps
  */
 export function createTimeSeriesLabel(
-    startTime: number, 
-    endTime: number, 
-    labelDefId: string, 
+    startTime: number,
+    endTime: number,
+    labelDefId: string,
     datasetId: string
 ): TimeSeriesLabel {
     if (!isValidTimeRange(startTime, endTime)) {
         throw new Error('Invalid time range');
     }
-    
+
     const now = Date.now();
     return {
         id: crypto.randomUUID(),
@@ -109,7 +107,7 @@ export function createLabelDefinition(name: string, color: string): LabelDefinit
     if (errors.length > 0) {
         throw new Error(`Invalid label definition: ${errors.join(', ')}`);
     }
-    
+
     const now = Date.now();
     return {
         id: crypto.randomUUID(),
@@ -128,10 +126,10 @@ export function hexToRgba(hex: string, alpha: number): string {
     if (!result || !result[1] || !result[2] || !result[3]) {
         return `rgba(0, 0, 0, ${alpha})`;
     }
-    
+
     const r = parseInt(result[1], 16);
     const g = parseInt(result[2], 16);
     const b = parseInt(result[3], 16);
-    
+
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }

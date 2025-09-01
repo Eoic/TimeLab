@@ -8,6 +8,7 @@ import { getDataManager } from './data';
 import { setupDropdowns, setupLabelsEmptyStates } from './ui';
 import { setupLabelManagement } from './ui/labelManagement';
 import { setupLabelModal, setupModalTriggers, loadHistoryEntries } from './ui/labelModal';
+import { setupLabelsPanel } from './ui/labelsPanel';
 
 import { setupCheckboxEnterToggle } from '@/a11y/checkbox';
 import { defineDropdown } from '@/components/dropdown';
@@ -26,6 +27,9 @@ defineDropdown();
 
 // Initialize empty chart
 const timeSeriesChart = initializeTimeSeriesChart();
+
+// Setup advanced labels panel with highlighting (replaces simple version)
+setupLabelsPanel(timeSeriesChart);
 
 // Connect data manager to chart
 const dataManager = getDataManager();

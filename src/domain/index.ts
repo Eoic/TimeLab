@@ -14,10 +14,10 @@ export type {
 export { validateTimeSeriesDataset, isValidTimeSeriesDataset } from './validators';
 
 // Label-related exports
-export { 
-    createTimeSeriesLabel, 
-    createLabelDefinition, 
-    isValidTimeRange, 
+export {
+    createTimeSeriesLabel,
+    createLabelDefinition,
+    isValidTimeRange,
     validateLabelDefinition,
     hexToRgba,
     DEFAULT_LABEL_DEFINITIONS,

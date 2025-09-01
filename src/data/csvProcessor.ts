@@ -4,6 +4,7 @@
 
 import type { TimeSeriesData } from '../charts/timeSeries';
 import type { TimeSeriesLabel } from '../domain/labels';
+import { getAllLabels, saveLabel, deleteLabel } from '../platform/storage';
 import type { TDataFile } from '../uploads';
 
 /**
@@ -34,6 +35,9 @@ export class CSVTimeSeriesData implements TimeSeriesData {
         } else {
             this.labeled = false;
         }
+
+        // Load existing labels for this dataset
+        void this.loadLabelsFromStorage();
     }
 
     getData(xColumn: string, yColumn: string): ReadonlyArray<readonly [number, number]> {
@@ -75,33 +79,108 @@ export class CSVTimeSeriesData implements TimeSeriesData {
 
     addLabel(label: TimeSeriesLabel): void {
         this.labels.push(label);
-        // Trigger persistence - this will be handled by a label service later
+        // Save to storage
+        void this.saveLabelToStorage(label);
         this.notifyLabelsChanged();
     }
 
     removeLabel(labelId: string): void {
-        const index = this.labels.findIndex(label => label.id === labelId);
+        const index = this.labels.findIndex((label) => label.id === labelId);
         if (index >= 0) {
             this.labels.splice(index, 1);
+            // Remove from storage
+            void this.removeLabelFromStorage(labelId);
             this.notifyLabelsChanged();
         }
     }
 
-    updateLabel(labelId: string, updates: Partial<Omit<TimeSeriesLabel, 'id' | 'datasetId' | 'createdAt'>>): void {
-        const index = this.labels.findIndex(label => label.id === labelId);
+    updateLabel(
+        labelId: string,
+        updates: Partial<Omit<TimeSeriesLabel, 'id' | 'datasetId' | 'createdAt'>>
+    ): void {
+        const index = this.labels.findIndex((label) => label.id === labelId);
         if (index >= 0 && this.labels[index]) {
             const existingLabel = this.labels[index];
-            const updatedLabel: TimeSeriesLabel = { 
+            const updatedLabel: TimeSeriesLabel = {
                 id: existingLabel.id,
                 datasetId: existingLabel.datasetId,
                 createdAt: existingLabel.createdAt,
                 startTime: updates.startTime ?? existingLabel.startTime,
                 endTime: updates.endTime ?? existingLabel.endTime,
                 labelDefId: updates.labelDefId ?? existingLabel.labelDefId,
-                updatedAt: Date.now() 
+                updatedAt: Date.now(),
             };
             this.labels[index] = updatedLabel;
+            // Update in storage
+            void this.saveLabelToStorage(updatedLabel);
             this.notifyLabelsChanged();
+        }
+    }
+
+    /**
+     * Load labels for this dataset from IndexedDB
+     */
+    private async loadLabelsFromStorage(): Promise<void> {
+        try {
+            // Get all stored labels
+            const result = await getAllLabels<any>();
+            if (result.ok) {
+                // Filter labels for this dataset
+                const datasetLabels = result.value.filter(
+                    (label: any) => label.datasetId === this.id
+                ) as TimeSeriesLabel[];
+                this.labels = datasetLabels;
+
+                // Notify that labels have been loaded
+                if (datasetLabels.length > 0) {
+                    this.notifyLabelsChanged();
+                }
+            }
+        } catch (error) {
+            // eslint-disable-next-line no-console
+            console.warn('Failed to load labels from storage:', error);
+        }
+    }
+
+    /**
+     * Save a label to IndexedDB
+     */
+    private async saveLabelToStorage(label: TimeSeriesLabel): Promise<void> {
+        try {
+            // Convert label to a compatible record format
+            const labelRecord = {
+                id: label.id,
+                startTime: label.startTime,
+                endTime: label.endTime,
+                labelDefId: label.labelDefId,
+                datasetId: label.datasetId,
+                createdAt: label.createdAt,
+                updatedAt: label.updatedAt,
+            };
+            const result = await saveLabel(labelRecord);
+            if (!result.ok) {
+                // eslint-disable-next-line no-console
+                console.warn('Failed to save label to storage:', result.error);
+            }
+        } catch (error) {
+            // eslint-disable-next-line no-console
+            console.warn('Error saving label to storage:', error);
+        }
+    }
+
+    /**
+     * Remove a label from IndexedDB
+     */
+    private async removeLabelFromStorage(labelId: string): Promise<void> {
+        try {
+            const result = await deleteLabel(labelId);
+            if (!result.ok) {
+                // eslint-disable-next-line no-console
+                console.warn('Failed to remove label from storage:', result.error);
+            }
+        } catch (error) {
+            // eslint-disable-next-line no-console
+            console.warn('Error removing label from storage:', error);
         }
     }
 
