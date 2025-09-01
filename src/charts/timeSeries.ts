@@ -91,6 +91,7 @@ export class TimeSeriesChart {
     private labelOverlay: HTMLDivElement | null = null;
     private labelStartX: number | null = null;
     private activeLabelRect: HTMLDivElement | null = null;
+    private activeLabelLine: HTMLDivElement | null = null;
     private readonly handleZoomEvent = (params: DataZoomEvent): void => {
         this.updateYAxisFromZoom(params.start, params.end);
     };
@@ -466,20 +467,37 @@ export class TimeSeriesChart {
         if (!this.labelMode || !this.labelOverlay) {
             return;
         }
-        e.stopPropagation();
-        e.preventDefault();
-        this.labelOverlay.setPointerCapture(e.pointerId);
-        this.labelStartX = e.offsetX;
+
         const def = this.getActiveLabelDefinition();
         if (!def) {
             return;
         }
+
+        e.stopPropagation();
+        e.preventDefault();
+        this.labelOverlay.setPointerCapture(e.pointerId);
+
+        const startX = e.offsetX;
+        this.labelStartX = startX;
+
+        const line = document.createElement('div');
+        line.style.position = 'absolute';
+        line.style.top = '0';
+        line.style.bottom = '0';
+        line.style.left = String(startX) + 'px';
+        line.style.width = '1px';
+        line.style.background = def.color;
+        line.style.pointerEvents = 'none';
+        this.labelOverlay.appendChild(line);
+        this.activeLabelLine = line;
+
         const rect = document.createElement('div');
         rect.style.position = 'absolute';
         rect.style.top = '0';
         rect.style.bottom = '0';
-        rect.style.left = String(this.labelStartX) + 'px';
+        rect.style.left = String(startX) + 'px';
         rect.style.background = hexToRgba(def.color, 0.3);
+        rect.style.pointerEvents = 'none';
         this.labelOverlay.appendChild(rect);
         this.activeLabelRect = rect;
     };
@@ -488,8 +506,10 @@ export class TimeSeriesChart {
         if (!this.labelMode || this.labelStartX === null || !this.activeLabelRect) {
             return;
         }
+
         e.stopPropagation();
         e.preventDefault();
+
         const currentX = e.offsetX;
         const left = Math.min(this.labelStartX, currentX);
         const width = Math.abs(currentX - this.labelStartX);
@@ -498,15 +518,24 @@ export class TimeSeriesChart {
     };
 
     private handleLabelEnd = (e: PointerEvent): void => {
-        if (!this.labelMode || this.labelStartX === null || !this.chart || !this.activeLabelRect) {
+        if (
+            !this.labelMode ||
+            this.labelStartX === null ||
+            !this.chart ||
+            !this.activeLabelRect ||
+            !this.activeLabelLine
+        ) {
             this.cleanupActiveRect();
             return;
         }
+
         e.stopPropagation();
         e.preventDefault();
+
         if (this.labelOverlay) {
             this.labelOverlay.releasePointerCapture(e.pointerId);
         }
+
         const endX = e.offsetX;
         const startPx = this.labelStartX;
         const start = this.chart.convertFromPixel({ xAxisIndex: 0 }, [
@@ -517,11 +546,14 @@ export class TimeSeriesChart {
             Math.max(startPx, endX),
             0,
         ])[0] as number;
+
         this.cleanupActiveRect();
+
         const def = this.getActiveLabelDefinition();
-        if (!def) {
+        if (!def || start === end) {
             return;
         }
+
         const label: TimeSeriesLabel = {
             id: uuid(),
             name: def.name,
@@ -540,7 +572,11 @@ export class TimeSeriesChart {
         if (this.activeLabelRect && this.labelOverlay) {
             this.labelOverlay.removeChild(this.activeLabelRect);
         }
+        if (this.activeLabelLine && this.labelOverlay) {
+            this.labelOverlay.removeChild(this.activeLabelLine);
+        }
         this.activeLabelRect = null;
+        this.activeLabelLine = null;
         this.labelStartX = null;
     }
 
