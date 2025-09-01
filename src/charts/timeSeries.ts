@@ -440,6 +440,9 @@ export class TimeSeriesChart {
         if (this.labelOverlay) {
             this.labelOverlay.style.pointerEvents = this.labelMode ? 'auto' : 'none';
         }
+        if (this.chart) {
+            this.chart.getDom().style.pointerEvents = this.labelMode ? 'none' : 'auto';
+        }
         if (!this.labelMode) {
             this.cleanupActiveRect();
         }
