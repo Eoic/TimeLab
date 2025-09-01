@@ -1,3 +1,5 @@
+import type { TimeSeriesLabel } from '@domain/timeSeries';
+
 import { getAllRecords, saveRecord, deleteRecord } from '../platform/storage';
 import { formatBytes, uuid } from '../shared/misc';
 import { confirmDelete } from '../ui/confirmation';
@@ -5,6 +7,7 @@ import { closeModal, openModal } from '../ui/dom';
 
 export type TDataFile = {
     labeled: boolean;
+    labels: TimeSeriesLabel[];
     id: string;
     name: string;
     size: number;
@@ -54,6 +57,17 @@ export function setupUploads(): void {
             })
         );
     };
+
+    window.addEventListener('timelab:labelsChanged', (event) => {
+        const detail = (event as CustomEvent<{ fileId: string; labels: TimeSeriesLabel[] }>).detail;
+        const file = dataFiles.find((f) => f.id === detail.fileId);
+        if (file) {
+            file.labels = detail.labels.slice();
+            file.labeled = file.labels.length > 0;
+            void saveRecord(file);
+            notifyChange();
+        }
+    });
 
     type UploadItemUI = { state: { cancelled: boolean }; detach: () => void } & {
         row: HTMLDivElement;
@@ -307,6 +321,7 @@ export function setupUploads(): void {
             addedAt: Date.now(),
             visible: true,
             labeled: false,
+            labels: [],
             text,
             demo: true,
         };
@@ -360,6 +375,7 @@ export function setupUploads(): void {
                     addedAt: Date.now(),
                     visible: true,
                     labeled: false,
+                    labels: [],
                     text,
                 };
                 dataFiles.push(record);
@@ -459,6 +475,11 @@ export function setupUploads(): void {
         try {
             const storedResult = await getAllRecords<TDataFile>();
             if (storedResult.ok && storedResult.value.length > 0) {
+                storedResult.value.forEach((record) => {
+                    if (!Array.isArray(record.labels)) {
+                        record.labels = [];
+                    }
+                });
                 dataFiles.push(...storedResult.value);
                 renderFilesList();
                 notifyChange();

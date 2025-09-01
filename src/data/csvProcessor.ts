@@ -2,6 +2,8 @@
  * CSV data processing and TimeSeriesData implementation
  */
 
+import type { TimeSeriesLabel } from '@domain/timeSeries';
+
 import type { TimeSeriesData } from '../charts/timeSeries';
 import type { TDataFile } from '../uploads';
 
@@ -15,6 +17,7 @@ export class CSVTimeSeriesData implements TimeSeriesData {
     private parsedData: ReadonlyArray<readonly number[]> = [];
     private labeled = false;
     private sourceFile: TDataFile;
+    private labels: TimeSeriesLabel[] = [];
 
     constructor(file: TDataFile) {
         this.id = file.id;
@@ -26,12 +29,8 @@ export class CSVTimeSeriesData implements TimeSeriesData {
         this.columns = columns;
         this.parsedData = data;
 
-        // Initialize labeled state from file data
-        if (file.labeled) {
-            this.labeled = file.labeled;
-        } else {
-            this.labeled = false;
-        }
+        this.labels = Array.isArray(file.labels) ? file.labels : [];
+        this.labeled = file.labeled || this.labels.length > 0;
     }
 
     getData(xColumn: string, yColumn: string): ReadonlyArray<readonly [number, number]> {
@@ -63,6 +62,21 @@ export class CSVTimeSeriesData implements TimeSeriesData {
         // The uploads system will handle persistence
         const event = new CustomEvent('timelab:labeledStateChanged', {
             detail: { fileId: this.sourceFile.id, labeled },
+        });
+        window.dispatchEvent(event);
+    }
+
+    getLabels(): ReadonlyArray<TimeSeriesLabel> {
+        return this.labels;
+    }
+
+    addLabel(label: TimeSeriesLabel): void {
+        this.labels = [...this.labels, label];
+        this.labeled = true;
+        this.sourceFile.labels = this.labels;
+        this.sourceFile.labeled = true;
+        const event = new CustomEvent('timelab:labelsChanged', {
+            detail: { fileId: this.sourceFile.id, labels: this.labels },
         });
         window.dispatchEvent(event);
     }
