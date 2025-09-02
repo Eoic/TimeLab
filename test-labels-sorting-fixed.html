@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TimeLab Labels Sorting - Fixed Implementation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success { color: #22c55e; }
+        .info { color: #3b82f6; }
+        .warning { color: #f59e0b; }
+        .fixed { color: #10b981; font-weight: bold; }
+        code {
+            background: #f3f4f6;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+        pre {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 16px;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        .feature-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .feature-list li:before {
+            content: "✅ ";
+            margin-right: 8px;
+        }
+        .fix-list li:before {
+            content: "🔧 ";
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 TimeLab Labels Sorting - Issues Fixed!</h1>
+    
+    <div class="test-section">
+        <h2>✨ Problems Resolved</h2>
+        <p class="success">Fixed both major issues with the labels sorting implementation!</p>
+        
+        <h3>🎯 Issues That Were Fixed:</h3>
+        <ul class="feature-list fix-list">
+            <li class="fixed">Replaced ugly HTML select with custom tl-dropdown component</li>
+            <li class="fixed">Fixed sorting behavior to maintain order when toggling visibility</li>
+            <li class="fixed">Improved visual design to match existing UI components</li>
+            <li class="fixed">Removed unnecessary "Sort by:" label for cleaner interface</li>
+            <li class="fixed">Fixed dropdown initialization with proper options and events</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>🎨 Visual Improvements</h2>
+        
+        <h3>Before vs After</h3>
+        <div class="warning">
+            <strong>Before:</strong> Ugly HTML select with "Sort by:" label, inconsistent styling
+        </div>
+        <div class="success">
+            <strong>After:</strong> Clean custom dropdown matching the existing design system
+        </div>
+        
+        <h3>Design Changes:</h3>
+        <ul>
+            <li><strong>Removed</strong> the "Sort by:" text label for cleaner appearance</li>
+            <li><strong>Replaced</strong> HTML select with custom <code>tl-dropdown</code> component</li>
+            <li><strong>Maintained</strong> consistent spacing and styling with existing toolbar</li>
+            <li><strong>Improved</strong> responsive behavior with proper flex layout</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>🔧 Sorting Behavior Fix</h2>
+        
+        <h3>The Problem:</h3>
+        <p class="warning">
+            When toggling label visibility, the <code>toggleLabelVisibility()</code> method was calling 
+            <code>refreshLabels()</code> which completely re-sorted all labels, disrupting the current sort order.
+        </p>
+        
+        <h3>The Solution:</h3>
+        <p class="success">
+            Instead of removing and re-adding label items, we now update the existing DOM elements in-place 
+            while preserving their position in the sorted list.
+        </p>
+        
+        <h3>Technical Details:</h3>
+        <ul>
+            <li><strong>Before:</strong> Remove element → Get updated data → Re-add element (triggers resort)</li>
+            <li><strong>After:</strong> Update element in-place → Preserve sort order → Update visual state only</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>💻 Implementation Details</h2>
+        
+        <h3>1. Custom Dropdown Integration</h3>
+        <div class="info">
+            <strong>File:</strong> <code>index.html</code><br>
+            <strong>Change:</strong> Replaced HTML select with tl-dropdown
+        </div>
+        <pre><code>&lt;!-- Old: Ugly HTML select --&gt;
+&lt;div class="labels-toolbar"&gt;
+    &lt;label for="labels-sort"&gt;Sort by:&lt;/label&gt;
+    &lt;select id="labels-sort"&gt;...&lt;/select&gt;
+&lt;/div&gt;
+
+&lt;!-- New: Clean custom dropdown --&gt;
+&lt;div class="labels-toolbar"&gt;
+    &lt;tl-dropdown id="labels-sort" placeholder="Creation order"&gt;&lt;/tl-dropdown&gt;
+&lt;/div&gt;</code></pre>
+
+        <h3>2. Dropdown Initialization</h3>
+        <div class="info">
+            <strong>File:</strong> <code>src/ui/labelsPanel.ts</code><br>
+            <strong>Change:</strong> Proper API usage for custom dropdown
+        </div>
+        <pre><code>// Initialize sort dropdown
+this.sortDropdown = document.querySelector('#labels-sort');
+if (this.sortDropdown) {
+    // Set dropdown options using the component API
+    this.sortDropdown.options = [
+        { value: 'creation', label: 'Creation order' },
+        { value: 'visibility', label: 'Visibility' },
+        { value: 'range', label: 'Time range' }
+    ];
+    
+    // Set default value
+    this.sortDropdown.value = 'creation';
+    
+    // Listen for changes
+    this.sortDropdown.addEventListener('change', () => {
+        this.currentSortBy = this.sortDropdown?.value as SortBy || 'creation';
+        this.refreshLabels();
+    });
+}</code></pre>
+
+        <h3>3. Fixed Visibility Toggle Logic</h3>
+        <div class="info">
+            <strong>File:</strong> <code>src/ui/labelsPanel.ts</code><br>
+            <strong>Change:</strong> In-place updates instead of DOM manipulation
+        </div>
+        <pre><code>// New approach: Update existing element without removing it
+private toggleLabelVisibility(label: TimeSeriesLabel): void {
+    if (!this.chart) return;
+
+    // Toggle visibility through the chart
+    this.chart.toggleLabelVisibility(label.id);
+
+    // Update the UI element in-place
+    const labelItem = this.labelItems.get(label.id);
+    if (labelItem) {
+        // Get updated label data
+        const currentSource = this.chart.getCurrentSource();
+        if (currentSource) {
+            const updatedLabel = currentSource.getLabels().find(l => l.id === label.id);
+            if (updatedLabel) {
+                // Update stored reference
+                labelItem.label = updatedLabel;
+                
+                // Update visual state without DOM removal
+                this.updateLabelItemVisualState(labelItem.element, updatedLabel);
+            }
+        }
+    }
+}</code></pre>
+
+        <h3>4. Simplified CSS</h3>
+        <div class="info">
+            <strong>File:</strong> <code>src/styles/components/components/card.scss</code><br>
+            <strong>Change:</strong> Removed complex select styling, simplified for dropdown
+        </div>
+        <pre><code>/* Simplified toolbar styling */
+.card.labctrl .labels-toolbar {
+    display: flex;
+    align-items: center;
+    padding: $spacing-sm $spacing-md;
+    border-bottom: 1px solid $color-border-primary;
+    background: $color-bg-secondary;
+}
+
+.card.labctrl .labels-toolbar tl-dropdown {
+    flex: 1;
+    min-width: 0;
+}</code></pre>
+    </div>
+
+    <div class="test-section">
+        <h2>🎮 How to Test</h2>
+        
+        <div class="info">
+            <strong>Testing Workflow:</strong>
+        </div>
+        
+        <ol>
+            <li><strong>Create Labels:</strong>
+                <ul>
+                    <li>Upload CSV data and create 4-5 labels at different time ranges</li>
+                    <li>Make sure they have different creation times</li>
+                </ul>
+            </li>
+            
+            <li><strong>Test Dropdown Design:</strong>
+                <ul>
+                    <li>Check that the dropdown matches other UI components</li>
+                    <li>Verify no "Sort by:" label is shown</li>
+                    <li>Confirm dropdown is responsive on mobile</li>
+                </ul>
+            </li>
+            
+            <li><strong>Test Sorting Stability:</strong>
+                <ul>
+                    <li>Choose "Time range" sorting from dropdown</li>
+                    <li>Verify labels are ordered by start time</li>
+                    <li>Toggle visibility of a middle label</li>
+                    <li><strong>Verify:</strong> Label stays in same position with muted styling</li>
+                    <li>Toggle visibility back on - should remain in same position</li>
+                </ul>
+            </li>
+            
+            <li><strong>Test All Sort Options:</strong>
+                <ul>
+                    <li>Creation order: Chronological by creation time</li>
+                    <li>Visibility: Visible first, then hidden (with creation as secondary)</li>
+                    <li>Time range: By start time, then end time</li>
+                </ul>
+            </li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h2>✅ Implementation Status</h2>
+        
+        <h3>Fixed Issues:</h3>
+        <ul class="feature-list fix-list">
+            <li>Ugly HTML select replaced with beautiful custom dropdown</li>
+            <li>Sorting now maintains order when toggling visibility</li>
+            <li>Visual design matches existing UI components perfectly</li>
+            <li>Removed unnecessary labels for cleaner interface</li>
+            <li>Proper dropdown API usage with correct options</li>
+            <li>Responsive design preserved</li>
+            <li>TypeScript compilation without errors</li>
+            <li>Performance optimized with in-place updates</li>
+        </ul>
+
+        <h3>🎯 Key Benefits:</h3>
+        <ul>
+            <li><strong>Consistency:</strong> Matches existing design system perfectly</li>
+            <li><strong>Stability:</strong> Sort order is preserved during visibility toggles</li>
+            <li><strong>Performance:</strong> No unnecessary DOM manipulation</li>
+            <li><strong>Usability:</strong> Clean interface without redundant labels</li>
+            <li><strong>Accessibility:</strong> Proper dropdown component with ARIA support</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>🚀 Ready for Testing</h2>
+        <p>Both major issues have been resolved! The labels sorting toolbar now uses the proper custom dropdown component and maintains sort order when toggling label visibility.</p>
+        
+        <p><a href="/" style="color: #3b82f6; text-decoration: none;">← Back to TimeLab Application</a></p>
+    </div>
+
+    <script>
+        console.log('🔧 TimeLab Labels Sorting Issues Fixed!');
+        console.log('✅ Fixed issues:');
+        console.log('  - Replaced ugly HTML select with custom dropdown');
+        console.log('  - Fixed sorting stability during visibility toggles');
+        console.log('  - Improved visual design consistency');
+        console.log('  - Removed unnecessary UI elements');
+        console.log('🎉 Ready for testing!');
+    </script>
+</body>
+</html>

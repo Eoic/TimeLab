@@ -53,24 +53,14 @@ export function updateEmptyState(
 }
 
 /**
- * Setup empty state management for labels panel
+ * Setup empty state management for history panel
  */
 export function setupLabelsEmptyStates(): void {
-    const labelsList = document.querySelector<HTMLUListElement>('.labels-list');
     const historyList = document.querySelector<HTMLUListElement>('.history-list');
 
-    if (!labelsList || !historyList) {
+    if (!historyList) {
         return;
     }
-
-    const updateLabelsEmpty = () => {
-        updateEmptyState(labelsList, '.label-item:not(.empty-state)', {
-            icon: 'label_off',
-            title: 'No labels created',
-            subtitle: 'Create your first label to get started',
-            className: 'labels-empty',
-        });
-    };
 
     const updateHistoryEmpty = () => {
         updateEmptyState(historyList, '.history-item:not(.empty-state)', {
@@ -81,15 +71,11 @@ export function setupLabelsEmptyStates(): void {
         });
     };
 
-    // Set up observers for both lists
-    const labelsObserver = new MutationObserver(updateLabelsEmpty);
-    labelsObserver.observe(labelsList, { childList: true, subtree: true });
-
+    // Set up observer for history list only
     const historyObserver = new MutationObserver(updateHistoryEmpty);
     historyObserver.observe(historyList, { childList: true, subtree: true });
 
     // Initial update
-    updateLabelsEmpty();
     updateHistoryEmpty();
 
     // Expose functions for testing (can be removed in production)
@@ -99,6 +85,9 @@ export function setupLabelsEmptyStates(): void {
             addTestHistory?: () => void;
         }
     ).addTestLabel = () => {
+        const labelsList = document.querySelector<HTMLUListElement>('.labels-list');
+        if (!labelsList) return;
+        
         const testLabel = document.createElement('li');
         testLabel.className = 'label-item';
         testLabel.innerHTML = `

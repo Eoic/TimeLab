@@ -7,9 +7,12 @@ export class TimeLabError extends Error {
 
     constructor(
         message: string,
-        public override cause?: unknown
+        cause?: unknown
     ) {
         super(message);
+        if (cause !== undefined) {
+            this.cause = cause;
+        }
     }
 }
 

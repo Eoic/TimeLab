@@ -50,9 +50,23 @@ dataManager
 
 // Expose for debugging in development
 if (process.env.NODE_ENV === 'development') {
+    const { resetDatabase } = await import('./platform/storage');
     (
-        window as unknown as { __timeSeriesController?: typeof timeSeriesChart }
+        window as unknown as { 
+            __timeSeriesController?: typeof timeSeriesChart;
+            __resetDatabase?: () => Promise<void>;
+        }
     ).__timeSeriesController = timeSeriesChart;
+    
+    // Expose database reset function for debugging storage issues
+    (window as any).__resetDatabase = async () => {
+        const result = await resetDatabase();
+        if (result.ok) {
+            console.log('Database reset successfully. Please refresh the page.');
+        } else {
+            console.error('Failed to reset database:', result.error);
+        }
+    };
 }
 
 // Setup UI components

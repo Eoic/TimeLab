@@ -23,6 +23,7 @@ export interface TimeSeriesData {
     getLabels(): ReadonlyArray<TimeSeriesLabel>;
     addLabel(label: TimeSeriesLabel): void;
     removeLabel(labelId: string): void;
+    toggleLabelVisibility(labelId: string): void;
     updateLabel(
         labelId: string,
         updates: Partial<Omit<TimeSeriesLabel, 'id' | 'datasetId' | 'createdAt'>>
@@ -184,6 +185,14 @@ export class TimeSeriesChart {
             }, 150); // Slightly longer delay for panel animations
         };
         window.addEventListener('timelab:layoutChanged', this.layoutChangeHandler);
+
+        // Listen for time series label changes (from label definition updates/deletions)
+        window.addEventListener('timelab:timeSeriesLabelsChanged', () => {
+            // Refresh the chart to show updated/removed labels
+            if (this.lastConfig) {
+                this.updateDisplay(this.lastConfig);
+            }
+        });
     }
 
     /**
@@ -478,6 +487,21 @@ export class TimeSeriesChart {
      */
     clearLabelHighlight(): void {
         this.highlightLabel(null);
+    }
+
+    /**
+     * Toggle visibility of a specific label
+     */
+    toggleLabelVisibility(labelId: string): void {
+        const source = this.getCurrentSource();
+        if (!source) return;
+
+        source.toggleLabelVisibility(labelId);
+
+        // Refresh display to show updated labels
+        if (this.lastConfig) {
+            this.updateDisplay(this.lastConfig);
+        }
     }
 
     /**
@@ -891,28 +915,27 @@ export class TimeSeriesChart {
         const labels = source.getLabels();
         if (labels.length === 0) return undefined;
 
-        // Create markArea data for each label
-        const markAreaData = labels.map((label) => {
+        // Filter to only show visible labels
+        const visibleLabels = labels.filter(label => label.visible !== false);
+        if (visibleLabels.length === 0) return undefined;
+
+        // Create markArea data for each visible label
+        const markAreaData = visibleLabels.map((label) => {
             const isHighlighted = this.highlightedLabelId === label.id;
             const opacity = isHighlighted ? 0.6 : 0.3; // Higher opacity for highlighted labels
+            const baseColor = this.getLabelColor(label.labelDefId, 1.0);
 
             return [
                 {
                     xAxis: label.startTime,
                     itemStyle: {
                         color: this.getLabelColor(label.labelDefId, opacity),
-                        borderColor: isHighlighted
-                            ? this.getLabelColor(label.labelDefId, 1.0)
-                            : undefined,
-                        borderWidth: isHighlighted ? 2 : 0,
+                        borderColor: baseColor,
+                        borderWidth: isHighlighted ? 2 : 1, // Always show borders, thicker when highlighted
+                        borderType: 'solid',
                     },
                     label: {
-                        show: true,
-                        position: 'insideTopLeft',
-                        formatter: () => {
-                            // You can customize the label text here
-                            return this.getLabelName(label.labelDefId);
-                        },
+                        show: false, // Hide label names on chart areas
                     },
                 },
                 {
@@ -931,11 +954,23 @@ export class TimeSeriesChart {
      * Get display color for a label definition
      */
     private getLabelColor(labelDefId: string, opacity = 1): string {
-        // Parse the label ID format: "label-{index}"
+        // Try to find the label definition by UUID
+        const labelDefinitions = getLabelDefinitions();
+        const definition = labelDefinitions.find(def => def.id === labelDefId);
+        
+        if (definition && definition.color && typeof definition.color === 'string') {
+            // Convert hex to rgba with opacity
+            const hex = definition.color.replace('#', '');
+            const r = parseInt(hex.substr(0, 2), 16);
+            const g = parseInt(hex.substr(2, 2), 16);
+            const b = parseInt(hex.substr(4, 2), 16);
+            return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+        }
+
+        // Fallback for legacy format "label-{index}" or hardcoded labels
         const match = labelDefId.match(/^label-(\d+)$/);
         if (match && match[1]) {
             const index = parseInt(match[1], 10);
-            const labelDefinitions = getLabelDefinitions();
             const definition = labelDefinitions[index];
             if (definition && definition.color && typeof definition.color === 'string') {
                 // Convert hex to rgba with opacity
@@ -963,31 +998,6 @@ export class TimeSeriesChart {
         const b = parseInt(hex.substr(4, 2), 16);
 
         return `rgba(${r}, ${g}, ${b}, ${opacity})`;
-    }
-
-    /**
-     * Get display name for a label definition
-     */
-    private getLabelName(labelDefId: string): string {
-        // Parse the label ID format: "label-{index}"
-        const match = labelDefId.match(/^label-(\d+)$/);
-        if (match && match[1]) {
-            const index = parseInt(match[1], 10);
-            const labelDefinitions = getLabelDefinitions();
-            const definition = labelDefinitions[index];
-            if (definition) {
-                return definition.name;
-            }
-        }
-
-        // Fallback for hardcoded labels or invalid IDs
-        const names: Record<string, string> = {
-            'default-positive': 'Positive',
-            'default-negative': 'Negative',
-            'default-neutral': 'Neutral',
-        };
-
-        return names[labelDefId] || labelDefId;
     }
 
     /**

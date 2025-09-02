@@ -1,10 +1,8 @@
 import type { TLDropdown } from '@/components/dropdown';
-import { getAllLabels, saveLabel } from '@/platform';
+import { getAllLabels, saveLabel, deleteLabel } from '@/platform';
 import { uuid } from '@/shared/misc';
 import type { LabelDefinition } from '@/types/storage';
 import type { TDataFile } from '@/uploads';
-import { DEFAULT_LABEL_DEFINITIONS } from '@/domain/labels';
-import { getLabelService } from '../services/labelService';
 
 /**
  * In-memory cache of label definitions
@@ -17,19 +15,13 @@ let isLoaded = false;
  */
 async function loadLabelDefinitions(): Promise<void> {
     if (isLoaded) return;
-    
+
     try {
         const result = await getAllLabels<LabelDefinition>();
         if (result.ok) {
             // Clear current definitions and populate from storage
             labelDefinitions.length = 0;
             labelDefinitions.push(...result.value);
-            
-            // If no definitions exist, create defaults
-            if (labelDefinitions.length === 0) {
-                await createDefaultDefinitions();
-            }
-            
             updateActiveLabelDropdown();
         } else {
             // eslint-disable-next-line no-console
@@ -41,36 +33,6 @@ async function loadLabelDefinitions(): Promise<void> {
     }
 
     isLoaded = true;
-}
-
-/**
- * Create default label definitions if none exist
- */
-async function createDefaultDefinitions(): Promise<void> {
-    for (const defaultDef of DEFAULT_LABEL_DEFINITIONS) {
-        const labelDef: LabelDefinition = {
-            id: defaultDef.id,
-            name: defaultDef.name,
-            color: defaultDef.color,
-            createdAt: Date.now(),
-            updatedAt: Date.now(),
-        };
-        
-        try {
-            const result = await saveLabel(labelDef);
-            if (result.ok) {
-                labelDefinitions.push(labelDef);
-            } else {
-                // eslint-disable-next-line no-console
-                console.error('Failed to save default label definition:', result.error);
-            }
-        } catch (error) {
-            // eslint-disable-next-line no-console
-            console.error('Error saving default label definition:', error);
-        }
-    }
-    
-    updateActiveLabelDropdown();
 }
 
 /**
@@ -98,6 +60,55 @@ async function saveLabelDefinitionToDB(name: string, color: string): Promise<str
     }
 
     return id;
+}
+
+/**
+ * Update label definition in IndexedDB
+ */
+async function updateLabelDefinitionInDB(id: string, name: string, color: string): Promise<void> {
+    const labelDef: LabelDefinition = {
+        id,
+        name,
+        color,
+        createdAt: 0, // Will be overwritten if it exists
+        updatedAt: Date.now(),
+    };
+
+    try {
+        // Get existing definition to preserve createdAt
+        const allResult = await getAllLabels<LabelDefinition>();
+        if (allResult.ok) {
+            const existing = allResult.value.find((def) => def.id === id);
+            if (existing) {
+                labelDef.createdAt = existing.createdAt;
+            }
+        }
+
+        const result = await saveLabel(labelDef);
+        if (!result.ok) {
+            // eslint-disable-next-line no-console
+            console.error('Failed to update label definition:', result.error);
+        }
+    } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Error updating label definition:', error);
+    }
+}
+
+/**
+ * Delete label definition from IndexedDB
+ */
+async function deleteLabelDefinitionFromDB(id: string): Promise<void> {
+    try {
+        const result = await deleteLabel(id);
+        if (!result.ok) {
+            // eslint-disable-next-line no-console
+            console.error('Failed to delete label definition:', result.error);
+        }
+    } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Error deleting label definition:', error);
+    }
 }
 
 export function updateActiveLabelDropdown(): void {
@@ -167,14 +178,13 @@ export function updateLabelDefinition(index: number, name: string, color: string
     if (index >= 0 && index < labelDefinitions.length) {
         const existing = labelDefinitions[index];
         if (existing) {
-            // Update the existing definition in memory
+            // Update the existing definition
             existing.name = name;
             existing.color = color;
             existing.updatedAt = Date.now();
 
-            // Use LabelService for cascading updates to related TimeSeriesLabels
-            const labelService = getLabelService();
-            void labelService.updateLabelDefinition(existing.id, { name, color });
+            // Update in database
+            void updateLabelDefinitionInDB(existing.id, name, color);
         }
 
         updateActiveLabelDropdown();
@@ -191,9 +201,8 @@ export function deleteLabelDefinition(index: number): void {
             // Remove from memory
             labelDefinitions.splice(index, 1);
 
-            // Use LabelService for cascading deletion of related TimeSeriesLabels
-            const labelService = getLabelService();
-            void labelService.deleteLabelDefinition(definition.id);
+            // Delete from database
+            void deleteLabelDefinitionFromDB(definition.id);
 
             updateActiveLabelDropdown();
         }

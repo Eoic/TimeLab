@@ -5,7 +5,7 @@
 
 import { DEFAULT_LABEL_DEFINITIONS, createLabelDefinition } from '../domain/labels';
 import type { LabelDefinition, TimeSeriesLabel } from '../domain/labels';
-import { getAllRecords, saveRecord, deleteRecord, STORE_LABELS } from '../platform/storage';
+import { getAllRecords, saveRecord, deleteRecord, STORE_LABELS, getAllTimeSeriesLabels, deleteTimeSeriesLabel } from '../platform/storage';
 import type { Result } from '../shared';
 import { StorageError, ok, err } from '../shared';
 import type { LabelDefinition as StoredLabelDefinition } from '../types/storage';
@@ -93,7 +93,7 @@ export class LabelService {
     }
 
     /**
-     * Update an existing label definition
+     * Update an existing label definition and cascade changes to related labels
      */
     async updateLabelDefinition(
         id: string,
@@ -113,16 +113,21 @@ export class LabelService {
 
         const result = await this.saveLabelDefinition(updated);
         if (result.ok) {
+                        // Cascade the changes to related TimeSeriesLabels
+            await this.cascadeDefinitionUpdate();
             this.notifyListeners();
             return ok(updated);
         }
-        return err(new StorageError('Failed to update label definition', result.error));
+        return err(new StorageError('Failed to update label definition'));
     }
 
     /**
-     * Delete a label definition
+     * Delete a label definition and cascade deletion to related labels
      */
     async deleteLabelDefinition(id: string): Promise<Result<void, StorageError>> {
+        // First cascade deletion to all related TimeSeriesLabels
+        await this.cascadeDefinitionDeletion(id);
+        
         const result = await deleteRecord(id, STORE_LABELS);
         if (result.ok) {
             this.labelDefinitions.delete(id);
@@ -132,8 +137,74 @@ export class LabelService {
     }
 
     /**
-     * Save a label definition to storage
+     * Cascade label definition changes to UI components
+     * Since TimeSeriesLabels reference LabelDefinitions by ID,
+     * they automatically reflect changes when the UI refreshes
      */
+    private async cascadeDefinitionUpdate(): Promise<void> {
+        try {
+            // Just notify UI components to refresh - labels automatically
+            // show updated name/color since they reference definitions by ID
+            this.notifyTimeSeriesLabelsChanged();
+        } catch (error) {
+            console.error('Error during label definition cascade update:', error);
+        }
+    }    /**
+     * Cascade label definition deletion to all related TimeSeriesLabels
+     */
+    private async cascadeDefinitionDeletion(defId: string): Promise<void> {
+        try {
+            // Get all TimeSeriesLabels from storage that reference this definition
+            const allLabelsResult = await getAllTimeSeriesLabels<any>();
+            if (!allLabelsResult.ok) {
+                console.error('Failed to load labels for cascade deletion');
+                return;
+            }
+
+            const labelsToDelete = allLabelsResult.value.filter(
+                (label: any) => label.labelDefId === defId
+            );
+
+            // Delete all related labels in parallel for better performance
+            const deletePromises = labelsToDelete.map(async (label: any) => {
+                try {
+                    await deleteTimeSeriesLabel(label.id);
+                    // Also remove from in-memory storage
+                    this.removeLabelFromAllDatasets(label.id);
+                } catch (error) {
+                    console.error('Failed to delete label during cascade:', error);
+                }
+            });
+
+            // Wait for all deletions to complete
+            await Promise.all(deletePromises);
+
+            // Notify UI components about the changes
+            this.notifyTimeSeriesLabelsChanged();
+        } catch (error) {
+            console.error('Error during label definition cascade deletion:', error);
+        }
+    }
+
+    /**
+     * Remove a label from all datasets (helper for cascade operations)
+     */
+    private removeLabelFromAllDatasets(labelId: string): void {
+        for (const [, labels] of Array.from(this.timeSeriesLabels.entries())) {
+            const index = labels.findIndex((l) => l.id === labelId);
+            if (index >= 0) {
+                labels.splice(index, 1);
+            }
+        }
+    }
+
+    /**
+     * Notify about TimeSeriesLabels changes (for UI refresh)
+     */
+    private notifyTimeSeriesLabelsChanged(): void {
+        // Dispatch a custom event that UI components can listen to
+        window.dispatchEvent(new CustomEvent('timelab:timeSeriesLabelsChanged'));
+    }
     private async saveLabelDefinition(
         definition: LabelDefinition
     ): Promise<Result<void, StorageError>> {

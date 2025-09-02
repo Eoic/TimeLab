@@ -432,6 +432,17 @@
                                 role="region"
                                 aria-labelledby="tab-labels"
                             >
+                                <div class="labels-toolbar">
+                                    <tl-dropdown id="labels-sort" placeholder="Creation order"></tl-dropdown>
+                                    <button 
+                                        id="labels-sort-order" 
+                                        class="btn-icon sort-order-btn" 
+                                        aria-label="Sort ascending" 
+                                        title="Toggle sort order"
+                                    >
+                                        <span class="material-symbols-outlined">arrow_upward</span>
+                                    </button>
+                                </div>
                                 <ul class="labels-list" role="list">
                                     <!-- Labels will be populated dynamically -->
                                 </ul>

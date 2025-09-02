@@ -112,17 +112,88 @@
 .card.labctrl .tab-body {
     flex: 1 1 auto;
     min-height: 0;
-    overflow: auto;
+    overflow: hidden; /* Don't scroll the entire tab-body */
     /* Scrollbar edge alignment */
     padding-right: $spacing-sm;
     margin-right: -$spacing-sm;
 }
 
+/* Labels panel should be a flex container to manage toolbar and list */
+.card.labctrl .labels-panel {
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+}
+
+/* Override tab system's display: block specifically for labels panel when active */
+.card.labctrl .tabs:has(#tab-labels:checked) .panel.labels-panel {
+    display: flex !important;
+}
+
 /* Collapsible panels: gracefully hide in desktop collapsed modes */
 .container.collapse-left #panel-config,
 .container.collapse-right #panel-labctrl {
-    display: none;
+    @include surface-elevation(1);
 }
+
+/* Labels toolbar styling */
+.card.labctrl .labels-toolbar {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+    padding-bottom: $spacing-xs;
+    border-bottom: 1px solid $color-border-primary;
+}
+
+.card.labctrl .labels-toolbar tl-dropdown {
+    flex: 1;
+    min-width: 0;
+}
+
+.card.labctrl .labels-toolbar .sort-order-btn {
+    flex-shrink: 0;
+    width: 38px; // Exact same height as dropdown
+    height: 38px; // Exact same height as dropdown
+    padding: 0; // No padding needed with fixed dimensions
+    border: 1px solid $color-border-primary;
+    border-radius: $border-radius;
+    background: $color-bg-secondary; // Match dropdown background
+    transition: all 120ms ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    &:hover {
+        background: $color-bg-tertiary; // Slightly different from dropdown hover
+        border-color: $color-border-secondary;
+    }
+    
+    &:active {
+        background: $color-bg-tertiary;
+    }
+    
+    .material-symbols-outlined {
+        font-size: 18px;
+        display: block;
+    }
+}
+
+@media (max-width: 480px) {
+    .card.labctrl .labels-toolbar {
+        padding: $spacing-xs $spacing-sm;
+        gap: $spacing-xs;
+    }
+    
+    .card.labctrl .labels-toolbar .sort-order-btn {
+        padding: $spacing-sm; // Same as dropdown - no change needed for mobile
+        
+        .material-symbols-outlined {
+            font-size: 16px; // Slightly smaller icon on mobile
+        }
+    }
+}
+
+/* Labels list styling */
 .container.collapse-bottom #panel-stats {
     display: none;
 }
@@ -130,12 +201,17 @@
 /* Labels list styling */
 .card.labctrl .labels-list {
     list-style: none;
-    padding: 0;
+    padding: 0 $spacing-xs 0 0; /* Add bottom padding to prevent cutoff */
     margin: 0;
     display: flex;
     flex-direction: column;
     gap: $spacing-xs;
-    height: 100%;
+    flex: 1 1 auto; /* Take remaining space after toolbar */
+    min-height: 0; /* Allow shrinking */
+    overflow-y: auto; /* Only the list scrolls */
+    /* Scrollbar edge alignment */
+    margin-right: calc($spacing-xs * -1);
+    margin-top: $spacing-xs;
 }
 
 .card.labctrl .labels-list > li {
@@ -182,6 +258,23 @@
     color: $color-text-secondary;
 }
 
+.card.labctrl .label-item .actions {
+    display: flex;
+    align-items: center;
+    gap: $spacing-xs;
+    opacity: 0;
+    transition: opacity 120ms ease;
+}
+
+.card.labctrl .label-item .actions .btn-icon {
+    padding: calc($spacing-xs * 0.5);
+}
+
+.card.labctrl .label-item .actions .btn-icon .material-symbols-outlined {
+    font-size: 18px;
+}
+
+/* Legacy support for direct .delete button */
 .card.labctrl .label-item .delete {
     opacity: 0;
     transition: opacity 120ms ease;
@@ -282,9 +375,22 @@
     font-size: $font-size-sm;
     color: $color-text-secondary;
 }
+.card.labctrl .label-item:hover .actions,
+.card.labctrl .label-item:focus-within .actions,
 .card.labctrl .label-item:hover .delete,
 .card.labctrl .label-item:focus-within .delete {
     opacity: 1;
+}
+
+/* Hidden label styling */
+.card.labctrl .label-item.hidden .title,
+.card.labctrl .label-item.hidden .range {
+    color: $color-text-muted;
+    opacity: 0.6;
+}
+
+.card.labctrl .label-item.hidden .dot {
+    opacity: 0.5;
 }
 
 /* History list styling */

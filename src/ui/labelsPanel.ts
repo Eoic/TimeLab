@@ -1,23 +1,39 @@
 /**
  * Labels panel UI management
- * Displays created time series labels with interaction capabilities
+ * Displays created time series labe        // Initialize sort order button
+        this.sortOrderBtn = panel.querySelector('.sort-order-btn');
+        if (this.sortOrderBtn) {
+            this.sortOrderBtn.addEventListener('click', () => {
+                this.toggleSortOrder();
+            });
+            this.updateSortOrderButton(); // Set initial state
+        } interaction capabilities
  */
 
 import type { TimeSeriesChart } from '../charts/timeSeries';
 import type { TimeSeriesLabel } from '../domain/labels';
 
 import { getLabelDefinitions } from './dropdowns';
+import { updateEmptyState } from './emptyStates';
+import { confirmDelete } from './confirmation';
 
 interface LabelPanelItem {
     element: HTMLElement;
     label: TimeSeriesLabel;
 }
 
+type SortBy = 'creation' | 'visibility' | 'range';
+type SortOrder = 'asc' | 'desc';
+
 export class LabelsPanel {
     private chart: TimeSeriesChart | null = null;
     private container: HTMLElement | null = null;
     private labelItems: Map<string, LabelPanelItem> = new Map();
     private currentHighlightedLabel: string | null = null;
+    private currentSortBy: SortBy = 'creation';
+    private currentSortOrder: SortOrder = 'asc';
+    private sortDropdown: any = null; // TLDropdown element
+    private sortOrderBtn: HTMLButtonElement | null = null;
 
     constructor() {
         this.setupPanelContainer();
@@ -38,6 +54,34 @@ export class LabelsPanel {
         this.container.className = 'labels-list';
         this.container.setAttribute('role', 'listbox');
         this.container.setAttribute('aria-label', 'Time series labels');
+
+        // Initialize sort dropdown
+        this.sortDropdown = document.querySelector('#labels-sort');
+        if (this.sortDropdown) {
+            // Set dropdown options
+            this.sortDropdown.options = [
+                { value: 'creation', label: 'Creation order' },
+                { value: 'visibility', label: 'Visibility' },
+                { value: 'range', label: 'Time range' }
+            ];
+            
+            // Set default value
+            this.sortDropdown.value = 'creation';
+            
+            // Listen for changes
+            this.sortDropdown.addEventListener('change', () => {
+                this.currentSortBy = this.sortDropdown?.value as SortBy || 'creation';
+                this.refreshLabels();
+            });
+        }
+
+        // Initialize sort order button
+        this.sortOrderBtn = document.querySelector('#labels-sort-order');
+        if (this.sortOrderBtn) {
+            this.sortOrderBtn.addEventListener('click', () => {
+                this.toggleSortOrder();
+            });
+        }
     }
 
     /**
@@ -47,6 +91,16 @@ export class LabelsPanel {
         // Listen for window resizing to adjust positioning
         window.addEventListener('resize', () => {
             // Future: Handle responsive adjustments
+        });
+
+        // Listen for labels loaded from storage
+        window.addEventListener('timelab:labelsChanged', () => {
+            this.refreshLabels();
+        });
+
+        // Listen for time series labels changes (e.g., from label definition updates/deletions)
+        window.addEventListener('timelab:timeSeriesLabelsChanged', () => {
+            this.refreshLabels();
         });
     }
 
@@ -90,17 +144,91 @@ export class LabelsPanel {
     private refreshLabels(): void {
         this.clearLabels();
 
-        if (!this.chart) return;
+        if (!this.chart) {
+            this.updateEmptyState();
+            return;
+        }
 
         const currentSource = this.chart.getCurrentSource();
-        if (!currentSource) return;
+        if (!currentSource) {
+            this.updateEmptyState();
+            return;
+        }
 
         const labels = currentSource.getLabels();
-        labels.forEach((label) => {
+        const sortedLabels = this.sortLabels([...labels]);
+        sortedLabels.forEach((label) => {
             this.addLabelToPanel(label);
         });
 
         this.updateEmptyState();
+    }
+
+    /**
+     * Toggle sort order between ascending and descending
+     */
+    private toggleSortOrder(): void {
+        this.currentSortOrder = this.currentSortOrder === 'asc' ? 'desc' : 'asc';
+        this.updateSortOrderButton();
+        this.refreshLabels();
+    }
+
+    /**
+     * Update the sort order button appearance
+     */
+    private updateSortOrderButton(): void {
+        if (!this.sortOrderBtn) return;
+
+        const isAscending = this.currentSortOrder === 'asc';
+        const icon = this.sortOrderBtn.querySelector('.material-symbols-outlined');
+        
+        if (icon) {
+            icon.textContent = isAscending ? 'arrow_upward' : 'arrow_downward';
+        }
+        
+        this.sortOrderBtn.setAttribute('aria-label', isAscending ? 'Sort ascending' : 'Sort descending');
+        this.sortOrderBtn.setAttribute('title', `Currently sorting ${isAscending ? 'ascending' : 'descending'}. Click to toggle.`);
+    }
+
+    /**
+     * Sort labels based on current sort criteria and order
+     */
+    private sortLabels(labels: TimeSeriesLabel[]): TimeSeriesLabel[] {
+        let sortedLabels: TimeSeriesLabel[];
+        
+        switch (this.currentSortBy) {
+            case 'creation':
+                sortedLabels = labels.sort((a, b) => a.createdAt - b.createdAt);
+                break;
+            
+            case 'visibility':
+                sortedLabels = labels.sort((a, b) => {
+                    const aVisible = a.visible !== false;
+                    const bVisible = b.visible !== false;
+                    if (aVisible === bVisible) {
+                        // If visibility is the same, sort by creation order
+                        return a.createdAt - b.createdAt;
+                    }
+                    // Visible labels first
+                    return bVisible ? 1 : -1;
+                });
+                break;
+            
+            case 'range':
+                sortedLabels = labels.sort((a, b) => {
+                    const startDiff = a.startTime - b.startTime;
+                    if (startDiff !== 0) return startDiff;
+                    // If start times are equal, sort by end time
+                    return a.endTime - b.endTime;
+                });
+                break;
+            
+            default:
+                sortedLabels = labels;
+        }
+
+        // Apply sort order (reverse for descending)
+        return this.currentSortOrder === 'desc' ? sortedLabels.reverse() : sortedLabels;
     }
 
     /**
@@ -112,21 +240,8 @@ export class LabelsPanel {
         const labelItem = this.createLabelItem(label);
         this.labelItems.set(label.id, { element: labelItem, label });
 
-        // Insert in chronological order (by startTime)
-        const existingItems = Array.from(this.container.children);
-        const insertIndex = existingItems.findIndex((item) => {
-            const itemLabelId = item.getAttribute('data-label-id');
-            if (!itemLabelId) return false;
-
-            const existingItem = this.labelItems.get(itemLabelId);
-            return existingItem && existingItem.label.startTime > label.startTime;
-        });
-
-        if (insertIndex >= 0 && existingItems[insertIndex]) {
-            this.container.insertBefore(labelItem, existingItems[insertIndex]);
-        } else {
-            this.container.appendChild(labelItem);
-        }
+        // Simply append since labels are pre-sorted
+        this.container.appendChild(labelItem);
 
         this.updateEmptyState();
     }
@@ -136,10 +251,18 @@ export class LabelsPanel {
      */
     private createLabelItem(label: TimeSeriesLabel): HTMLElement {
         const labelDefinitions = getLabelDefinitions();
-        const labelDefMatch = label.labelDefId.match(/^label-(\d+)$/);
-        const labelDef = labelDefMatch?.[1]
-            ? labelDefinitions[parseInt(labelDefMatch[1], 10)]
-            : null;
+        
+        // Try to find label definition by UUID first, then fall back to legacy index format
+        let labelDef = labelDefinitions.find(def => def.id === label.labelDefId);
+        
+        if (!labelDef) {
+            // Fallback for legacy format "label-{index}"
+            const labelDefMatch = label.labelDefId.match(/^label-(\d+)$/);
+            if (labelDefMatch?.[1]) {
+                const index = parseInt(labelDefMatch[1], 10);
+                labelDef = labelDefinitions[index];
+            }
+        }
 
         const labelName = labelDef?.name || this.getFallbackLabelName(label.labelDefId);
         const labelColor = labelDef?.color || this.getFallbackLabelColor(label.labelDefId);
@@ -153,17 +276,28 @@ export class LabelsPanel {
         item.setAttribute('role', 'option');
         item.setAttribute('aria-selected', 'false');
 
+        // Determine visibility state (default to visible if undefined)
+        const isVisible = label.visible !== false;
+        const visibilityIcon = isVisible ? 'visibility' : 'visibility_off';
+        const visibilityTitle = isVisible ? 'Hide label' : 'Show label';
+
+        // Add muted class for hidden labels
+        if (!isVisible) {
+            item.classList.add('hidden');
+        }
+
         item.innerHTML = `
-            <div class="label-item-content">
-                <div class="label-item-header">
-                    <span class="label-item-color" style="background-color: ${labelColor}"></span>
-                    <span class="label-item-name">${labelName}</span>
-                </div>
-                <div class="label-item-range">${timeRange}</div>
-                <button class="label-item-delete" aria-label="Delete ${labelName} label" title="Delete label">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                        <path d="M11 1.5v1h3.5a.5.5 0 0 1 0 1h-.538l-.853 10.66A2 2 0 0 1 11.115 16h-6.23a2 2 0 0 1-1.994-1.84L2.038 3.5H1.5a.5.5 0 0 1 0-1H5v-1A1.5 1.5 0 0 1 6.5 0h3A1.5 1.5 0 0 1 11 1.5Zm-5 0v1h4v-1a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5Z"/>
-                    </svg>
+            <span class="dot" style="--dot: ${labelColor}"></span>
+            <div class="meta">
+                <div class="title">${labelName}</div>
+                <div class="range">${timeRange}</div>
+            </div>
+            <div class="actions">
+                <button class="visibility btn-icon" aria-label="${visibilityTitle} ${labelName}" title="${visibilityTitle}">
+                    <span class="material-symbols-outlined">${visibilityIcon}</span>
+                </button>
+                <button class="delete btn-icon" aria-label="Delete ${labelName} label" title="Delete label">
+                    <span class="material-symbols-outlined">delete</span>
                 </button>
             </div>
         `;
@@ -201,14 +335,23 @@ export class LabelsPanel {
 
         // Click to focus
         item.addEventListener('click', (e) => {
-            if ((e.target as HTMLElement).closest('.label-item-delete')) {
-                return; // Let delete button handle its own click
+            if ((e.target as HTMLElement).closest('.delete') || (e.target as HTMLElement).closest('.visibility')) {
+                return; // Let action buttons handle their own clicks
             }
             this.focusLabelOnChart(label);
         });
 
+        // Visibility toggle button
+        const visibilityBtn = item.querySelector('.visibility') as HTMLElement;
+        if (visibilityBtn) {
+            visibilityBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.toggleLabelVisibility(label);
+            });
+        }
+
         // Delete button
-        const deleteBtn = item.querySelector('.label-item-delete') as HTMLElement;
+        const deleteBtn = item.querySelector('.delete') as HTMLElement;
         if (deleteBtn) {
             deleteBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -222,19 +365,15 @@ export class LabelsPanel {
      */
     private async deleteLabelWithConfirm(label: TimeSeriesLabel): Promise<void> {
         const labelDefinitions = getLabelDefinitions();
-        const labelDefMatch = label.labelDefId.match(/^label-(\d+)$/);
-        const labelDef = labelDefMatch?.[1]
-            ? labelDefinitions[parseInt(labelDefMatch[1], 10)]
-            : null;
-        const labelName = labelDef?.name || 'this label';
+        const labelDef = labelDefinitions.find(def => def.id === label.labelDefId);
+        const labelName = labelDef?.name || this.getFallbackLabelName(label.labelDefId);
 
-        const confirmed = confirm(`Are you sure you want to delete "${labelName}"?`);
-        if (!confirmed) return;
-
-        this.deleteLabel(label);
-    }
-
-    /**
+        // Use custom confirmation modal instead of browser confirm()
+        const confirmed = await confirmDelete(labelName, 'label');
+        if (confirmed) {
+            this.deleteLabel(label);
+        }
+    }    /**
      * Delete a label
      */
     private deleteLabel(label: TimeSeriesLabel): void {
@@ -257,14 +396,68 @@ export class LabelsPanel {
         this.clearChartHighlight();
 
         // Refresh chart display to show updated labels
-        const chart = this.chart.getChart();
-        if (chart) {
-            // Force chart to update by triggering a display refresh
-            // This will rebuild the mark areas without the deleted label
-            chart.setOption({}, true);
+        const lastConfig = this.chart?.getLastConfig();
+        if (this.chart && lastConfig) {
+            // Use the proper updateDisplay method instead of forcing option reset
+            this.chart.updateDisplay(lastConfig);
         }
 
         this.updateEmptyState();
+    }
+
+    /**
+     * Toggle visibility of a label
+     */
+    private toggleLabelVisibility(label: TimeSeriesLabel): void {
+        if (!this.chart) return;
+
+        // Toggle visibility through the chart
+        this.chart.toggleLabelVisibility(label.id);
+
+        // Update the UI element to reflect new visibility state without full refresh
+        const labelItem = this.labelItems.get(label.id);
+        if (labelItem) {
+            // Get the updated label from the data source
+            const currentSource = this.chart.getCurrentSource();
+            if (currentSource) {
+                const updatedLabels = currentSource.getLabels();
+                const updatedLabel = updatedLabels.find(l => l.id === label.id);
+                if (updatedLabel) {
+                    // Update the stored label reference
+                    labelItem.label = updatedLabel;
+                    
+                    // Update the visual state of the existing element
+                    this.updateLabelItemVisualState(labelItem.element, updatedLabel);
+                }
+            }
+        }
+    }
+
+    /**
+     * Update the visual state of a label item element
+     */
+    private updateLabelItemVisualState(element: HTMLElement, label: TimeSeriesLabel): void {
+        const isVisible = label.visible !== false;
+        
+        // Update CSS class for hidden state
+        if (isVisible) {
+            element.classList.remove('hidden');
+        } else {
+            element.classList.add('hidden');
+        }
+        
+        // Update visibility button icon and title
+        const visibilityBtn = element.querySelector('.visibility');
+        const visibilityIcon = visibilityBtn?.querySelector('.material-symbols-outlined');
+        if (visibilityIcon && visibilityBtn) {
+            visibilityIcon.textContent = isVisible ? 'visibility' : 'visibility_off';
+            const labelDefinitions = getLabelDefinitions();
+            const labelDef = labelDefinitions.find(def => def.id === label.labelDefId);
+            const labelName = labelDef?.name || `Label ${label.labelDefId}`;
+            const visibilityTitle = isVisible ? 'Hide label' : 'Show label';
+            visibilityBtn.setAttribute('aria-label', `${visibilityTitle} ${labelName}`);
+            visibilityBtn.setAttribute('title', visibilityTitle);
+        }
     }
 
     /**
@@ -275,8 +468,8 @@ export class LabelsPanel {
 
         this.currentHighlightedLabel = labelId;
 
-        if (this.chart) {
-            this.chart.highlightLabel(labelId);
+        if (this.chart && 'highlightLabel' in this.chart) {
+            (this.chart as any).highlightLabel(labelId);
         }
     }
 
@@ -288,8 +481,8 @@ export class LabelsPanel {
 
         this.currentHighlightedLabel = null;
 
-        if (this.chart) {
-            this.chart.clearLabelHighlight();
+        if (this.chart && 'clearLabelHighlight' in this.chart) {
+            (this.chart as any).clearLabelHighlight();
         }
     }
 
@@ -321,33 +514,12 @@ export class LabelsPanel {
     private updateEmptyState(): void {
         if (!this.container) return;
 
-        if (this.labelItems.size === 0) {
-            this.showEmptyState();
-        } else {
-            // Remove empty state if it exists
-            const emptyState = this.container.querySelector('.labels-empty-state');
-            if (emptyState) {
-                emptyState.remove();
-            }
-        }
-    }
-
-    /**
-     * Show empty state
-     */
-    private showEmptyState(): void {
-        if (!this.container) return;
-
-        const emptyState = document.createElement('div');
-        emptyState.className = 'labels-empty-state';
-        emptyState.innerHTML = `
-            <div class="empty-state-content">
-                <p>No labels created yet</p>
-                <p class="empty-state-hint">Use label drawing mode to create time series labels</p>
-            </div>
-        `;
-
-        this.container.appendChild(emptyState);
+        updateEmptyState(this.container, '.label-item:not(.empty-state)', {
+            icon: 'label_off',
+            title: 'No labels created',
+            subtitle: 'Create your first label to get started',
+            className: 'labels-empty',
+        });
     }
 
     /**

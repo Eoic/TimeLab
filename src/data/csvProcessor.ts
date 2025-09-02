@@ -4,7 +4,7 @@
 
 import type { TimeSeriesData } from '../charts/timeSeries';
 import type { TimeSeriesLabel } from '../domain/labels';
-import { getAllLabels, saveLabel, deleteLabel } from '../platform/storage';
+import { getAllTimeSeriesLabels, saveTimeSeriesLabel, deleteTimeSeriesLabel } from '../platform/storage';
 import type { TDataFile } from '../uploads';
 
 /**
@@ -94,6 +94,22 @@ export class CSVTimeSeriesData implements TimeSeriesData {
         }
     }
 
+    toggleLabelVisibility(labelId: string): void {
+        const index = this.labels.findIndex((label) => label.id === labelId);
+        if (index >= 0 && this.labels[index]) {
+            const existingLabel = this.labels[index];
+            const updatedLabel: TimeSeriesLabel = {
+                ...existingLabel,
+                visible: existingLabel.visible !== false ? false : true, // Toggle: undefined/true → false, false → true
+                updatedAt: Date.now(),
+            };
+            this.labels[index] = updatedLabel;
+            // Update in storage
+            void this.saveLabelToStorage(updatedLabel);
+            this.notifyLabelsChanged();
+        }
+    }
+
     updateLabel(
         labelId: string,
         updates: Partial<Omit<TimeSeriesLabel, 'id' | 'datasetId' | 'createdAt'>>
@@ -109,6 +125,7 @@ export class CSVTimeSeriesData implements TimeSeriesData {
                 endTime: updates.endTime ?? existingLabel.endTime,
                 labelDefId: updates.labelDefId ?? existingLabel.labelDefId,
                 updatedAt: Date.now(),
+                ...(updates.visible !== undefined ? { visible: updates.visible } : existingLabel.visible !== undefined ? { visible: existingLabel.visible } : {}),
             };
             this.labels[index] = updatedLabel;
             // Update in storage
@@ -122,8 +139,8 @@ export class CSVTimeSeriesData implements TimeSeriesData {
      */
     private async loadLabelsFromStorage(): Promise<void> {
         try {
-            // Get all stored labels
-            const result = await getAllLabels<any>();
+            // Get all stored time series labels
+            const result = await getAllTimeSeriesLabels<any>();
             if (result.ok) {
                 // Filter labels for this dataset
                 const datasetLabels = result.value.filter(
@@ -156,8 +173,9 @@ export class CSVTimeSeriesData implements TimeSeriesData {
                 datasetId: label.datasetId,
                 createdAt: label.createdAt,
                 updatedAt: label.updatedAt,
+                visible: label.visible, // Include visibility state
             };
-            const result = await saveLabel(labelRecord);
+            const result = await saveTimeSeriesLabel(labelRecord);
             if (!result.ok) {
                 // eslint-disable-next-line no-console
                 console.warn('Failed to save label to storage:', result.error);
@@ -173,7 +191,7 @@ export class CSVTimeSeriesData implements TimeSeriesData {
      */
     private async removeLabelFromStorage(labelId: string): Promise<void> {
         try {
-            const result = await deleteLabel(labelId);
+            const result = await deleteTimeSeriesLabel(labelId);
             if (!result.ok) {
                 // eslint-disable-next-line no-console
                 console.warn('Failed to remove label from storage:', result.error);

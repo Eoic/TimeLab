@@ -13,6 +13,7 @@ export interface TimeSeriesLabel {
     readonly datasetId: string;
     readonly createdAt: number;
     readonly updatedAt: number;
+    readonly visible?: boolean; // Optional visibility flag, defaults to true
 }
 
 /**

@@ -19,6 +19,7 @@
     right: $spacing-sm;
     display: flex;
     position: absolute;
+    z-index: 1000;
 }
 
 /* Empty state styling */

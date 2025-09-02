@@ -9,13 +9,14 @@ import { StorageError, ok, err } from '../shared';
 export type IDBRecord = Record<string, unknown> & { id: string };
 
 const DB_NAME = 'timelab';
-const DB_VERSION = 2; // Bump version to trigger upgrade
+const DB_VERSION = 4; // Bump version to force upgrade and ensure time series labels store exists
 const STORE_FILES = 'files';
-const STORE_LABELS = 'labels';
+const STORE_LABELS = 'labels'; // For label definitions
+const STORE_TIME_SERIES_LABELS = 'timeSeriesLabels'; // For actual time series labels
 const STORE_HISTORY = 'history';
 
 // Export store constants for use by other modules
-export { STORE_FILES, STORE_LABELS, STORE_HISTORY };
+export { STORE_FILES, STORE_LABELS, STORE_TIME_SERIES_LABELS, STORE_HISTORY };
 
 function openDatabase(): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
@@ -28,9 +29,14 @@ function openDatabase(): Promise<IDBDatabase> {
                 db.createObjectStore(STORE_FILES, { keyPath: 'id' });
             }
 
-            // Create labels store if it doesn't exist
+            // Create labels store if it doesn't exist (for label definitions)
             if (!db.objectStoreNames.contains(STORE_LABELS)) {
                 db.createObjectStore(STORE_LABELS, { keyPath: 'id' });
+            }
+
+            // Create time series labels store if it doesn't exist (for actual chart labels)
+            if (!db.objectStoreNames.contains(STORE_TIME_SERIES_LABELS)) {
+                db.createObjectStore(STORE_TIME_SERIES_LABELS, { keyPath: 'id' });
             }
 
             // Create history store if it doesn't exist
@@ -75,6 +81,15 @@ export async function saveRecord(
 ): Promise<Result<void, StorageError>> {
     try {
         const db = await openDatabase();
+        
+        // Check if the store exists before attempting to use it
+        if (!db.objectStoreNames.contains(storeName)) {
+            const availableStores = Array.from(db.objectStoreNames).join(', ');
+            const errorMsg = `Object store '${storeName}' not found. Available stores: ${availableStores}. Database version: ${db.version}`;
+            console.error('Storage Error:', errorMsg);
+            return err(new StorageError(errorMsg));
+        }
+        
         await new Promise<void>((resolve, reject) => {
             const tx = db.transaction(storeName, 'readwrite');
             const store = tx.objectStore(storeName);
@@ -115,6 +130,33 @@ export async function deleteRecord(
     }
 }
 
+/**
+ * Reset the entire database (for debugging/development)
+ * This will delete all data and recreate the database with current schema
+ */
+export async function resetDatabase(): Promise<Result<void, StorageError>> {
+    try {
+        // Close any existing connections
+        const deleteReq = indexedDB.deleteDatabase(DB_NAME);
+        await new Promise<void>((resolve, reject) => {
+            deleteReq.onsuccess = () => {
+                console.log('Database deleted successfully');
+                resolve();
+            };
+            deleteReq.onerror = () => {
+                reject(deleteReq.error ?? new Error('Failed to delete database'));
+            };
+        });
+        
+        // Reopen to trigger creation with current schema
+        await openDatabase();
+        console.log('Database reset and recreated successfully');
+        return ok(undefined);
+    } catch (error) {
+        return err(new StorageError('Failed to reset database', error));
+    }
+}
+
 // Convenience functions for specific stores
 
 /**
@@ -136,6 +178,27 @@ export async function saveLabel(label: IDBRecord): Promise<Result<void, StorageE
  */
 export async function deleteLabel(id: string): Promise<Result<void, StorageError>> {
     return deleteRecord(id, STORE_LABELS);
+}
+
+/**
+ * Get all time series labels
+ */
+export async function getAllTimeSeriesLabels<T extends IDBRecord>(): Promise<Result<T[], StorageError>> {
+    return getAllRecords<T>(STORE_TIME_SERIES_LABELS);
+}
+
+/**
+ * Save a time series label
+ */
+export async function saveTimeSeriesLabel(label: IDBRecord): Promise<Result<void, StorageError>> {
+    return saveRecord(label, STORE_TIME_SERIES_LABELS);
+}
+
+/**
+ * Delete a time series label
+ */
+export async function deleteTimeSeriesLabel(id: string): Promise<Result<void, StorageError>> {
+    return deleteRecord(id, STORE_TIME_SERIES_LABELS);
 }
 
 /**

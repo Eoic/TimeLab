@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TimeLab Labels Sorting & Visual Improvements</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success { color: #22c55e; }
+        .info { color: #3b82f6; }
+        code {
+            background: #f3f4f6;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+        pre {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 16px;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        .feature-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .feature-list li:before {
+            content: "✅ ";
+            margin-right: 8px;
+        }
+        .demo-image {
+            max-width: 100%;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            margin: 16px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎯 TimeLab Labels Sorting & Visual Improvements</h1>
+    
+    <div class="test-section">
+        <h2>✨ New Features Successfully Implemented</h2>
+        <p class="success">Enhanced labels panel with sorting capabilities and improved visual feedback!</p>
+        
+        <h3>🚀 What's New:</h3>
+        <ul class="feature-list">
+            <li>Sort toolbar with dropdown for organization options</li>
+            <li>Three sorting methods: Creation order, Visibility, Time range</li>
+            <li>Mobile-responsive design with adaptive spacing</li>
+            <li>Muted styling for hidden labels (visual feedback)</li>
+            <li>Improved accessibility with proper ARIA labels</li>
+            <li>Consistent styling with existing UI components</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>🔧 Sorting Options</h2>
+        
+        <h3>1. Creation Order (Default)</h3>
+        <div class="info">
+            <strong>Behavior:</strong> Labels sorted by when they were created (oldest first)<br>
+            <strong>Use case:</strong> Review labeling progress chronologically
+        </div>
+        
+        <h3>2. Visibility</h3>
+        <div class="info">
+            <strong>Behavior:</strong> Visible labels first, then hidden labels<br>
+            <strong>Use case:</strong> Quickly find and manage visible/hidden labels
+        </div>
+        
+        <h3>3. Time Range</h3>
+        <div class="info">
+            <strong>Behavior:</strong> Labels sorted by start time, then end time<br>
+            <strong>Use case:</strong> Navigate labels in temporal sequence on the chart
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🎨 Visual Improvements</h2>
+        
+        <h3>Hidden Label Styling</h3>
+        <p>When a label's visibility is toggled off, the text becomes muted to provide clear visual feedback:</p>
+        
+        <ul>
+            <li><strong>Title & Range Text:</strong> Reduced opacity (60%) and muted color</li>
+            <li><strong>Color Dot:</strong> Reduced opacity (50%) to indicate inactive state</li>
+            <li><strong>Icon State:</strong> Eye-off icon shows current hidden status</li>
+        </ul>
+        
+        <h3>Responsive Design</h3>
+        <p>The sorting toolbar adapts to different screen sizes:</p>
+        <ul>
+            <li><strong>Desktop:</strong> Full spacing and comfortable touch targets</li>
+            <li><strong>Mobile (≤480px):</strong> Compact spacing and smaller text</li>
+            <li><strong>Dropdown:</strong> Flexible width that adjusts to available space</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>💻 Technical Implementation</h2>
+        
+        <h3>1. HTML Structure Updates</h3>
+        <div class="info">
+            <strong>File:</strong> <code>index.html</code><br>
+            <strong>Addition:</strong> Labels toolbar with sort dropdown
+        </div>
+        <pre><code>&lt;div class="labels-toolbar"&gt;
+    &lt;label for="labels-sort" class="sort-label"&gt;Sort by:&lt;/label&gt;
+    &lt;select id="labels-sort" class="sort-dropdown"&gt;
+        &lt;option value="creation"&gt;Creation order&lt;/option&gt;
+        &lt;option value="visibility"&gt;Visibility&lt;/option&gt;
+        &lt;option value="range"&gt;Time range&lt;/option&gt;
+    &lt;/select&gt;
+&lt;/div&gt;</code></pre>
+
+        <h3>2. TypeScript Logic</h3>
+        <div class="info">
+            <strong>File:</strong> <code>src/ui/labelsPanel.ts</code><br>
+            <strong>Changes:</strong> Added sorting state and methods
+        </div>
+        <pre><code>type SortBy = 'creation' | 'visibility' | 'range';
+
+private currentSortBy: SortBy = 'creation';
+private sortDropdown: HTMLSelectElement | null = null;
+
+private sortLabels(labels: TimeSeriesLabel[]): TimeSeriesLabel[] {
+    switch (this.currentSortBy) {
+        case 'creation':
+            return labels.sort((a, b) => a.createdAt - b.createdAt);
+        case 'visibility':
+            return labels.sort((a, b) => {
+                const aVisible = a.visible !== false;
+                const bVisible = b.visible !== false;
+                if (aVisible === bVisible) {
+                    return a.createdAt - b.createdAt;
+                }
+                return bVisible ? 1 : -1; // Visible first
+            });
+        case 'range':
+            return labels.sort((a, b) => {
+                const startDiff = a.startTime - b.startTime;
+                return startDiff !== 0 ? startDiff : a.endTime - b.endTime;
+            });
+    }
+}</code></pre>
+
+        <h3>3. CSS Styling</h3>
+        <div class="info">
+            <strong>File:</strong> <code>src/styles/components/components/card.scss</code><br>
+            <strong>Changes:</strong> Added toolbar and hidden label styles
+        </div>
+        <pre><code>/* Toolbar styling */
+.card.labctrl .labels-toolbar {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+    padding: $spacing-sm $spacing-md;
+    border-bottom: 1px solid $color-border-primary;
+    background: $color-bg-secondary;
+}
+
+/* Hidden label styling */
+.card.labctrl .label-item.hidden .title,
+.card.labctrl .label-item.hidden .range {
+    color: $color-text-muted;
+    opacity: 0.6;
+}
+
+.card.labctrl .label-item.hidden .dot {
+    opacity: 0.5;
+}</code></pre>
+    </div>
+
+    <div class="test-section">
+        <h2>🎮 How to Use the New Features</h2>
+        
+        <div class="info">
+            <strong>Testing Workflow:</strong>
+        </div>
+        
+        <ol>
+            <li><strong>Load Data & Create Labels:</strong>
+                <ul>
+                    <li>Upload a CSV file with time series data</li>
+                    <li>Enable label mode and create 3-4 labels at different time ranges</li>
+                    <li>Toggle visibility off for 1-2 labels using the eye icon</li>
+                </ul>
+            </li>
+            
+            <li><strong>Test Sorting Options:</strong>
+                <ul>
+                    <li>Use the "Sort by" dropdown in the labels panel</li>
+                    <li>Try each option and observe how labels reorder</li>
+                    <li>Notice how hidden labels appear with muted styling</li>
+                </ul>
+            </li>
+            
+            <li><strong>Verify Mobile Experience:</strong>
+                <ul>
+                    <li>Resize browser window to mobile width (&lt;480px)</li>
+                    <li>Check that toolbar remains functional and readable</li>
+                    <li>Ensure dropdown is easy to use on touch devices</li>
+                </ul>
+            </li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h2>✅ Implementation Status</h2>
+        
+        <h3>Completed Features:</h3>
+        <ul class="feature-list">
+            <li>Sort dropdown with three options</li>
+            <li>Real-time sorting when selection changes</li>
+            <li>Hidden label visual styling (muted colors, reduced opacity)</li>
+            <li>Mobile-responsive toolbar design</li>
+            <li>Proper TypeScript typing and error handling</li>
+            <li>Accessibility improvements (ARIA labels, focus states)</li>
+            <li>Consistent visual integration with existing UI</li>
+            <li>Performance optimization (minimal DOM manipulation)</li>
+        </ul>
+
+        <h3>🎯 Key Benefits:</h3>
+        <ul>
+            <li><strong>Organization:</strong> Multiple ways to organize and find labels</li>
+            <li><strong>Visual Clarity:</strong> Clear indication of hidden vs visible labels</li>
+            <li><strong>Responsive:</strong> Works seamlessly on desktop and mobile</li>
+            <li><strong>Intuitive:</strong> Familiar dropdown interface for sorting</li>
+            <li><strong>Accessible:</strong> Screen reader friendly with proper semantics</li>
+            <li><strong>Performant:</strong> Efficient sorting without layout thrashing</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>🚀 Ready for Testing</h2>
+        <p>The enhanced labels panel with sorting and visual improvements is now live! The features provide better organization and clearer visual feedback for managing time series labels.</p>
+        
+        <p><a href="/" style="color: #3b82f6; text-decoration: none;">← Back to TimeLab Application</a></p>
+    </div>
+
+    <script>
+        console.log('🎯 TimeLab Labels Sorting & Visual Improvements Complete!');
+        console.log('✅ Features implemented:');
+        console.log('  - Sort toolbar with 3 options');
+        console.log('  - Creation order (default)');
+        console.log('  - Visibility sorting');
+        console.log('  - Time range sorting');
+        console.log('  - Muted styling for hidden labels');
+        console.log('  - Mobile-responsive design');
+        console.log('🎉 Ready for testing!');
+    </script>
+</body>
+</html>
