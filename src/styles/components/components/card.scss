@@ -133,7 +133,21 @@
 /* Collapsible panels: gracefully hide in desktop collapsed modes */
 .container.collapse-left #panel-config,
 .container.collapse-right #panel-labctrl {
-    @include surface-elevation(1);
+    display: none !important;
+}
+
+/* Add smooth transitions for panel visibility */
+#panel-config,
+#panel-labctrl {
+    transition: opacity 150ms ease-out;
+}
+
+/* Ensure panels are also hidden in responsive mode */
+@media (min-width: 1200px) {
+    .container.collapse-left #panel-config,
+    .container.collapse-right #panel-labctrl {
+        display: none !important;
+    }
 }
 
 /* Labels toolbar styling */
@@ -162,16 +176,16 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    
+
     &:hover {
         background: $color-bg-tertiary; // Slightly different from dropdown hover
         border-color: $color-border-secondary;
     }
-    
+
     &:active {
         background: $color-bg-tertiary;
     }
-    
+
     .material-symbols-outlined {
         font-size: 18px;
         display: block;
@@ -183,10 +197,10 @@
         padding: $spacing-xs $spacing-sm;
         gap: $spacing-xs;
     }
-    
+
     .card.labctrl .labels-toolbar .sort-order-btn {
         padding: $spacing-sm; // Same as dropdown - no change needed for mobile
-        
+
         .material-symbols-outlined {
             font-size: 16px; // Slightly smaller icon on mobile
         }

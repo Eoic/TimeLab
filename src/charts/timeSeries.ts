@@ -1,5 +1,5 @@
 import type { TimeSeriesLabel } from '../domain/labels';
-import { installModalFocusTrap } from '../ui/dom';
+import { installModalFocusTrap, closeModal } from '../ui/dom';
 import { getLabelDefinitions } from '../ui/dropdowns';
 
 import { init, type EChartOption, type ECharts } from './echarts';
@@ -159,30 +159,41 @@ export class TimeSeriesChart {
 
         // Listen for layout changes (when panels are toggled)
         this.resizeObserver = new ResizeObserver(() => {
-            // Debounce resize calls
+            // Use immediate resize for responsive feel
+            if (this.chart) {
+                this.chart.resize();
+                this.resizeDrawingCanvas();
+            }
+            // Debounce additional resizes for performance
             if (this.resizeTimeout) {
                 clearTimeout(this.resizeTimeout);
             }
             this.resizeTimeout = window.setTimeout(() => {
                 if (this.chart) {
                     this.chart.resize();
-                    this.resizeDrawingCanvas(); // Resize canvas overlay too
+                    this.resizeDrawingCanvas();
                 }
-            }, 100);
+            }, 50); // Much shorter delay
         });
         this.resizeObserver.observe(container);
 
         // Listen for explicit layout change events from panel toggles
         this.layoutChangeHandler = () => {
+            // Immediate resize for responsive feedback
+            if (this.chart) {
+                this.chart.resize();
+                this.resizeDrawingCanvas();
+            }
+            // Additional resize after layout transition
             if (this.resizeTimeout) {
                 clearTimeout(this.resizeTimeout);
             }
             this.resizeTimeout = window.setTimeout(() => {
                 if (this.chart) {
                     this.chart.resize();
-                    this.resizeDrawingCanvas(); // Resize canvas overlay too
+                    this.resizeDrawingCanvas();
                 }
-            }, 150); // Slightly longer delay for panel animations
+            }, 220); // Match CSS transition duration + small buffer
         };
         window.addEventListener('timelab:layoutChanged', this.layoutChangeHandler);
 
@@ -330,27 +341,20 @@ export class TimeSeriesChart {
             button.tabIndex = hasData ? 0 : -1;
         });
 
-        // Labeled/unlabeled toggle button visibility
-        const labeledToggle = document.getElementById('toggle-labeled') as HTMLElement;
-        labeledToggle.style.display = hasData ? 'flex' : 'none';
-        labeledToggle.setAttribute('aria-hidden', hasData ? 'false' : 'true');
-        (labeledToggle as HTMLButtonElement).tabIndex = hasData ? 0 : -1;
+        // Series navigation container visibility
+        const seriesNavigation = document.querySelector(
+            '.right[role="group"][aria-label="Series navigation"]'
+        );
+        if (seriesNavigation instanceof HTMLElement) {
+            seriesNavigation.style.display = hasData ? '' : 'none';
+            seriesNavigation.setAttribute('aria-hidden', hasData ? 'false' : 'true');
 
-        // Series navigation controls visibility
-        const seriesPrev = document.getElementById('series-prev');
-        const seriesNext = document.getElementById('series-next');
-        const seriesIndicator = document.getElementById('series-indicator');
-        const seriesGrid = document.getElementById('series-grid');
-
-        [seriesPrev, seriesNext, seriesIndicator, seriesGrid].forEach((element) => {
-            if (element) {
-                element.style.display = hasData ? '' : 'none';
-                element.setAttribute('aria-hidden', hasData ? 'false' : 'true');
-                if (element instanceof HTMLButtonElement) {
-                    element.tabIndex = hasData ? 0 : -1;
-                }
-            }
-        });
+            // Update tabindex for all buttons within the series navigation
+            const navButtons = seriesNavigation.querySelectorAll('button');
+            navButtons.forEach((button) => {
+                button.tabIndex = hasData ? 0 : -1;
+            });
+        }
     }
 
     /**
@@ -916,7 +920,7 @@ export class TimeSeriesChart {
         if (labels.length === 0) return undefined;
 
         // Filter to only show visible labels
-        const visibleLabels = labels.filter(label => label.visible !== false);
+        const visibleLabels = labels.filter((label) => label.visible !== false);
         if (visibleLabels.length === 0) return undefined;
 
         // Create markArea data for each visible label
@@ -956,8 +960,8 @@ export class TimeSeriesChart {
     private getLabelColor(labelDefId: string, opacity = 1): string {
         // Try to find the label definition by UUID
         const labelDefinitions = getLabelDefinitions();
-        const definition = labelDefinitions.find(def => def.id === labelDefId);
-        
+        const definition = labelDefinitions.find((def) => def.id === labelDefId);
+
         if (definition && definition.color && typeof definition.color === 'string') {
             // Convert hex to rgba with opacity
             const hex = definition.color.replace('#', '');
@@ -1023,6 +1027,15 @@ export class TimeSeriesChart {
         }
 
         const data = source.getData(config.xColumn, config.yColumn);
+        console.log('Retrieved data for columns:', {
+            xColumn: config.xColumn,
+            yColumn: config.yColumn,
+            dataLength: data.length,
+            firstFewPoints: data.slice(0, 3),
+            lastFewPoints: data.slice(-3),
+            sourceName: source.name,
+            sourceColumns: source.columns,
+        });
 
         // Apply configuration with defaults
         const xType = config.xType || 'category';
@@ -1037,29 +1050,72 @@ export class TimeSeriesChart {
         const snap = config.snap ?? false;
         const yAuto = config.yAuto ?? true;
 
-        // Process data based on x-axis type
+        // Process data based on x-axis column selection
         let seriesData: ReadonlyArray<readonly [number | string, number]> = data;
-        if (xType === 'category') {
+        if (xType === 'category' && config.xColumn === 'index') {
+            // Only use row indices when specifically "index" is selected
             seriesData = data.map((_pair, i) => [String(i), data[i]?.[1] ?? NaN] as const);
+        } else {
+            // Use the actual data from getData method for all other columns
+            seriesData = data;
         }
 
-        // Configure axes
+        // Validate data for any invalid values
+        const invalidPoints = seriesData.filter((point) => {
+            const [x, y] = point;
+            const xNum = typeof x === 'string' ? parseFloat(x) : x;
+            return !Number.isFinite(xNum) || !Number.isFinite(y);
+        });
+
+        // eslint-disable-next-line no-console
+        console.log('Final series data for chart:', {
+            xType,
+            xColumn: config.xColumn,
+            processingType:
+                xType === 'category' && config.xColumn === 'index' ? 'row indices' : 'actual data',
+            totalPoints: seriesData.length,
+            invalidPoints: invalidPoints.length,
+            invalidSample: invalidPoints.slice(0, 3),
+            firstFewSeriesPoints: seriesData.slice(0, 3),
+            lastFewSeriesPoints: seriesData.slice(-3),
+        });
+
+        // Configure axes with proper auto-scaling
         const xAxis: EChartOption.XAxis = {
             type: xType as EChartOption.XAxis['type'],
             boundaryGap: xType === 'category',
             axisLine: showGrid ? {} : { show: false },
             splitLine: { show: showGrid },
+            scale: true, // Enable auto-scaling for X axis
+            axisLabel: {
+                // Format X-axis labels to avoid excessive decimal places
+                formatter: (value: number | string) => {
+                    if (typeof value === 'number') {
+                        // Round to at most 3 decimal places and remove trailing zeros
+                        return parseFloat(value.toFixed(3)).toString();
+                    }
+                    return value;
+                },
+            },
         };
 
         const yAxis: EChartOption.YAxis = {
             type: yType as EChartOption.YAxis['type'],
-            scale: yAuto,
+            scale: true, // Always enable auto-scaling for Y axis
             axisLine: showGrid ? {} : { show: false },
             splitLine: { show: showGrid },
+            axisLabel: {
+                // Format Y-axis labels to avoid excessive decimal places
+                formatter: (value: number) => {
+                    // Round to at most 3 decimal places and remove trailing zeros
+                    return parseFloat(value.toFixed(3)).toString();
+                },
+            },
         };
 
-        // Apply manual Y-axis range if not auto
+        // Apply manual Y-axis range if not auto (override the scale setting)
         if (!yAuto) {
+            yAxis.scale = false; // Disable auto-scaling when manual range is set
             if (config.yMin !== undefined) {
                 yAxis.min = config.yMin;
             }
@@ -1090,6 +1146,16 @@ export class TimeSeriesChart {
                       axisPointer: { type: 'cross' as const, snap },
                   };
 
+        // eslint-disable-next-line no-console
+        console.log('Chart configuration debug:', {
+            showArea,
+            xType,
+            yType,
+            seriesDataLength: seriesData.length,
+            firstPoint: seriesData[0],
+            lastPoint: seriesData[seriesData.length - 1],
+        });
+
         this.chart.setOption(
             {
                 tooltip,
@@ -1103,7 +1169,7 @@ export class TimeSeriesChart {
                         showSymbol,
                         sampling,
                         lineStyle: { width: lineWidth },
-                        areaStyle: showArea ? {} : undefined,
+                        areaStyle: showArea ? { opacity: 0.3 } : undefined,
                         markLine,
                         markArea,
                         data: [...seriesData] as Array<[number | string, number]>,
@@ -1278,12 +1344,38 @@ function getCurrentChartConfig(xColumn: string, yColumn: string): TimeSeriesConf
             ? (samplingValue as 'lttb' | 'average' | 'max' | 'min')
             : undefined;
 
-    // Helper to get xType value
+    // Helper to get xType value - default to numeric for all columns
     const xTypeValue = elXType ? (elXType as { value?: string }).value : undefined;
-    const xType: 'category' | 'time' | 'value' =
-        xTypeValue && ['category', 'time', 'value'].includes(xTypeValue)
-            ? (xTypeValue as 'category' | 'time' | 'value')
-            : 'category';
+
+    // eslint-disable-next-line no-console
+    console.log('X-axis type detection:', {
+        xColumn,
+        xTypeDropdownValue: xTypeValue,
+        elXType: elXType?.id,
+    });
+
+    const xType: 'category' | 'time' | 'value' = (() => {
+        // Respect user's explicit choice
+        switch (xTypeValue) {
+            case 'time':
+                return 'time';
+            case 'numeric':
+                return 'value';
+            case 'index':
+                return 'category';
+        }
+
+        // Special case: when user selects "index" column, treat as category
+        if (xColumn === 'index') {
+            return 'category';
+        }
+
+        // Default: all data columns are numeric (value axis)
+        return 'value';
+    })();
+
+    // eslint-disable-next-line no-console
+    console.log('X-axis type result:', xType);
 
     // Helper to get yType value
     const yTypeValue = elYType ? (elYType as { value?: string }).value : undefined;
@@ -1402,6 +1494,15 @@ function bindUIControls(chart: TimeSeriesChart): void {
     const xDropdown = document.querySelector('#x-axis');
     const yDropdown = document.querySelector('#y-axis');
 
+    // eslint-disable-next-line no-console
+    console.log('Dropdown element references:', {
+        xDropdown: xDropdown?.id,
+        yDropdown: yDropdown?.id,
+        sameElement: xDropdown === yDropdown,
+        xValue: (xDropdown as { value?: string } | null)?.value,
+        yValue: (yDropdown as { value?: string } | null)?.value,
+    });
+
     const updateChart = () => {
         // Don't update chart if we have no data sources at all
         const seriesInfo = chart.getCurrentSeriesInfo();
@@ -1419,13 +1520,20 @@ function bindUIControls(chart: TimeSeriesChart): void {
             return;
         }
 
-        const xColumn = (xDropdown as HTMLSelectElement).value || 'index';
-        const yColumn = (yDropdown as HTMLSelectElement).value || 'value';
+        const xColumn = (xDropdown as { value?: string } | null)?.value || 'index';
+        const yColumn = (yDropdown as { value?: string } | null)?.value || 'value';
+
+        console.log('updateChart called with:', { xColumn, yColumn });
 
         // Only update if we have valid column values
         if (xColumn && yColumn && xColumn !== '' && yColumn !== '') {
             // Get current configuration from all UI controls
             const config = getCurrentChartConfig(xColumn, yColumn);
+            console.log('Generated config:', {
+                xColumn: config.xColumn,
+                yColumn: config.yColumn,
+                xType: config.xType,
+            });
             chart.updateDisplay(config);
         }
     };
@@ -1439,8 +1547,14 @@ function bindUIControls(chart: TimeSeriesChart): void {
         }
     };
 
-    xDropdown?.addEventListener('change', updateChart);
-    yDropdown?.addEventListener('change', updateChart);
+    xDropdown?.addEventListener('change', () => {
+        console.log('X dropdown changed to:', (xDropdown as { value?: string } | null)?.value);
+        updateChart();
+    });
+    yDropdown?.addEventListener('change', () => {
+        console.log('Y dropdown changed to:', (yDropdown as { value?: string } | null)?.value);
+        updateChart();
+    });
 
     // Auto-update when data sources change
     chart.on('series-changed', autoUpdateOnDataAvailable);
@@ -1586,9 +1700,7 @@ function closeSeriesModal(): void {
     const modal = document.getElementById('modal-series-selector');
     const btnGrid = document.getElementById('series-grid') as HTMLButtonElement | null;
 
-    if (modal) {
-        modal.setAttribute('aria-hidden', 'true');
-    }
+    closeModal(modal);
     btnGrid?.focus();
 }
 

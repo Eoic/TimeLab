@@ -4,7 +4,11 @@
 
 import type { TimeSeriesData } from '../charts/timeSeries';
 import type { TimeSeriesLabel } from '../domain/labels';
-import { getAllTimeSeriesLabels, saveTimeSeriesLabel, deleteTimeSeriesLabel } from '../platform/storage';
+import {
+    getAllTimeSeriesLabels,
+    saveTimeSeriesLabel,
+    deleteTimeSeriesLabel,
+} from '../platform/storage';
 import type { TDataFile } from '../uploads';
 
 /**
@@ -41,18 +45,56 @@ export class CSVTimeSeriesData implements TimeSeriesData {
     }
 
     getData(xColumn: string, yColumn: string): ReadonlyArray<readonly [number, number]> {
-        const xIndex = this.columns.indexOf(xColumn);
-        const yIndex = this.columns.indexOf(yColumn);
+        // Handle special case for "index" - use row index instead of column data
+        const useXIndex = xColumn === 'index';
+        const useYIndex = yColumn === 'index';
 
-        if (xIndex === -1 || yIndex === -1) {
+        const xIndex = useXIndex ? -1 : this.columns.indexOf(xColumn);
+        const yIndex = useYIndex ? -1 : this.columns.indexOf(yColumn);
+
+        console.log('getData called:', {
+            xColumn,
+            yColumn,
+            useXIndex,
+            useYIndex,
+            xIndex,
+            yIndex,
+            columns: this.columns,
+            firstRowSample: this.parsedData[0],
+        });
+
+        // Check if non-index columns exist
+        if (!useXIndex && xIndex === -1) {
+            console.log('X column not found:', xColumn);
+            return [];
+        }
+        if (!useYIndex && yIndex === -1) {
+            console.log('Y column not found:', yColumn);
             return [];
         }
 
-        return this.parsedData.map((row, index) => {
-            const xValue = xIndex < row.length ? (row[xIndex] ?? index) : index;
-            const yValue = yIndex < row.length ? (row[yIndex] ?? 0) : 0;
+        const result = this.parsedData.map((row, index) => {
+            // For x-axis: use row index if "index" selected, otherwise use column data
+            const xValue = useXIndex ? index : xIndex < row.length ? (row[xIndex] ?? index) : index;
+
+            // For y-axis: use row index if "index" selected, otherwise use column data
+            const yValue = useYIndex ? index : yIndex < row.length ? (row[yIndex] ?? 0) : 0;
+
             return [xValue, yValue] as const;
         });
+
+        // Sort data by X values for proper line rendering and area filling
+        // Only sort when not using index for X-axis (index is already sorted)
+        const sortedResult = useXIndex ? result : result.slice().sort((a, b) => a[0] - b[0]);
+
+        console.log('getData result sample:', {
+            totalPoints: sortedResult.length,
+            firstFew: sortedResult.slice(0, 3),
+            lastFew: sortedResult.slice(-3),
+            wasSorted: !useXIndex,
+        });
+
+        return sortedResult;
     }
 
     isLabeled(): boolean {
@@ -125,7 +167,11 @@ export class CSVTimeSeriesData implements TimeSeriesData {
                 endTime: updates.endTime ?? existingLabel.endTime,
                 labelDefId: updates.labelDefId ?? existingLabel.labelDefId,
                 updatedAt: Date.now(),
-                ...(updates.visible !== undefined ? { visible: updates.visible } : existingLabel.visible !== undefined ? { visible: existingLabel.visible } : {}),
+                ...(updates.visible !== undefined
+                    ? { visible: updates.visible }
+                    : existingLabel.visible !== undefined
+                      ? { visible: existingLabel.visible }
+                      : {}),
             };
             this.labels[index] = updatedLabel;
             // Update in storage

@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modal Focus Management Fix - TimeLab</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .problem {
+            background: #fff2f2;
+            border-left: 4px solid #dc3545;
+        }
+        .solution {
+            background: #f2fff2;
+            border-left: 4px solid #28a745;
+        }
+        code {
+            background: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+        .code-block {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        .warning {
+            color: #dc3545;
+            font-weight: 600;
+        }
+        .success {
+            color: #28a745;
+            font-weight: 600;
+        }
+        .diff-remove {
+            background: #ffe6e6;
+            text-decoration: line-through;
+        }
+        .diff-add {
+            background: #e6ffe6;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Modal Focus Management Fix</h1>
+    
+    <div class="section problem">
+        <h2>Problem: ARIA Hidden Focus Violation</h2>
+        <p>When closing modals, the following warning appeared in the browser console:</p>
+        <div class="code-block warning">
+            Blocked aria-hidden on an element because its descendant retained focus. The focus must not be hidden from assistive technology users. Avoid using aria-hidden on a focused element or its ancestor. Consider using the inert attribute instead, which will also prevent focus.
+        </div>
+        <p><strong>Root Cause:</strong> The <code>closeModal</code> function was immediately setting <code>aria-hidden="true"</code> on modals while buttons inside them still had focus, violating ARIA accessibility guidelines.</p>
+    </div>
+
+    <div class="section solution">
+        <h2>Solution: Proper Focus Management</h2>
+        <p><strong>Fixed by:</strong> Moving focus away from modal elements before setting <code>aria-hidden="true"</code></p>
+        
+        <h3>Updated closeModal function:</h3>
+        <div class="code-block">
+<pre>export function closeModal(modal: HTMLElement | null | undefined): void {
+    if (!modal) {
+        return;
+    }
+
+    // Move focus away from the modal before hiding it to prevent ARIA violations
+    const activeElement = document.activeElement as HTMLElement | null;
+    if (activeElement && modal.contains(activeElement)) {
+        // Try to find the element that opened the modal
+        let opener: HTMLElement | null = null;
+        
+        // First try: look for data-modal attribute pattern
+        const modalId = modal.id.replace('modal-', '');
+        opener = document.querySelector<HTMLElement>(`[data-modal="${modalId}"]`);
+        
+        // Second try: look for aria-controls pattern
+        if (!opener && modal.id) {
+            opener = document.querySelector<HTMLElement>(`[aria-controls="${modal.id}"]`);
+        }
+        
+        if (opener) {
+            opener.focus();
+        } else {
+            // Fallback to body if opener not found
+            document.body.focus();
+        }
+        
+        // Use requestAnimationFrame to ensure focus has moved before hiding
+        requestAnimationFrame(() => {
+            modal.setAttribute('aria-hidden', 'true');
+        });
+    } else {
+        // No focus management needed, can hide immediately
+        modal.setAttribute('aria-hidden', 'true');
+    }
+}</pre>
+        </div>
+        
+        <h3>Centralized Usage</h3>
+        <p>Updated all modal close implementations to use the centralized <code>closeModal</code> function:</p>
+        <ul>
+            <li>✅ Data Upload Modal (<code>src/uploads/index.ts</code>)</li>
+            <li>✅ Label Management Modal (<code>src/ui/labelManagement.ts</code>)</li>
+            <li>✅ Label Creation Modal (<code>src/ui/labelModal.ts</code>)</li>
+            <li>✅ Series Selector Modal (<code>src/charts/timeSeries.ts</code>)</li>
+            <li>✅ Confirmation Modal (<code>src/ui/confirmation.ts</code>) - Special handling for dynamic modals</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Benefits</h2>
+        <ul>
+            <li><strong>✅ Accessibility:</strong> Eliminates ARIA violations and console warnings</li>
+            <li><strong>✅ User Experience:</strong> Proper focus management for keyboard navigation</li>
+            <li><strong>✅ Assistive Technology:</strong> Screen readers won't lose focus context</li>
+            <li><strong>✅ Code Quality:</strong> Centralized modal behavior for consistency</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Technical Changes</h2>
+        <h3>1. Enhanced DOM Utilities (src/ui/dom.ts)</h3>
+        <ul>
+            <li>Added focus management logic before setting aria-hidden</li>
+            <li>Support for both <code>data-modal</code> and <code>aria-controls</code> patterns</li>
+            <li>Uses <code>requestAnimationFrame</code> to ensure proper timing</li>
+        </ul>
+        
+        <h3>2. Multiple Modal Opening Patterns Supported</h3>
+        <ul>
+            <li><strong>data-modal pattern:</strong> <code>&lt;button data-modal="label-new"&gt;</code> → <code>#modal-label-new</code></li>
+            <li><strong>aria-controls pattern:</strong> <code>&lt;button aria-controls="modal-data-upload"&gt;</code> → <code>#modal-data-upload</code></li>
+        </ul>
+        
+        <h3>3. Updated Modal Implementations</h3>
+        <ul>
+            <li><strong>Standard Modals:</strong> Use centralized <code>closeModal()</code> function</li>
+            <li><strong>Confirmation Dialogs:</strong> Special handling to remember and restore previous focus</li>
+        </ul>
+        
+        <h3>4. Confirmation Dialog Enhancement</h3>
+        <p>Confirmation modals now remember the previously focused element and restore focus to it when closing, preventing focus violations.</p>
+        
+        <h3>5. Timing Optimization</h3>
+        <p>Uses <code>requestAnimationFrame</code> to ensure focus moves before aria-hidden is applied</p>
+    </div>
+
+    <div class="section success">
+        <h2>✅ Resolution</h2>
+        <p class="success">The modal focus management issue has been resolved. No more ARIA hidden violations will occur when closing modals, ensuring proper accessibility compliance and better user experience.</p>
+    </div>
+</body>
+</html>

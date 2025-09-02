@@ -229,6 +229,11 @@ export function setupUploads(): void {
             vis.addEventListener('click', () => {
                 file.visible = !file.visible;
 
+                // Update the button content immediately without DOM recreation
+                vis.setAttribute('aria-pressed', String(file.visible));
+                vis.title = file.visible ? 'Hide from labeling' : 'Include in labeling';
+                vis.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true">${file.visible ? 'visibility' : 'visibility_off'}</span>${file.visible ? 'Visible' : 'Hidden'}`;
+
                 void (async () => {
                     try {
                         const result = await saveRecord(file);
@@ -240,7 +245,6 @@ export function setupUploads(): void {
                         // ignore persistence errors for UI responsiveness
                     }
 
-                    renderFilesList();
                     notifyChange();
                 })();
             });

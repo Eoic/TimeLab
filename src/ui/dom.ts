@@ -32,7 +32,37 @@ export function closeModal(modal: HTMLElement | null | undefined): void {
     if (!modal) {
         return;
     }
-    modal.setAttribute('aria-hidden', 'true');
+
+    // Move focus away from the modal before hiding it to prevent ARIA violations
+    const activeElement = document.activeElement as HTMLElement | null;
+    if (activeElement && modal.contains(activeElement)) {
+        // Try to find the element that opened the modal
+        let opener: HTMLElement | null = null;
+
+        // First try: look for data-modal attribute pattern
+        const modalId = modal.id.replace('modal-', '');
+        opener = document.querySelector<HTMLElement>(`[data-modal="${modalId}"]`);
+
+        // Second try: look for aria-controls pattern
+        if (!opener && modal.id) {
+            opener = document.querySelector<HTMLElement>(`[aria-controls="${modal.id}"]`);
+        }
+
+        if (opener) {
+            opener.focus();
+        } else {
+            // Fallback to body if opener not found
+            document.body.focus();
+        }
+
+        // Use requestAnimationFrame to ensure focus has moved before hiding
+        requestAnimationFrame(() => {
+            modal.setAttribute('aria-hidden', 'true');
+        });
+    } else {
+        // No focus management needed, can hide immediately
+        modal.setAttribute('aria-hidden', 'true');
+    }
 }
 
 /**

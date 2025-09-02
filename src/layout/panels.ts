@@ -62,12 +62,15 @@ export function setupCollapsiblePanels(): void {
         const chart = (window as unknown as { __timestudioChart?: { resize: () => void } })
             .__timestudioChart;
         if (chart) {
+            // Use immediate resize + animation frame for smooth transition
+            chart.resize();
             requestAnimationFrame(() => {
                 chart.resize();
             });
+            // One more resize after CSS transition completes (200ms)
             setTimeout(() => {
                 chart.resize();
-            }, 120);
+            }, 220);
         }
 
         // Also emit a custom event for new chart implementations

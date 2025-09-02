@@ -1,10 +1,11 @@
+import { getLabelService } from '../services/labelService';
+
 import type { TLDropdown } from '@/components/dropdown';
+import { DEFAULT_LABEL_DEFINITIONS } from '@/domain/labels';
 import { getAllLabels, saveLabel } from '@/platform';
 import { uuid } from '@/shared/misc';
 import type { LabelDefinition } from '@/types/storage';
 import type { TDataFile } from '@/uploads';
-import { DEFAULT_LABEL_DEFINITIONS } from '@/domain/labels';
-import { getLabelService } from '../services/labelService';
 
 /**
  * In-memory cache of label definitions
@@ -17,19 +18,19 @@ let isLoaded = false;
  */
 async function loadLabelDefinitions(): Promise<void> {
     if (isLoaded) return;
-    
+
     try {
         const result = await getAllLabels<LabelDefinition>();
         if (result.ok) {
             // Clear current definitions and populate from storage
             labelDefinitions.length = 0;
             labelDefinitions.push(...result.value);
-            
+
             // If no definitions exist, create defaults
             if (labelDefinitions.length === 0) {
                 await createDefaultDefinitions();
             }
-            
+
             updateActiveLabelDropdown();
         } else {
             // eslint-disable-next-line no-console
@@ -55,7 +56,7 @@ async function createDefaultDefinitions(): Promise<void> {
             createdAt: Date.now(),
             updatedAt: Date.now(),
         };
-        
+
         try {
             const result = await saveLabel(labelDef);
             if (result.ok) {
@@ -69,7 +70,7 @@ async function createDefaultDefinitions(): Promise<void> {
             console.error('Error saving default label definition:', error);
         }
     }
-    
+
     updateActiveLabelDropdown();
 }
 
@@ -214,6 +215,12 @@ export function setupDropdowns(): void {
     const cfgZoom = document.querySelector<TLDropdown>('#cfg-zoom-preset');
 
     const setAxisOptions = (cols: string[] | null) => {
+        // eslint-disable-next-line no-console
+        console.log('setAxisOptions called with:', cols, 'Current values:', {
+            x: xAxisDropdown?.value,
+            y: yAxisDropdown?.value,
+        });
+
         if (!xAxisDropdown || !yAxisDropdown) {
             return;
         }
@@ -252,13 +259,11 @@ export function setupDropdowns(): void {
             xAxisDropdown.value = timeColumn || 'index';
         }
 
-        // Y options are all columns except the currently selected X (if present in list)
-        const xVal = xAxisDropdown.value;
-        const yOpts = options.filter((o) => o.value !== xVal);
-        yAxisDropdown.options = yOpts.length ? yOpts : options;
+        // Y options are all columns (same as X options)
+        yAxisDropdown.options = options;
 
         if (!yAxisDropdown.value) {
-            const yColumn = yOpts.find(
+            const yColumn = options.find(
                 (opt) =>
                     opt.value.toLowerCase().includes('punch') ||
                     opt.value.toLowerCase().includes('force') ||
@@ -310,11 +315,11 @@ export function setupDropdowns(): void {
 
     if (cfgXType) {
         cfgXType.options = [
-            { value: 'index', label: 'Index (category)' },
-            { value: 'time', label: 'Time (date/time)' },
             { value: 'numeric', label: 'Numeric (value axis)' },
+            { value: 'time', label: 'Time (date/time)' },
+            { value: 'index', label: 'Index (category)' },
         ];
-        cfgXType.value = 'index';
+        cfgXType.value = 'numeric'; // Default to numeric for all columns
     }
 
     if (cfgYType) {
@@ -363,6 +368,13 @@ export function setupDropdowns(): void {
     xAxisDropdown?.addEventListener('change', (ev: Event) => {
         const ce = ev as CustomEvent<{ value?: unknown }>;
         const val = typeof ce.detail.value === 'string' ? ce.detail.value : '';
+        // eslint-disable-next-line no-console
+        console.log(
+            'X dropdown changed to:',
+            val,
+            'Y dropdown current value:',
+            yAxisDropdown?.value
+        );
         if (val) {
             (ev.currentTarget as HTMLElement).setAttribute('data-selected', val);
         }
@@ -370,6 +382,8 @@ export function setupDropdowns(): void {
     yAxisDropdown?.addEventListener('change', (ev: Event) => {
         const ce = ev as CustomEvent<{ value?: unknown }>;
         const val = typeof ce.detail.value === 'string' ? ce.detail.value : '';
+        // eslint-disable-next-line no-console
+        console.log('Y dropdown changed to:', val, 'Event triggered by:', ev);
         if (val) {
             (ev.currentTarget as HTMLElement).setAttribute('data-selected', val);
         }
@@ -384,6 +398,11 @@ export function setupDropdowns(): void {
     // Listen for direct column updates from the chart system
     window.addEventListener('timelab:columnsAvailable', (ev) => {
         const detail = (ev as CustomEvent<{ columns: string[] }>).detail;
+        // eslint-disable-next-line no-console
+        console.log(
+            'timelab:columnsAvailable event fired, calling setAxisOptions with:',
+            detail.columns
+        );
         setAxisOptions(detail.columns.length > 0 ? detail.columns : null);
     });
 

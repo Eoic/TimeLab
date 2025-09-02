@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Series Navigation Cleanup - TimeLab</title>
+        <style>
+            body {
+                background: #1f2937;
+                color: #f9fafb;
+                font-family: Arial, sans-serif;
+                padding: 20px;
+            }
+            .test-section {
+                background: #374151;
+                padding: 20px;
+                margin: 20px 0;
+                border-radius: 8px;
+            }
+            .success {
+                color: #10b981;
+                font-weight: bold;
+            }
+            .info {
+                background: #1f2937;
+                color: #f9fafb;
+                padding: 16px;
+                border-radius: 8px;
+                margin: 10px 0;
+            }
+            pre {
+                background: #111827;
+                color: #e5e7eb;
+                padding: 12px;
+                border-radius: 6px;
+                overflow-x: auto;
+                font-size: 14px;
+            }
+            ul {
+                list-style: none;
+                padding: 0;
+            }
+            li {
+                padding: 8px 0;
+                border-bottom: 1px solid #4b5563;
+            }
+            li:before {
+                content: '✅ ';
+                margin-right: 8px;
+            }
+            a {
+                color: #3b82f6;
+                text-decoration: none;
+            }
+            .before-after {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
+                margin: 20px 0;
+            }
+            .before,
+            .after {
+                padding: 16px;
+                border-radius: 8px;
+            }
+            .before {
+                background: #991b1b;
+                border-left: 4px solid #dc2626;
+            }
+            .after {
+                background: #065f46;
+                border-left: 4px solid #10b981;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>🧹 TimeLab Series Navigation Cleanup - Responsive UI Fix</h1>
+
+        <div class="test-section">
+            <h2>✨ Redundant Element Hiding Eliminated</h2>
+            <p class="success">
+                Series navigation is now properly hidden as a single component when no data is
+                loaded!
+            </p>
+
+            <h3>🐛 Issue Fixed:</h3>
+            <ul>
+                <li>Removed redundant individual element hiding within series navigation</li>
+                <li>Simplified code by hiding the entire container instead</li>
+                <li>Eliminated leftover visibility logic for child elements</li>
+                <li>Improved code maintainability and performance</li>
+                <li>Made responsive behavior more predictable</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2>🔧 Code Improvement Details</h2>
+
+            <div class="before-after">
+                <div class="before">
+                    <h4>❌ Before: Individual Element Hiding</h4>
+                    <pre><code>// Individually hide each element
+const labeledToggle = document.getElementById('toggle-labeled');
+const seriesPrev = document.getElementById('series-prev');
+const seriesNext = document.getElementById('series-next');
+const seriesIndicator = document.getElementById('series-indicator');
+const seriesGrid = document.getElementById('series-grid');
+
+[seriesPrev, seriesNext, seriesIndicator, seriesGrid].forEach((element) => {
+    if (element) {
+        element.style.display = hasData ? '' : 'none';
+        element.setAttribute('aria-hidden', hasData ? 'false' : 'true');
+        if (element instanceof HTMLButtonElement) {
+            element.tabIndex = hasData ? 0 : -1;
+        }
+    }
+});
+
+// Plus separate handling for labeledToggle
+labeledToggle.style.display = hasData ? 'flex' : 'none';
+labeledToggle.setAttribute('aria-hidden', hasData ? 'false' : 'true');
+(labeledToggle as HTMLButtonElement).tabIndex = hasData ? 0 : -1;</code></pre>
+                </div>
+
+                <div class="after">
+                    <h4>✅ After: Container-Level Hiding</h4>
+                    <pre><code>// Hide the entire series navigation container
+const seriesNavigation = document.querySelector(
+    '.right[role="group"][aria-label="Series navigation"]'
+);
+if (seriesNavigation instanceof HTMLElement) {
+    seriesNavigation.style.display = hasData ? '' : 'none';
+    seriesNavigation.setAttribute('aria-hidden', hasData ? 'false' : 'true');
+    
+    // Update tabindex for all buttons within
+    const navButtons = seriesNavigation.querySelectorAll('button');
+    navButtons.forEach((button) => {
+        button.tabIndex = hasData ? 0 : -1;
+    });
+}</code></pre>
+                </div>
+            </div>
+
+            <h3>Key Improvements:</h3>
+            <div class="info">
+                <strong>1. Simplified Logic:</strong> One container rule instead of 5 individual
+                element rules<br />
+                <strong>2. Better Maintainability:</strong> Adding new elements to series nav
+                auto-inherits behavior<br />
+                <strong>3. Improved Performance:</strong> Fewer DOM queries and style updates<br />
+                <strong>4. Cleaner Code:</strong> Eliminated redundant leftover visibility logic
+            </div>
+
+            <h3>HTML Structure Context:</h3>
+            <pre><code>&lt;div class="right flex-wrap" role="group" aria-label="Series navigation"&gt;
+    &lt;button id="toggle-labeled"&gt;Unlabeled&lt;/button&gt;
+    &lt;div class="series-stepper"&gt;
+        &lt;button id="series-prev"&gt;Previous&lt;/button&gt;
+        &lt;span id="series-indicator"&gt;1 / 1&lt;/span&gt;
+        &lt;button id="series-next"&gt;Next&lt;/button&gt;
+    &lt;/div&gt;
+    &lt;button id="series-grid"&gt;Select series&lt;/button&gt;
+&lt;/div&gt;</code></pre>
+        </div>
+
+        <div class="test-section">
+            <h2>🎯 User Experience Impact</h2>
+
+            <h3>When No Data is Loaded:</h3>
+            <ul>
+                <li>
+                    <strong>Clean Interface:</strong> Entire series navigation section disappears
+                </li>
+                <li>
+                    <strong>No Visual Clutter:</strong> No leftover empty spaces or partially hidden
+                    elements
+                </li>
+                <li>
+                    <strong>Logical Flow:</strong> Users immediately understand there's no data to
+                    navigate
+                </li>
+                <li>
+                    <strong>Accessible:</strong> Screen readers properly understand the hidden state
+                </li>
+                <li><strong>Keyboard Navigation:</strong> No tab stops on inaccessible elements</li>
+            </ul>
+
+            <h3>When Data is Loaded:</h3>
+            <ul>
+                <li>
+                    <strong>Full Functionality:</strong> All series navigation controls become
+                    available
+                </li>
+                <li><strong>Proper Focus:</strong> All buttons receive proper tab order</li>
+                <li>
+                    <strong>Clear Purpose:</strong> Users can immediately see series management
+                    options
+                </li>
+                <li>
+                    <strong>Consistent Behavior:</strong> All elements show/hide as a cohesive unit
+                </li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2>⚙️ Technical Benefits</h2>
+
+            <h3>Code Quality:</h3>
+            <ul>
+                <li>
+                    <strong>DRY Principle:</strong> Don't Repeat Yourself - single source of truth
+                </li>
+                <li>
+                    <strong>Maintainability:</strong> Future changes to series nav auto-inherit
+                    behavior
+                </li>
+                <li>
+                    <strong>Readability:</strong> Clear intent - hide the entire navigation group
+                </li>
+                <li><strong>Performance:</strong> Fewer DOM operations and style calculations</li>
+            </ul>
+
+            <h3>Accessibility:</h3>
+            <ul>
+                <li>
+                    <strong>ARIA Compliance:</strong> Proper use of aria-hidden at container level
+                </li>
+                <li><strong>Keyboard Navigation:</strong> Tab order managed efficiently</li>
+                <li><strong>Screen Reader Friendly:</strong> Clear semantic grouping</li>
+                <li><strong>Focus Management:</strong> No orphaned focusable elements</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2>🧪 Testing the Fix</h2>
+
+            <div class="info">
+                <strong>Test Scenario:</strong>
+            </div>
+
+            <ol>
+                <li><strong>Start Fresh:</strong> Open TimeLab with no data loaded</li>
+                <li>
+                    <strong>Observe:</strong> Series navigation section should be completely hidden
+                </li>
+                <li><strong>Load Data:</strong> Upload a CSV file or load example data</li>
+                <li>
+                    <strong>Observe:</strong> Entire series navigation appears with all controls
+                </li>
+                <li><strong>Clear Data:</strong> Remove or reset the data</li>
+                <li><strong>Observe:</strong> Series navigation cleanly disappears again</li>
+            </ol>
+
+            <h3>✅ Expected Results:</h3>
+            <ul>
+                <li>No individual elements partially visible when no data</li>
+                <li>Clean show/hide transition for entire navigation group</li>
+                <li>No leftover spacing or layout artifacts</li>
+                <li>Proper keyboard navigation behavior</li>
+                <li>Screen reader announces container state correctly</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2>🎉 Implementation Complete</h2>
+            <p class="success">
+                The series navigation now behaves as a cohesive component, hiding and showing as a
+                single unit based on data availability!
+            </p>
+
+            <p>
+                This change eliminates redundant code, improves maintainability, and provides a
+                cleaner user experience when no data is loaded. The interface now feels more
+                polished and intentional.
+            </p>
+
+            <p><a href="/">← Back to TimeLab Application</a></p>
+        </div>
+
+        <script>
+            console.log('🧹 TimeLab Series Navigation Cleanup Complete!');
+            console.log('✅ Improvements made:');
+            console.log('  - Eliminated redundant individual element hiding');
+            console.log('  - Simplified to container-level visibility control');
+            console.log('  - Improved code maintainability');
+            console.log('  - Enhanced accessibility compliance');
+            console.log('  - Cleaner responsive UI behavior');
+            console.log('🎯 Series navigation now works as a cohesive component!');
+        </script>
+    </body>
+</html>

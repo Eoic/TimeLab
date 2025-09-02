@@ -1,5 +1,6 @@
 import type { HistoryEntry } from '../types/storage';
 
+import { closeModal as closeDOMModal } from './dom.js';
 import { addLabelDefinition } from './dropdowns.js';
 
 import { getAllHistory, saveHistory } from '@/platform';
@@ -142,7 +143,8 @@ export function setupLabelModal(): void {
     }
 
     function closeModal(): void {
-        modal?.setAttribute('aria-hidden', 'true');
+        // Use the centralized closeModal function for proper focus management
+        closeDOMModal(modal);
 
         // Focus the button that opened the modal
         const openButton = document.querySelector('[data-modal="label-new"]') as HTMLElement;
@@ -415,14 +417,14 @@ export function setupModalTriggers(): void {
         modal.addEventListener('click', (e) => {
             const target = e.target as HTMLElement;
             if (target.closest('[data-close]') || target === modal) {
-                modal.setAttribute('aria-hidden', 'true');
+                closeDOMModal(modal);
             }
         });
 
         // Handle Escape key
         modal.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
-                modal.setAttribute('aria-hidden', 'true');
+                closeDOMModal(modal);
             }
         });
     });

@@ -26,6 +26,7 @@
         'config chart labctrl'
         'config chart labctrl'
         'config stats labctrl';
+    transition: grid-template-columns 200ms ease-out;
 
     .header {
         grid-area: header;
@@ -61,40 +62,44 @@
 
     /* Collapsed layout variants (desktop) */
     &.collapse-left {
+        grid-template-columns: 1fr minmax(0, 370px);
         grid-template-areas:
-            'header header header'
-            'toolbar toolbar toolbar'
-            'chart chart labctrl'
-            'chart chart labctrl'
-            'stats stats labctrl';
+            'header header'
+            'toolbar toolbar'
+            'chart labctrl'
+            'chart labctrl'
+            'stats labctrl';
     }
 
     &.collapse-right {
+        grid-template-columns: minmax(0, 370px) 1fr;
         grid-template-areas:
-            'header header header'
-            'toolbar toolbar toolbar'
-            'config chart chart'
-            'config chart chart'
-            'config stats stats';
+            'header header'
+            'toolbar toolbar'
+            'config chart'
+            'config chart'
+            'config stats';
     }
 
     &.collapse-left.collapse-right {
+        grid-template-columns: 1fr;
         grid-template-areas:
-            'header header header'
-            'toolbar toolbar toolbar'
-            'chart chart chart'
-            'chart chart chart'
-            'stats stats stats';
+            'header'
+            'toolbar'
+            'chart'
+            'chart'
+            'stats';
     }
 
     /* All panels collapsed: maximize chart area across remaining rows */
     &.collapse-left.collapse-right.collapse-bottom {
+        grid-template-columns: 1fr;
         grid-template-areas:
-            'header header header'
-            'toolbar toolbar toolbar'
-            'chart chart chart'
-            'chart chart chart'
-            'chart chart chart';
+            'header'
+            'toolbar'
+            'chart'
+            'chart'
+            'chart';
     }
 
     &.collapse-bottom {
@@ -108,21 +113,23 @@
 
     /* Combined variants to ensure correct expansion when bottom is collapsed */
     &.collapse-left.collapse-bottom {
+        grid-template-columns: 1fr minmax(0, 370px);
         grid-template-areas:
-            'header header header'
-            'toolbar toolbar toolbar'
-            'chart chart labctrl'
-            'chart chart labctrl'
-            'chart chart labctrl';
+            'header header'
+            'toolbar toolbar'
+            'chart labctrl'
+            'chart labctrl'
+            'chart labctrl';
     }
 
     &.collapse-right.collapse-bottom {
+        grid-template-columns: minmax(0, 370px) 1fr;
         grid-template-areas:
-            'header header header'
-            'toolbar toolbar toolbar'
-            'config chart chart'
-            'config chart chart'
-            'config chart chart';
+            'header header'
+            'toolbar toolbar'
+            'config chart'
+            'config chart'
+            'config chart';
     }
 }
 

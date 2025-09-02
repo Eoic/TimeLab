@@ -15,6 +15,9 @@ export interface ConfirmationOptions {
  */
 export function showConfirmation(options: ConfirmationOptions): Promise<boolean> {
     return new Promise((resolve) => {
+        // Remember the element that had focus before opening the confirmation
+        const previouslyFocusedElement = document.activeElement as HTMLElement | null;
+
         const modal = document.getElementById('modal-confirm');
         const titleElement = document.getElementById('confirm-title');
         const messageElement = document.getElementById('confirm-message');
@@ -52,14 +55,34 @@ export function showConfirmation(options: ConfirmationOptions): Promise<boolean>
         // Event handlers
         const handleConfirm = () => {
             cleanup();
-            closeModal(modal);
-            resolve(true);
+            // For confirmation modals, manually manage focus before closing
+            if (previouslyFocusedElement) {
+                previouslyFocusedElement.focus();
+                // Use requestAnimationFrame to ensure focus moves before closing
+                requestAnimationFrame(() => {
+                    closeModal(modal);
+                    resolve(true);
+                });
+            } else {
+                closeModal(modal);
+                resolve(true);
+            }
         };
 
         const handleCancel = () => {
             cleanup();
-            closeModal(modal);
-            resolve(false);
+            // For confirmation modals, manually manage focus before closing
+            if (previouslyFocusedElement) {
+                previouslyFocusedElement.focus();
+                // Use requestAnimationFrame to ensure focus moves before closing
+                requestAnimationFrame(() => {
+                    closeModal(modal);
+                    resolve(false);
+                });
+            } else {
+                closeModal(modal);
+                resolve(false);
+            }
         };
 
         const handleKeydown = (e: KeyboardEvent) => {

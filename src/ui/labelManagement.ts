@@ -1,4 +1,5 @@
 import { confirmDelete } from './confirmation.js';
+import { closeModal, openModal } from './dom.js';
 import { getLabelDefinitions, updateLabelDefinition, deleteLabelDefinition } from './dropdowns.js';
 
 /**
@@ -37,30 +38,21 @@ export function setupLabelManagement(): void {
  * Open the label management modal and populate it with current labels
  */
 function openLabelManagementModal(): void {
-    const modal = document.querySelector('#modal-label-manage');
-    const listContainer = document.querySelector('#label-manage-list');
-
-    if (!modal || !listContainer) {
-        return;
-    }
+    const modal = document.querySelector('#modal-label-manage') as HTMLElement;
 
     // Populate the list with current label definitions
     populateLabelManagementList();
 
     // Show modal
-    modal.setAttribute('aria-hidden', 'false');
+    openModal(modal);
 }
 
 /**
  * Close the label management modal
  */
 function closeLabelManagementModal(): void {
-    const modal = document.querySelector('#modal-label-manage');
-    if (!modal) {
-        return;
-    }
-
-    modal.setAttribute('aria-hidden', 'true');
+    const modal = document.querySelector('#modal-label-manage') as HTMLElement;
+    closeModal(modal);
 }
 
 /**

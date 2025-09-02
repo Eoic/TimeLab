@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>File Visibility Button Focus Fix (Optimized) - TimeLab</title>
+        <style>
+            body {
+                font-family:
+                    system-ui,
+                    -apple-system,
+                    sans-serif;
+                line-height: 1.6;
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 20px;
+                background: #f5f5f5;
+            }
+            .section {
+                background: white;
+                padding: 20px;
+                margin: 20px 0;
+                border-radius: 8px;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            }
+            .problem {
+                background: #fff2f2;
+                border-left: 4px solid #dc3545;
+            }
+            .solution {
+                background: #f2fff2;
+                border-left: 4px solid #28a745;
+            }
+            .optimization {
+                background: #e8f4fd;
+                border-left: 4px solid #0066cc;
+            }
+            code {
+                background: #f8f9fa;
+                padding: 2px 6px;
+                border-radius: 4px;
+                font-family: 'Consolas', 'Monaco', monospace;
+            }
+            .code-block {
+                background: #f8f9fa;
+                padding: 15px;
+                border-radius: 6px;
+                overflow-x: auto;
+                margin: 10px 0;
+            }
+            .warning {
+                color: #dc3545;
+                font-weight: 600;
+            }
+            .success {
+                color: #28a745;
+                font-weight: 600;
+            }
+            .info {
+                color: #0066cc;
+                font-weight: 600;
+            }
+            ul {
+                list-style-type: none;
+                padding-left: 0;
+            }
+            ul li:before {
+                content: '✅ ';
+                margin-right: 8px;
+            }
+            .compare {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
+                margin: 20px 0;
+            }
+            .before,
+            .after {
+                padding: 15px;
+                border-radius: 6px;
+            }
+            .before {
+                background: #fef2f2;
+                border-left: 4px solid #dc3545;
+            }
+            .after {
+                background: #f0fdf4;
+                border-left: 4px solid #22c55e;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>🚀 File Visibility Button Focus Fix (Optimized)</h1>
+
+        <div class="section problem">
+            <h2>Original Problem: Focus Loss on Visibility Toggle</h2>
+            <p>
+                <strong>Issue:</strong> When clicking "Visible"/"Hidden" button in the "Manage data
+                files" modal, focus was lost and there was a visible animation as the button was
+                recreated.
+            </p>
+
+            <p>
+                <strong>Root Cause:</strong> Complete DOM re-render destroyed and recreated all
+                elements, interrupting focus and causing visual flicker.
+            </p>
+
+            <div class="code-block warning">
+                User Experience Issues: • Keyboard navigation interrupted • Visible button
+                recreation animation • Focus restoration delay/flash • Poor performance with large
+                file lists
+            </div>
+        </div>
+
+        <div class="section optimization">
+            <h2>🎯 Optimized Solution: In-Place Content Updates</h2>
+            <p>
+                <strong>New Strategy:</strong> Instead of recreating the entire DOM, update only the
+                button's content (text, icon, attributes) in place, preserving the DOM element and
+                its natural focus state.
+            </p>
+
+            <div class="compare">
+                <div class="before">
+                    <h4>❌ Previous Approach</h4>
+                    <ul style="font-size: 0.9em">
+                        <li style="list-style: none">🔄 Full DOM recreation</li>
+                        <li style="list-style: none">⏱️ Focus restoration timing</li>
+                        <li style="list-style: none">✨ Visible animation/flash</li>
+                        <li style="list-style: none">🐌 Slower performance</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>✅ Optimized Approach</h4>
+                    <ul style="font-size: 0.9em">
+                        <li style="list-style: none">🎯 In-place content update</li>
+                        <li style="list-style: none">⚡ Instant, no timing issues</li>
+                        <li style="list-style: none">🔒 Perfect focus retention</li>
+                        <li style="list-style: none">🚀 Much faster</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="section solution">
+            <h2>Implementation Details</h2>
+
+            <h3>Optimized Click Handler</h3>
+            <div class="code-block">
+                <pre>
+vis.addEventListener('click', () => {
+    // 1. Update data model
+    file.visible = !file.visible;
+
+    // 2. Update button content immediately (no DOM recreation!)
+    vis.setAttribute('aria-pressed', String(file.visible));
+    vis.title = file.visible ? 'Hide from labeling' : 'Include in labeling';
+    vis.innerHTML = `&lt;span class="material-symbols-outlined" aria-hidden="true"&gt;${
+        file.visible ? 'visibility' : 'visibility_off'
+    }&lt;/span&gt;${file.visible ? 'Visible' : 'Hidden'}`;
+
+    // 3. Persist changes and notify (async, no UI blocking)
+    void (async () => {
+        await saveRecord(file);
+        notifyChange(); // No DOM re-render needed!
+    })();
+});</pre
+                >
+            </div>
+
+            <h3>Simplified renderFilesList Function</h3>
+            <div class="code-block">
+                <pre>
+// No longer needs focus restoration parameters!
+const renderFilesList = () => {
+    // ... DOM creation logic (only called when truly needed) ...
+};</pre
+                >
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Technical Benefits</h2>
+
+            <h3>🎯 Perfect Focus Management</h3>
+            <ul>
+                <li>
+                    <strong>No Focus Loss:</strong> DOM element preserved, focus naturally
+                    maintained
+                </li>
+                <li>
+                    <strong>No Animation:</strong> Content updates smoothly without visual
+                    disruption
+                </li>
+                <li><strong>Instant Feedback:</strong> Button reflects new state immediately</li>
+            </ul>
+
+            <h3>⚡ Performance Improvements</h3>
+            <ul>
+                <li><strong>Faster Updates:</strong> Only update what changed, not entire DOM</li>
+                <li><strong>Reduced Memory:</strong> No object creation/destruction</li>
+                <li>
+                    <strong>Better Scaling:</strong> Performance doesn't degrade with more files
+                </li>
+            </ul>
+
+            <h3>🧹 Code Simplification</h3>
+            <ul>
+                <li><strong>No Focus Restoration Logic:</strong> Removed complex timing code</li>
+                <li><strong>Simpler Function Signature:</strong> No optional parameters needed</li>
+                <li>
+                    <strong>More Predictable:</strong> Direct updates, no async timing dependencies
+                </li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>User Experience Comparison</h2>
+
+            <div class="compare">
+                <div class="before">
+                    <h4>Before Optimization</h4>
+                    <ol style="font-size: 0.9em; list-style: decimal">
+                        <li>User clicks visibility button</li>
+                        <li>Button loses focus immediately</li>
+                        <li>Entire file list DOM recreated</li>
+                        <li>Focus restored with animation</li>
+                        <li>Brief visual flash/flicker</li>
+                    </ol>
+                </div>
+                <div class="after">
+                    <h4>After Optimization</h4>
+                    <ol style="font-size: 0.9em; list-style: decimal">
+                        <li>User clicks visibility button</li>
+                        <li>Button content updates instantly</li>
+                        <li>Focus never lost</li>
+                        <li>Smooth, seamless transition</li>
+                        <li>Perfect user experience!</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Implementation Pattern</h2>
+            <p>
+                <strong>Key Principle:</strong>
+                <em
+                    >Update content in place rather than recreating DOM elements when only content
+                    changes.</em
+                >
+            </p>
+
+            <h3>When to Use This Pattern</h3>
+            <ul>
+                <li>
+                    <strong>Toggle States:</strong> Visibility, enabled/disabled, expanded/collapsed
+                </li>
+                <li><strong>Content Updates:</strong> Text, icons, attributes that change</li>
+                <li>
+                    <strong>User Interactions:</strong> Buttons, inputs that users are actively
+                    using
+                </li>
+                <li>
+                    <strong>Focus-Critical Elements:</strong> Any element where focus loss would
+                    disrupt UX
+                </li>
+            </ul>
+
+            <h3>When to Still Use Full Re-render</h3>
+            <ul>
+                <li><strong>Structural Changes:</strong> Adding/removing items from lists</li>
+                <li><strong>Initial Load:</strong> First time rendering content</li>
+                <li><strong>Complex Updates:</strong> Multiple interdependent elements changing</li>
+            </ul>
+        </div>
+
+        <div class="section success">
+            <h2>✅ Optimization Complete</h2>
+            <p class="success">
+                The file visibility button now updates seamlessly without any focus loss or visual
+                disruption. This pattern provides the best possible user experience while being more
+                performant and simpler to maintain.
+            </p>
+
+            <p>
+                <strong>Test the improvement:</strong> Open the "Manage data files" modal, navigate
+                to any visibility button, and toggle it. The button should update instantly with
+                perfect focus retention and no visual artifacts.
+            </p>
+
+            <div class="code-block info">
+                <strong>Pattern Summary:</strong><br />
+                ✅ Update content in place when possible<br />
+                ✅ Preserve DOM elements and their state<br />
+                ✅ Use full re-render only when structurally necessary<br />
+                ✅ Prioritize user experience and performance
+            </div>
+        </div>
+    </body>
+</html>

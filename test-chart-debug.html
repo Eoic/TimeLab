@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Chart Axis Debug Analysis</title>
+        <style>
+            body {
+                font-family:
+                    system-ui,
+                    -apple-system,
+                    sans-serif;
+                max-width: 900px;
+                margin: 0 auto;
+                padding: 20px;
+                line-height: 1.6;
+            }
+
+            .debug-section {
+                background: #f0f8ff;
+                border: 2px solid #0066cc;
+                padding: 20px;
+                margin: 20px 0;
+                border-radius: 8px;
+            }
+
+            .issue-analysis {
+                background: #fff3cd;
+                border: 1px solid #ffeaa7;
+                padding: 15px;
+                border-radius: 4px;
+                margin: 15px 0;
+            }
+
+            .fix-attempt {
+                background: #d1ecf1;
+                border: 1px solid #bee5eb;
+                padding: 15px;
+                border-radius: 4px;
+                margin: 15px 0;
+            }
+
+            code {
+                background: #e8e8e8;
+                padding: 2px 6px;
+                border-radius: 3px;
+                font-family: 'Monaco', 'Consolas', monospace;
+            }
+
+            pre {
+                background: #f8f8f8;
+                padding: 15px;
+                border-radius: 4px;
+                overflow-x: auto;
+                font-size: 14px;
+            }
+
+            .data-table {
+                border-collapse: collapse;
+                width: 100%;
+                margin: 10px 0;
+            }
+
+            .data-table th,
+            .data-table td {
+                border: 1px solid #ddd;
+                padding: 8px;
+                text-align: left;
+            }
+
+            .data-table th {
+                background: #f5f5f5;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>🔍 Chart Axis Debug Analysis</h1>
+
+        <div class="debug-section">
+            <h2>🚨 Current Issue Analysis</h2>
+            <p>
+                <strong>User Report:</strong> "Chart is always stuck on timestamp_ms, regardless of
+                which value is chosen from the x axis dropdown."
+            </p>
+
+            <div class="issue-analysis">
+                <h3>🔍 Key Observations:</h3>
+                <ol>
+                    <li>
+                        <strong>Fixed Expected Issue:</strong> X-axis "index" selection should now
+                        work
+                    </li>
+                    <li>
+                        <strong>Fixed Expected Issue:</strong> X-axis type mapping should be correct
+                    </li>
+                    <li>
+                        <strong>New Problem:</strong> Chart apparently defaults to "timestamp_ms"
+                        regardless of selection
+                    </li>
+                    <li>
+                        <strong>Data Mismatch:</strong> CSV file has columns like "Winkel", "Force
+                        left", etc. but NO "timestamp_ms"
+                    </li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="debug-section">
+            <h2>📊 Data Source Analysis</h2>
+
+            <h3>CSV File Data (CurveDataExporter_Tool_LVPA-1_20250602_230.csv):</h3>
+            <table class="data-table">
+                <tr>
+                    <th>Actual Columns</th>
+                </tr>
+                <tr>
+                    <td>Winkel</td>
+                </tr>
+                <tr>
+                    <td>Force left</td>
+                </tr>
+                <tr>
+                    <td>Force right</td>
+                </tr>
+                <tr>
+                    <td>Total press force</td>
+                </tr>
+                <tr>
+                    <td>Kanal LENKIMAS DS</td>
+                </tr>
+                <tr>
+                    <td>Kanal LENKIMAS OS</td>
+                </tr>
+                <tr>
+                    <td>Kanal TARP PUANSONU</td>
+                </tr>
+                <tr>
+                    <td>Kanal ROUND PUNCH</td>
+                </tr>
+                <tr>
+                    <td>OS DOUBLE</td>
+                </tr>
+                <tr>
+                    <td>DS DOUBLE</td>
+                </tr>
+                <tr>
+                    <td>PLOTIS OS</td>
+                </tr>
+                <tr>
+                    <td>SLIDE</td>
+                </tr>
+            </table>
+
+            <h3>Example Data (from addExampleData function):</h3>
+            <table class="data-table">
+                <tr>
+                    <th>Example Columns</th>
+                </tr>
+                <tr>
+                    <td>timestamp_ms</td>
+                </tr>
+                <tr>
+                    <td>press_force_kN</td>
+                </tr>
+                <tr>
+                    <td>piezo_strain_microstrain</td>
+                </tr>
+            </table>
+
+            <div class="issue-analysis">
+                <p>
+                    <strong>🔥 Critical Finding:</strong> The user mentions "timestamp_ms" which
+                    only exists in example data, not in the actual CSV file! This suggests either:
+                </p>
+                <ul>
+                    <li>Example data is being loaded automatically (unexpected)</li>
+                    <li>Example data is overriding the CSV data</li>
+                    <li>User is looking at example data instead of the CSV</li>
+                    <li>There's a data source priority issue</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="debug-section">
+            <h2>🔧 Applied Fixes Summary</h2>
+
+            <div class="fix-attempt">
+                <h3>Fix #1: Index Special Case Handling</h3>
+                <p><strong>File:</strong> <code>src/data/csvProcessor.ts</code></p>
+                <p>
+                    <strong>Change:</strong> Modified getData() to handle "index" selection by using
+                    row indices instead of column lookup
+                </p>
+                <p><strong>Status:</strong> ✅ Should work</p>
+            </div>
+
+            <div class="fix-attempt">
+                <h3>Fix #2: X-Axis Type Mapping</h3>
+                <p><strong>File:</strong> <code>src/charts/timeSeries.ts</code></p>
+                <p>
+                    <strong>Change:</strong> Fixed mapping from dropdown values to ECharts axis
+                    types
+                </p>
+                <p><strong>Status:</strong> ✅ Should work</p>
+            </div>
+
+            <div class="fix-attempt">
+                <h3>Fix #3: Dropdown Value Reading</h3>
+                <p><strong>File:</strong> <code>src/charts/timeSeries.ts</code></p>
+                <p><strong>Change:</strong> Fixed type casting for reading dropdown values</p>
+                <p><strong>Status:</strong> ✅ Should work</p>
+            </div>
+        </div>
+
+        <div class="debug-section">
+            <h2>🤔 Possible Root Causes</h2>
+
+            <h3>Theory 1: Data Source Priority</h3>
+            <div class="issue-analysis">
+                <p>The chart might be using example data instead of the CSV data. Check:</p>
+                <ul>
+                    <li>Is example data loaded automatically?</li>
+                    <li>Does example data override CSV data?</li>
+                    <li>Is there a data source selection issue?</li>
+                </ul>
+            </div>
+
+            <h3>Theory 2: Dropdown Selection Not Working</h3>
+            <div class="issue-analysis">
+                <p>The dropdown values might not be getting read correctly. Check:</p>
+                <ul>
+                    <li>Are the change event listeners working?</li>
+                    <li>Is the updateChart function being called?</li>
+                    <li>Are the dropdown values being read correctly?</li>
+                </ul>
+            </div>
+
+            <h3>Theory 3: Column Mapping Error</h3>
+            <div class="issue-analysis">
+                <p>The column names might not match between dropdowns and data. Check:</p>
+                <ul>
+                    <li>Do dropdown options match actual CSV columns?</li>
+                    <li>Is there a fallback that defaults to first column?</li>
+                    <li>Are column names being processed correctly?</li>
+                </ul>
+            </div>
+
+            <h3>Theory 4: Cache/State Issue</h3>
+            <div class="issue-analysis">
+                <p>The chart might be stuck in a cached state. Check:</p>
+                <ul>
+                    <li>Is the chart state being updated properly?</li>
+                    <li>Are there multiple chart instances?</li>
+                    <li>Is there old config being reused?</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="debug-section">
+            <h2>🧪 Debug Steps</h2>
+
+            <h3>Step 1: Verify Data Sources</h3>
+            <pre><code>// Open browser console and run:
+const dataManager = window.__timeSeriesController?.getDataManager?.();
+if (dataManager) {
+    dataManager.getDataSources().then(sources => {
+        console.log('Data sources:', sources);
+        sources.forEach((source, i) => {
+            console.log(`Source ${i}:`, source.name, source.columns);
+        });
+    });
+}</code></pre>
+
+            <h3>Step 2: Check Dropdown Values</h3>
+            <pre><code>// Check current dropdown selections:
+const xDropdown = document.querySelector('#x-axis');
+const yDropdown = document.querySelector('#y-axis');
+console.log('X dropdown:', xDropdown?.value);
+console.log('Y dropdown:', yDropdown?.value);
+console.log('X options:', xDropdown?.options);
+console.log('Y options:', yDropdown?.options);</code></pre>
+
+            <h3>Step 3: Monitor Chart Updates</h3>
+            <pre><code>// Check if updateChart is being called:
+// (Already added console.log in updateChart function)
+// Change dropdown values and watch console for logs</code></pre>
+
+            <h3>Step 4: Verify Chart Data</h3>
+            <pre><code>// Check what data the chart is actually using:
+const chartController = window.__timeSeriesController;
+if (chartController) {
+    const lastConfig = chartController.getLastConfig?.();
+    console.log('Last config:', lastConfig);
+    const currentSource = chartController.getCurrentSource?.();
+    if (currentSource) {
+        console.log('Current source data:', currentSource.getData('Winkel', 'Total press force'));
+    }
+}</code></pre>
+        </div>
+
+        <div class="debug-section">
+            <h2>💡 Next Actions</h2>
+
+            <ol>
+                <li>
+                    <strong>Run Debug Scripts:</strong> Execute the console commands above to
+                    identify the exact issue
+                </li>
+                <li>
+                    <strong>Check Data Priority:</strong> Verify which data source is being used by
+                    the chart
+                </li>
+                <li>
+                    <strong>Test Dropdown Changes:</strong> Monitor console logs when changing
+                    dropdown values
+                </li>
+                <li>
+                    <strong>Verify Column Mapping:</strong> Ensure dropdown options match available
+                    data columns
+                </li>
+                <li>
+                    <strong>Check Example Data:</strong> Verify if example data is loaded and taking
+                    precedence
+                </li>
+            </ol>
+
+            <p>
+                <strong>🎯 Goal:</strong> Identify why the chart shows "timestamp_ms" data when that
+                column doesn't exist in the CSV file.
+            </p>
+        </div>
+
+        <p>
+            <strong>Status:</strong> Need to identify the root cause of the data source/column
+            selection issue.
+        </p>
+    </body>
+</html>
