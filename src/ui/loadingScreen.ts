@@ -1,0 +1,190 @@
+/**
+ * Loading screen functionality
+ * Manages the initial loading state and smooth transition out
+ */
+
+interface LoadingState {
+    isComplete: boolean;
+    completedSteps: Set<string>;
+    requiredSteps: string[];
+}
+
+class LoadingManager {
+    private state: LoadingState = {
+        isComplete: false,
+        completedSteps: new Set(),
+        requiredSteps: [
+            'app-initialized',
+            'ui-setup',
+            'chart-initialized',
+            'dropdowns-setup',
+            'data-loaded',
+            'themes-ready',
+        ],
+    };
+
+    private loadingElement: HTMLElement | null = null;
+    private startTime = Date.now();
+    private minDisplayTime = 2500; // Minimum 2.5 seconds display time
+
+    constructor() {
+        this.loadingElement = document.getElementById('loading-screen');
+
+        // Auto-complete after a maximum timeout to prevent infinite loading
+        setTimeout(() => {
+            if (!this.state.isComplete) {
+                // eslint-disable-next-line no-console
+                console.warn('Loading timeout reached, forcing completion');
+                this.completeLoading();
+            }
+        }, 10000); // 10 second timeout
+    }
+
+    /**
+     * Mark a loading step as complete
+     */
+    markStepComplete(step: string): void {
+        this.state.completedSteps.add(step);
+        this.updateProgress();
+
+        if (this.areAllStepsComplete()) {
+            this.completeLoading();
+        }
+    }
+
+    /**
+     * Check if all required steps are complete
+     */
+    private areAllStepsComplete(): boolean {
+        return this.state.requiredSteps.every((step) => this.state.completedSteps.has(step));
+    }
+
+    /**
+     * Update loading progress indicator
+     */
+    private updateProgress(): void {
+        const progress = (this.state.completedSteps.size / this.state.requiredSteps.length) * 100;
+        const progressBar = document.querySelector('.loading-progress-bar') as HTMLElement;
+        const progressText = document.querySelector('.loading-progress-text') as HTMLElement;
+        const statusText = document.querySelector('.loading-status') as HTMLElement;
+
+        if (progressBar) {
+            progressBar.style.setProperty('--progress', `${String(progress)}%`);
+        }
+
+        if (progressText) {
+            progressText.textContent = `${String(Math.round(progress))}%`;
+        }
+
+        if (statusText) {
+            statusText.innerHTML = this.getStatusMessage();
+        }
+    }
+
+    /**
+     * Get current status message based on completed steps
+     */
+    private getStatusMessage(): string {
+        const completedSteps = Array.from(this.state.completedSteps);
+        const lastCompleted = completedSteps[completedSteps.length - 1];
+
+        const statusMessages: Record<string, string> = {
+            'app-initialized':
+                'Application initialized<span class="loading-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>',
+            'themes-ready':
+                'Themes loaded<span class="loading-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>',
+            'chart-initialized':
+                'Chart initialized<span class="loading-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>',
+            'data-loaded':
+                'Data loaded<span class="loading-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>',
+            'dropdowns-setup':
+                'UI components ready<span class="loading-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>',
+            'ui-setup':
+                'Finalizing setup<span class="loading-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>',
+        };
+
+        if (completedSteps.length === 0) {
+            return 'Initializing application<span class="loading-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>';
+        }
+
+        return (
+            statusMessages[lastCompleted!] ||
+            'Loading<span class="loading-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>'
+        );
+    }
+
+    /**
+     * Complete the loading process and hide the screen
+     */
+    private completeLoading(): void {
+        if (this.state.isComplete || !this.loadingElement) return;
+
+        this.state.isComplete = true;
+
+        // Calculate remaining time to meet minimum display duration
+        const elapsedTime = Date.now() - this.startTime;
+        const remainingTime = Math.max(0, this.minDisplayTime - elapsedTime);
+
+        // Wait for remaining time before starting fade out
+        setTimeout(() => {
+            if (!this.loadingElement) return;
+
+            // Add completion class to trigger fade out animation
+            this.loadingElement.classList.add('loading-complete');
+
+            // Remove the loading screen from DOM after animation
+            setTimeout(() => {
+                if (this.loadingElement && this.loadingElement.parentNode) {
+                    this.loadingElement.parentNode.removeChild(this.loadingElement);
+                }
+            }, 600); // Match CSS animation duration
+        }, remainingTime);
+    }
+
+    /**
+     * Force complete loading (for emergency use)
+     */
+    forceComplete(): void {
+        this.completeLoading();
+    }
+}
+
+// Create global instance
+let loadingManager: LoadingManager | null = null;
+
+/**
+ * Initialize the loading manager
+ */
+export function initializeLoadingScreen(): LoadingManager {
+    if (!loadingManager) {
+        loadingManager = new LoadingManager();
+    }
+    return loadingManager;
+}
+
+/**
+ * Mark a loading step as complete
+ */
+export function markLoadingStepComplete(step: string): void {
+    if (loadingManager) {
+        loadingManager.markStepComplete(step);
+    }
+}
+
+/**
+ * Force complete the loading screen
+ */
+export function forceCompleteLoading(): void {
+    if (loadingManager) {
+        loadingManager.forceComplete();
+    }
+}
+
+// Auto-initialize when module loads
+if (typeof window !== 'undefined' && document.readyState !== 'loading') {
+    initializeLoadingScreen();
+} else if (typeof window !== 'undefined') {
+    document.addEventListener('DOMContentLoaded', () => {
+        initializeLoadingScreen();
+    });
+}

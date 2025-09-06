@@ -42,6 +42,8 @@ input[type='checkbox'] {
     appearance: none;
     inline-size: 16px;
     block-size: 16px;
+    min-inline-size: 16px;
+    min-block-size: 16px;
     padding: 0;
     margin-right: $spacing-xs;
     border: 1px solid $color-border-primary;

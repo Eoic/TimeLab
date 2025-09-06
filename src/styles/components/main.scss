@@ -8,6 +8,7 @@
 @use './components/container';
 @use './components/header';
 @use './components/icons';
+@use './components/loading-screen';
 
 // Navigation components
 @use './components/tabs';
@@ -54,6 +55,18 @@ body {
     overflow-x: hidden;
     color: $color-text-primary;
     background-color: $color-bg-primary;
+}
+
+/* Hide app container initially while loading screen is shown */
+#app {
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+/* Show app when loading is complete */
+body:not(:has(.loading-screen)) #app,
+.loading-screen.loading-complete ~ #app {
+    opacity: 1;
 }
 
 /* Compact, theme-aware scrollbars */

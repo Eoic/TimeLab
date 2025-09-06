@@ -81,7 +81,7 @@ export async function saveRecord(
 ): Promise<Result<void, StorageError>> {
     try {
         const db = await openDatabase();
-        
+
         // Check if the store exists before attempting to use it
         if (!db.objectStoreNames.contains(storeName)) {
             const availableStores = Array.from(db.objectStoreNames).join(', ');
@@ -89,7 +89,7 @@ export async function saveRecord(
             console.error('Storage Error:', errorMsg);
             return err(new StorageError(errorMsg));
         }
-        
+
         await new Promise<void>((resolve, reject) => {
             const tx = db.transaction(storeName, 'readwrite');
             const store = tx.objectStore(storeName);
@@ -147,7 +147,7 @@ export async function resetDatabase(): Promise<Result<void, StorageError>> {
                 reject(deleteReq.error ?? new Error('Failed to delete database'));
             };
         });
-        
+
         // Reopen to trigger creation with current schema
         await openDatabase();
         console.log('Database reset and recreated successfully');
@@ -183,7 +183,9 @@ export async function deleteLabel(id: string): Promise<Result<void, StorageError
 /**
  * Get all time series labels
  */
-export async function getAllTimeSeriesLabels<T extends IDBRecord>(): Promise<Result<T[], StorageError>> {
+export async function getAllTimeSeriesLabels<T extends IDBRecord>(): Promise<
+    Result<T[], StorageError>
+> {
     return getAllRecords<T>(STORE_TIME_SERIES_LABELS);
 }
 

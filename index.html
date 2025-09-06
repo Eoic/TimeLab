@@ -17,6 +17,36 @@
     </head>
 
     <body>
+        <!-- Loading screen - shown initially, hidden after app loads -->
+        <div id="loading-screen" class="loading-screen">
+            <div class="loading-content">
+                <div class="loading-brand">
+                    <div class="loading-logo">
+                        <span class="material-symbols-outlined">vital_signs</span>
+                        <h1 class="loading-title">TimeLab</h1>
+                    </div>
+                    <p class="loading-subtitle">Time-series data labeling tool</p>
+                </div>
+
+                <div class="loading-spinner"></div>
+
+                <div class="loading-progress">
+                    <div class="loading-progress-text">0%</div>
+                    <div class="loading-progress-track">
+                        <div class="loading-progress-bar" style="--progress: 0%"></div>
+                    </div>
+                </div>
+
+                <div class="loading-status">
+                    Initializing application<span class="loading-dots">
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                    </span>
+                </div>
+            </div>
+        </div>
+
         <div id="app" class="container">
             <div class="header flex justify-between items-center">
                 <div>
@@ -433,11 +463,14 @@
                                 aria-labelledby="tab-labels"
                             >
                                 <div class="labels-toolbar">
-                                    <tl-dropdown id="labels-sort" placeholder="Creation order"></tl-dropdown>
-                                    <button 
-                                        id="labels-sort-order" 
-                                        class="btn-icon sort-order-btn" 
-                                        aria-label="Sort ascending" 
+                                    <tl-dropdown
+                                        id="labels-sort"
+                                        placeholder="Creation order"
+                                    ></tl-dropdown>
+                                    <button
+                                        id="labels-sort-order"
+                                        class="btn-icon sort-order-btn"
+                                        aria-label="Sort ascending"
                                         title="Toggle sort order"
                                     >
                                         <span class="material-symbols-outlined">arrow_upward</span>
