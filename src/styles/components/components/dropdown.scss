@@ -67,6 +67,16 @@ tl-dropdown {
     padding: calc($spacing-xs / 2);
     padding-right: 0; // bring scrollbar closer to container edge
     overflow: hidden; // clip overflowing list to menu bounds
+
+    // Portal mode: allow JS positioning to override default CSS positioning
+    &.dropdown-menu--portaled {
+        position: fixed !important;
+        // Reset specific interfering properties, avoiding shorthand that could override JS positioning
+        inset-inline: unset !important; // Remove left: 0, right: 0 constraint
+        inset-block: unset !important; // Remove top/bottom constraints
+        right: unset !important;
+        bottom: unset !important;
+    }
 }
 
 .dropdown[aria-expanded='true'] .dropdown-menu {

@@ -345,6 +345,7 @@ export class TLDropdown extends HTMLElement {
         menu.classList.add('dropdown-menu--portaled');
         menu.style.position = 'fixed';
         menu.style.display = 'block';
+        menu.style.visibility = 'visible'; // Ensure dropdown is visible
         menu.style.zIndex = '1001'; // above overlay
         this.repositionMenu();
 
@@ -392,12 +393,17 @@ export class TLDropdown extends HTMLElement {
         }
 
         const rect = anchor.getBoundingClientRect();
+
         const viewportW = window.innerWidth;
         const viewportH = window.innerHeight;
         const margin = 8; // viewport margin
 
         // Check if this is a theme dropdown for custom spacing
         const isThemeDropdown = this.classList.contains('theme-dropdown');
+
+        // Check if anchor is an icon button (typically square/small buttons)
+        const isIconButton = anchor.classList.contains('btn-icon') || anchor.offsetWidth <= 48;
+
         const gap = isThemeDropdown ? 8 : 4; // $spacing-sm (16px) for theme, default 4px for others
         const rightOffset = isThemeDropdown ? 0 : 0; // $spacing-lg (32px) from right for theme dropdown
 
@@ -414,8 +420,70 @@ export class TLDropdown extends HTMLElement {
         const minWidth = isThemeDropdown ? themeMinWidth : Math.max(rect.width, baseMinWidth);
         const width = Math.min(minWidth, viewportW - margin * 2);
 
-        // Calculate left position with right offset for theme dropdown
-        let left = Math.min(Math.max(rect.left, margin), viewportW - width - margin);
+        // Smart horizontal positioning: try to align with button edges before shifting
+        let left = rect.left; // Default: align with left edge of button
+
+        // For icon buttons, try to center the dropdown over the button first
+        if (isIconButton && !isThemeDropdown) {
+            const centerLeft = rect.left + (rect.width - width) / 2;
+            if (centerLeft >= margin && centerLeft + width <= viewportW - margin) {
+                // Centering fits, use it
+                left = centerLeft;
+            } else {
+                // Centering doesn't fit, fall back to edge alignment logic
+                const leftAlignedRight = rect.left + width;
+                const rightAlignedLeft = rect.right - width;
+
+                if (leftAlignedRight > viewportW - margin) {
+                    // Left alignment doesn't fit, try right alignment
+                    if (rightAlignedLeft >= margin) {
+                        // Right alignment fits, use it
+                        left = rightAlignedLeft;
+                    } else {
+                        // Neither alignment fits perfectly, choose the better option
+                        const leftOverflow = leftAlignedRight - (viewportW - margin);
+                        const rightOverflow = margin - rightAlignedLeft;
+
+                        if (rightOverflow < leftOverflow) {
+                            // Right alignment has less overflow
+                            left = Math.max(margin, rightAlignedLeft);
+                        } else {
+                            // Left alignment has less overflow
+                            left = Math.min(rect.left, viewportW - width - margin);
+                        }
+                    }
+                }
+            }
+        } else {
+            // Regular button positioning: try left/right edge alignment
+            const leftAlignedRight = left + width;
+            const rightAlignedLeft = rect.right - width;
+
+            if (leftAlignedRight > viewportW - margin) {
+                // Left alignment doesn't fit, try right alignment
+                if (rightAlignedLeft >= margin) {
+                    // Right alignment fits, use it
+                    left = rightAlignedLeft;
+                } else {
+                    // Neither alignment fits perfectly, choose the better option
+                    const leftOverflow = leftAlignedRight - (viewportW - margin);
+                    const rightOverflow = margin - rightAlignedLeft;
+
+                    if (rightOverflow < leftOverflow) {
+                        // Right alignment has less overflow
+                        left = Math.max(margin, rightAlignedLeft);
+                    } else {
+                        // Left alignment has less overflow
+                        left = Math.min(rect.left, viewportW - width - margin);
+                    }
+                }
+            }
+        }
+
+        // Final bounds check
+        left = Math.max(margin, Math.min(left, viewportW - width - margin));
+
+        // Special handling for theme dropdown positioning
         if (isThemeDropdown) {
             // Position dropdown with right offset for theme dropdown
             left = Math.min(rect.right - width - rightOffset, viewportW - width - margin);
@@ -449,10 +517,18 @@ export class TLDropdown extends HTMLElement {
             top = Math.max(margin, rect.top - maxHeight - gap);
         }
 
-        menu.style.width = `${String(Math.floor(width))}px`;
-        menu.style.left = `${String(Math.floor(left))}px`;
-        menu.style.top = `${String(Math.floor(top))}px`;
-        menu.style.maxHeight = `${String(Math.floor(maxHeight))}px`;
+        // Force positioning with maximum specificity
+        menu.style.setProperty('position', 'fixed', 'important');
+        menu.style.setProperty('left', `${String(Math.floor(left))}px`, 'important');
+        menu.style.setProperty('top', `${String(Math.floor(top))}px`, 'important');
+        menu.style.setProperty('width', `${String(Math.floor(width))}px`, 'important');
+        menu.style.setProperty('max-height', `${String(Math.floor(maxHeight))}px`, 'important');
+
+        // Only override the specific conflicting properties
+        menu.style.setProperty('right', 'auto', 'important');
+        menu.style.setProperty('bottom', 'auto', 'important');
+        // NOTE: Don't use any 'inset' shorthand properties as they can override left/top        // Add portal class to override CSS positioning constraints
+        menu.classList.add('dropdown-menu--portaled');
 
         // Adjust internal list height to match available space inside menu
         const list = menu.querySelector<HTMLUListElement>('.dropdown-options');

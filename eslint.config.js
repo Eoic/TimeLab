@@ -77,6 +77,8 @@ export default tseslint.config(
             'coverage/',
             'src/vendor/',
             'src/charts/echarts.min.js',
+            'cypress/',
+            'cypress.config.ts',
         ],
     }
 );

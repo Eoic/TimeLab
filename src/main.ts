@@ -18,7 +18,6 @@ import { setupRangeProgress } from '@/inputs/range';
 import { setupCollapsiblePanels } from '@/layout/panels';
 import { setupSettings } from '@/settings';
 import { setupStatsPanel } from '@/stats/panel';
-import { setupSnapSettingsDropdown } from '@/toolbar/snap';
 import { setupUploads } from '@/uploads';
 
 import './styles/main.scss';
@@ -84,7 +83,6 @@ async function initializeApplication(): Promise<void> {
         setupStatsPanel();
         setupLabelsEmptyStates();
         setupRangeProgress();
-        setupSnapSettingsDropdown();
         setupCheckboxEnterToggle();
         setupUploads();
         setupLabelModal();
