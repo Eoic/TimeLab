@@ -1,6 +1,6 @@
 import type { EChartOption, ECharts } from './echarts';
 
-import type { TLDropdown } from '@/components/dropdown';
+import type { TLDropdown } from '@/ui/dropdown';
 
 export function setupChartConfigControls(
     chart: ECharts,

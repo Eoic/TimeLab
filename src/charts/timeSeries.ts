@@ -1,4 +1,6 @@
 import type { TimeSeriesLabel } from '../domain/labels';
+import type { Result } from '../shared/result';
+import type { EChartsExtended, ZRenderMouseEvent } from '../types/echarts-extensions';
 import { installModalFocusTrap, closeModal } from '../ui/dom';
 import { getLabelDefinitions } from '../ui/dropdowns';
 
@@ -619,25 +621,27 @@ export class TimeSeriesChart {
         if (!this.chart) return;
 
         // Listen to mouse events for drawing
-        (this.chart as any).getZr().on('mousedown', this.handleDrawingMouseDown.bind(this));
-        (this.chart as any).getZr().on('mousemove', this.handleDrawingMouseMove.bind(this));
-        (this.chart as any).getZr().on('mouseup', this.handleDrawingMouseUp.bind(this));
+        const extendedChart = this.chart as EChartsExtended;
+        extendedChart.getZr().on('mousedown', this.handleDrawingMouseDown.bind(this));
+        extendedChart.getZr().on('mousemove', this.handleDrawingMouseMove.bind(this));
+        extendedChart.getZr().on('mouseup', this.handleDrawingMouseUp.bind(this));
     }
 
     /**
      * Handle mouse down for label drawing
      */
-    private handleDrawingMouseDown(event: any): void {
+    private handleDrawingMouseDown(event: ZRenderMouseEvent): void {
         if (!this.chart || !this.labelMode) return;
 
         // Allow drawing anywhere in the chart area
         // The event comes from the zrender canvas, so we can proceed
-        const pixelPoint = [event.offsetX, event.offsetY];
-        const dataPoint = (this.chart as any).convertFromPixel({ gridIndex: 0 }, pixelPoint);
+        const pixelPoint: [number, number] = [event.offsetX, event.offsetY];
+        const extendedChart = this.chart as EChartsExtended;
+        const dataPoint = extendedChart.convertFromPixel({ gridIndex: 0 }, pixelPoint);
 
         if (dataPoint && dataPoint[0] !== null) {
             this.isDrawing = true;
-            this.drawStartX = dataPoint[0] as number;
+            this.drawStartX = dataPoint[0];
             // Show initial canvas line at the start position
             this.showCanvasPreviewLine(pixelPoint[0]);
         }
@@ -646,17 +650,19 @@ export class TimeSeriesChart {
     /**
      * Handle mouse move for label drawing
      */
-    private handleDrawingMouseMove(event: any): void {
+    private handleDrawingMouseMove(event: ZRenderMouseEvent): void {
         if (!this.chart || !this.labelMode) return;
 
-        const pixelPoint = [event.offsetX, event.offsetY];
+        const pixelPoint: [number, number] = [event.offsetX, event.offsetY];
 
         if (this.isDrawing && this.drawStartX !== null) {
             // Update drawing rectangle using canvas overlay for real-time feedback
             this.updateDrawingCanvasRectangle(pixelPoint);
         } else {
             // Show preview line when hovering using canvas
-            this.showCanvasPreviewLine(pixelPoint[0]);
+            if (typeof pixelPoint[0] === 'number') {
+                this.showCanvasPreviewLine(pixelPoint[0]);
+            }
         }
     }
 
@@ -676,17 +682,12 @@ export class TimeSeriesChart {
         ctx.clearRect(0, 0, this.drawingCanvas.width, this.drawingCanvas.height);
 
         // Convert pixel position to data position and snap to nearest data point
-        const dataPoint = (this.chart as any).convertFromPixel({ gridIndex: 0 }, [
-            pixelX,
-            chartArea.y,
-        ]);
+        const extendedChart = this.chart as EChartsExtended;
+        const dataPoint = extendedChart.convertFromPixel({ gridIndex: 0 }, [pixelX, chartArea.y]);
         if (!dataPoint || dataPoint[0] === null) return;
 
         // Convert snapped data position back to pixel for precise drawing
-        const snappedPixel = (this.chart as any).convertToPixel({ gridIndex: 0 }, [
-            dataPoint[0],
-            0,
-        ]);
+        const snappedPixel = extendedChart.convertToPixel({ gridIndex: 0 }, [dataPoint[0], 0]);
         if (!snappedPixel || typeof snappedPixel[0] !== 'number') return;
 
         const snappedX = snappedPixel[0];
@@ -710,20 +711,18 @@ export class TimeSeriesChart {
     /**
      * Update the drawing rectangle on canvas overlay (real-time)
      */
-    private updateDrawingCanvasRectangle(pixelPoint: number[]): void {
+    private updateDrawingCanvasRectangle(pixelPoint: [number, number]): void {
         if (!this.chart || !this.drawingCanvas || this.drawStartX === null) return;
 
         // Get snapped pixel coordinates for both start and current positions
-        const startPixel = (this.chart as any).convertToPixel({ gridIndex: 0 }, [
-            this.drawStartX,
-            0,
-        ]);
+        const extendedChart = this.chart as EChartsExtended;
+        const startPixel = extendedChart.convertToPixel({ gridIndex: 0 }, [this.drawStartX, 0]);
 
         // Snap the current position to data points too
-        const currentDataPoint = (this.chart as any).convertFromPixel({ gridIndex: 0 }, pixelPoint);
+        const currentDataPoint = extendedChart.convertFromPixel({ gridIndex: 0 }, pixelPoint);
         if (!currentDataPoint || currentDataPoint[0] === null) return;
 
-        const currentSnappedPixel = (this.chart as any).convertToPixel({ gridIndex: 0 }, [
+        const currentSnappedPixel = extendedChart.convertToPixel({ gridIndex: 0 }, [
             currentDataPoint[0],
             0,
         ]);
@@ -817,14 +816,15 @@ export class TimeSeriesChart {
     /**
      * Handle mouse up to finalize label drawing
      */
-    private handleDrawingMouseUp(event: any): void {
+    private handleDrawingMouseUp(event: ZRenderMouseEvent): void {
         if (!this.chart || !this.labelMode || !this.isDrawing || this.drawStartX === null) return;
 
-        const pixelPoint = [event.offsetX, event.offsetY];
-        const dataPoint = (this.chart as any).convertFromPixel({ gridIndex: 0 }, pixelPoint);
+        const pixelPoint: [number, number] = [event.offsetX, event.offsetY];
+        const extendedChart = this.chart as EChartsExtended;
+        const dataPoint = extendedChart.convertFromPixel({ gridIndex: 0 }, pixelPoint);
 
         if (dataPoint && dataPoint[0] !== null) {
-            const endX = dataPoint[0] as number;
+            const endX = dataPoint[0];
             this.finalizeLabelDrawing(this.drawStartX, endX);
         }
 
@@ -950,7 +950,7 @@ export class TimeSeriesChart {
 
         return {
             silent: true, // Don't intercept mouse events - allow drawing over labels
-            data: markAreaData as any,
+            data: markAreaData as any, // ECharts markArea type is complex, using any for data compatibility
         };
     }
 
@@ -1302,7 +1302,7 @@ export interface DataManager {
     /**
      * Get all available data sources
      */
-    getDataSources(): Promise<readonly TimeSeriesData[]>;
+    getDataSources(): Promise<Result<readonly TimeSeriesData[]>>;
 
     /**
      * Subscribe to data changes

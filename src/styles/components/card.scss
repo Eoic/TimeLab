@@ -1,6 +1,6 @@
 // Note: tokens are auto-imported via Vite config
-@use '../../_semantic' as *;
-@use '../../abstracts/_theme-utils' as *;
+@use '../_semantic' as *;
+@use '../abstracts/_theme-utils' as *;
 
 .card {
     position: relative;

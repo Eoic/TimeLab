@@ -5,30 +5,30 @@
 @use '../base/reset' as *;
 
 // Base components
-@use './components/container';
-@use './components/header';
-@use './components/icons';
-@use './components/loading-screen';
+@use './container';
+@use './header';
+@use './icons';
+@use './loading-screen';
 
 // Navigation components
-@use './components/tabs';
-@use './components/pills';
+@use './tabs';
+@use './pills';
 
 // UI components
-@use './components/button';
-@use './components/card';
-@use './components/chart';
-@use './components/empty-states';
-@use './components/forms';
-@use './components/dropdown';
-@use './components/toolbar';
-@use './components/project-toolbar';
+@use './button';
+@use './card';
+@use './chart';
+@use './empty-states';
+@use './forms';
+@use './dropdown';
+@use './toolbar';
+@use './project-toolbar';
 
 // Content components
-@use './components/headings';
-@use './components/links';
-@use './components/lists';
-@use './components/dividers';
+@use './headings';
+@use './links';
+@use './lists';
+@use './dividers';
 
 // Utility classes
 @use './formatting';

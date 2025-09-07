@@ -11,3 +11,129 @@ export const THEMES = [
 ] as const;
 
 export type Theme = (typeof THEMES)[number];
+
+// Theme attribute name template literal type
+export type ThemeAttribute = `data-theme`;
+
+// Theme data attribute value template literal type
+export type ThemeDataAttribute = `[data-theme="${Exclude<Theme, 'auto'>}"]`;
+
+// CSS variable theme prefix template literal type
+export type ThemeVariablePrefix = `--theme-${Theme}`;
+
+// Theme class name template literal type  
+export type ThemeClassName = `theme-${Theme}`;
+
+// Storage key template literal type
+export type ThemeStorageKey = `preferred-theme` | `theme-${Theme}-config`;
+
+// Theme event name template literal type
+export type ThemeEventName = `timelab:theme-changed` | `timelab:theme-${Theme}-applied`;
+
+// Theme validation type guard
+export function isValidTheme(value: string): value is Theme {
+    return (THEMES as readonly string[]).includes(value);
+}
+
+// Get theme display name with proper typing
+export function getThemeDisplayName<T extends Theme>(theme: T): string {
+    const themeNames: Record<Theme, string> = {
+        'auto': 'Auto (System)',
+        'light': 'Light',
+        'dark': 'Dark', 
+        'oled': 'OLED (Black)',
+        'high-contrast': 'High Contrast',
+        'sepia': 'Sepia',
+        'blue': 'Blue',
+        'green': 'Green',
+        'purple': 'Purple',
+    };
+    return themeNames[theme];
+}
+
+// Theme category types for better organization
+export type SystemTheme = Extract<Theme, 'auto'>;
+export type BaseTheme = Extract<Theme, 'light' | 'dark'>;
+export type AccessibilityTheme = Extract<Theme, 'high-contrast' | 'oled'>;
+export type ColorVariantTheme = Extract<Theme, 'sepia' | 'blue' | 'green' | 'purple'>;
+
+// Theme configuration interface with template literal keys
+export interface ThemeConfig {
+    readonly [K in ThemeStorageKey]?: string;
+}
+
+// Theme metadata interface
+export interface ThemeMetadata {
+    readonly name: Theme;
+    readonly displayName: string;
+    readonly category: 'system' | 'base' | 'accessibility' | 'color-variant';
+    readonly supportsDarkMode: boolean;
+    readonly cssVariablePrefix: ThemeVariablePrefix;
+}
+
+// Complete theme metadata mapping
+export const THEME_METADATA: Record<Theme, ThemeMetadata> = {
+    'auto': {
+        name: 'auto',
+        displayName: 'Auto (System)',
+        category: 'system',
+        supportsDarkMode: true,
+        cssVariablePrefix: '--theme-auto',
+    },
+    'light': {
+        name: 'light',
+        displayName: 'Light',
+        category: 'base',
+        supportsDarkMode: false,
+        cssVariablePrefix: '--theme-light',
+    },
+    'dark': {
+        name: 'dark',
+        displayName: 'Dark',
+        category: 'base',
+        supportsDarkMode: true,
+        cssVariablePrefix: '--theme-dark',
+    },
+    'oled': {
+        name: 'oled',
+        displayName: 'OLED (Black)',
+        category: 'accessibility',
+        supportsDarkMode: true,
+        cssVariablePrefix: '--theme-oled',
+    },
+    'high-contrast': {
+        name: 'high-contrast',
+        displayName: 'High Contrast',
+        category: 'accessibility',
+        supportsDarkMode: true,
+        cssVariablePrefix: '--theme-high-contrast',
+    },
+    'sepia': {
+        name: 'sepia',
+        displayName: 'Sepia',
+        category: 'color-variant',
+        supportsDarkMode: false,
+        cssVariablePrefix: '--theme-sepia',
+    },
+    'blue': {
+        name: 'blue',
+        displayName: 'Blue',
+        category: 'color-variant',
+        supportsDarkMode: true,
+        cssVariablePrefix: '--theme-blue',
+    },
+    'green': {
+        name: 'green',
+        displayName: 'Green',
+        category: 'color-variant',
+        supportsDarkMode: true,
+        cssVariablePrefix: '--theme-green',
+    },
+    'purple': {
+        name: 'purple',
+        displayName: 'Purple',
+        category: 'color-variant',
+        supportsDarkMode: true,
+        cssVariablePrefix: '--theme-purple',
+    },
+} as const;

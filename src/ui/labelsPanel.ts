@@ -85,30 +85,61 @@ export class LabelsPanel {
         }
     }
 
+    // Store bound handlers for cleanup
+    private resizeHandler = () => {
+        // Future: Handle responsive adjustments
+    };
+
+    private labelsChangedHandler = () => {
+        this.refreshLabels();
+    };
+
+    private timeSeriesLabelsChangedHandler = () => {
+        this.refreshLabels();
+    };
+
+    private labelDefinitionsLoadedHandler = () => {
+        this.refreshLabels();
+    };
+
     /**
      * Bind global events
      */
     private bindEvents(): void {
         // Listen for window resizing to adjust positioning
-        window.addEventListener('resize', () => {
-            // Future: Handle responsive adjustments
-        });
+        window.addEventListener('resize', this.resizeHandler);
 
         // Listen for labels loaded from storage
-        window.addEventListener('timelab:labelsChanged', () => {
-            this.refreshLabels();
-        });
+        window.addEventListener('timelab:labelsChanged', this.labelsChangedHandler);
 
         // Listen for time series labels changes (e.g., from label definition updates/deletions)
-        window.addEventListener('timelab:timeSeriesLabelsChanged', () => {
-            this.refreshLabels();
-        });
+        window.addEventListener(
+            'timelab:timeSeriesLabelsChanged',
+            this.timeSeriesLabelsChangedHandler
+        );
 
         // Listen for label definitions being loaded from storage
         // This is crucial for fixing the reload issue where labels show IDs instead of names
-        window.addEventListener('timelab:labelDefinitionsLoaded', () => {
-            this.refreshLabels();
-        });
+        window.addEventListener(
+            'timelab:labelDefinitionsLoaded',
+            this.labelDefinitionsLoadedHandler
+        );
+    }
+
+    /**
+     * Clean up event listeners to prevent memory leaks
+     */
+    destroy(): void {
+        window.removeEventListener('resize', this.resizeHandler);
+        window.removeEventListener('timelab:labelsChanged', this.labelsChangedHandler);
+        window.removeEventListener(
+            'timelab:timeSeriesLabelsChanged',
+            this.timeSeriesLabelsChangedHandler
+        );
+        window.removeEventListener(
+            'timelab:labelDefinitionsLoaded',
+            this.labelDefinitionsLoadedHandler
+        );
     }
 
     /**

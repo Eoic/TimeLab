@@ -12,13 +12,13 @@ import { setupLabelsPanel } from './ui/labelsPanel';
 import { initializeLoadingScreen, markLoadingStepComplete } from './ui/loadingScreen';
 import { initializeProjectToolbar } from './ui/projectToolbar';
 
-import { setupCheckboxEnterToggle } from '@/a11y/checkbox';
-import { defineDropdown } from '@/components/dropdown';
-import { setupRangeProgress } from '@/inputs/range';
-import { setupCollapsiblePanels } from '@/layout/panels';
+import { setupCheckboxEnterToggle } from '@/ui/checkboxAccessibility';
+import { defineDropdown } from '@/ui/dropdown';
+import { setupRangeProgress } from '@/ui/rangeInputs';
+import { setupCollapsiblePanels } from '@/ui/collapsiblePanels';
 import { setupSettings } from '@/settings';
-import { setupStatsPanel } from '@/stats/panel';
-import { setupUploads } from '@/uploads';
+import { setupStatsPanel } from '@/ui/statsPanel';
+import { setupUploads } from '@/data/uploads';
 
 import './styles/main.scss';
 
@@ -66,16 +66,15 @@ async function initializeApplication(): Promise<void> {
         });
 
         // Load initial data if available
-        try {
-            const sources = await dataManager.getDataSources();
-            timeSeriesChart.setDataSources(sources);
-            markLoadingStepComplete('data-loaded');
-        } catch (error: unknown) {
+        const sourcesResult = await dataManager.getDataSources();
+        if (sourcesResult.ok) {
+            timeSeriesChart.setDataSources(sourcesResult.value);
+        } else {
             // eslint-disable-next-line no-console
-            console.error('Failed to load initial data sources:', error);
-            // Still mark as complete to not block loading
-            markLoadingStepComplete('data-loaded');
+            console.error('Failed to load initial data sources:', sourcesResult.error);
         }
+        // Always mark as complete to not block loading
+        markLoadingStepComplete('data-loaded');
 
         // Setup UI components
         setupDropdowns();

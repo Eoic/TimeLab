@@ -9,7 +9,7 @@ import {
     saveTimeSeriesLabel,
     deleteTimeSeriesLabel,
 } from '../platform/storage';
-import type { TDataFile } from '../uploads';
+import type { TDataFile } from './uploads';
 
 /**
  * Implementation of TimeSeriesData for CSV files

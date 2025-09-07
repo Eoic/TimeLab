@@ -1,6 +1,6 @@
 // Note: tokens are auto-imported via Vite config
-@use '../../_semantic' as *;
-@use '../../abstracts/theme-utils' as *;
+@use '../_semantic' as *;
+@use '../abstracts/theme-utils' as *;
 
 tl-dropdown {
     display: block;

@@ -2,7 +2,8 @@
  * Project service for managing project operations and state
  */
 
-import * as storage from '../platform/projectStorage';
+import type { IProjectStorage } from '../platform/projectStorage';
+import * as defaultStorage from '../platform/projectStorage';
 import type { Result } from '../shared';
 import { ok, err, StorageError } from '../shared';
 import type {
@@ -14,28 +15,43 @@ import type {
     ProjectServiceEvents,
 } from '../types/project';
 
+type EventListenerMap = {
+    [K in keyof ProjectServiceEvents]: Array<(data: ProjectServiceEvents[K]) => void>;
+};
+
 export class ProjectService implements IProjectService {
     private currentProject: Project | null = null;
     private projects: Project[] = [];
-    private eventListeners: Map<keyof ProjectServiceEvents, Array<(data: any) => void>> = new Map();
+    private eventListeners: Partial<EventListenerMap> = {};
+    private readonly storage: IProjectStorage;
 
-    constructor() {
+    constructor(storage?: IProjectStorage) {
+        this.storage = storage || defaultStorage;
         this.initializeEventMap();
     }
 
     private initializeEventMap(): void {
-        this.eventListeners.set('projectCreated', []);
-        this.eventListeners.set('projectUpdated', []);
-        this.eventListeners.set('projectDeleted', []);
-        this.eventListeners.set('projectSwitched', []);
-        this.eventListeners.set('projectsLoaded', []);
+        this.eventListeners.projectCreated = [];
+        this.eventListeners.projectUpdated = [];
+        this.eventListeners.projectDeleted = [];
+        this.eventListeners.projectSwitched = [];
+        this.eventListeners.projectsLoaded = [];
+    }
+
+    /**
+     * Clean up resources and event listeners to prevent memory leaks
+     */
+    destroy(): void {
+        this.eventListeners = {};
+        this.currentProject = null;
+        this.projects = [];
     }
 
     private emit<K extends keyof ProjectServiceEvents>(
         event: K,
         data: ProjectServiceEvents[K]
     ): void {
-        const listeners = this.eventListeners.get(event) || [];
+        const listeners = this.eventListeners[event] || [];
         listeners.forEach((listener) => {
             listener(data);
         });
@@ -45,27 +61,29 @@ export class ProjectService implements IProjectService {
         event: K,
         listener: (data: ProjectServiceEvents[K]) => void
     ): void {
-        const listeners = this.eventListeners.get(event) || [];
-        listeners.push(listener);
-        this.eventListeners.set(event, listeners);
+        if (!this.eventListeners[event]) {
+            this.eventListeners[event] = [];
+        }
+        this.eventListeners[event]!.push(listener);
     }
 
     off<K extends keyof ProjectServiceEvents>(
         event: K,
         listener: (data: ProjectServiceEvents[K]) => void
     ): void {
-        const listeners = this.eventListeners.get(event) || [];
+        const listeners = this.eventListeners[event];
+        if (!listeners) return;
+        
         const index = listeners.indexOf(listener);
         if (index > -1) {
             listeners.splice(index, 1);
-            this.eventListeners.set(event, listeners);
         }
     }
 
     async initialize(): Promise<void> {
         try {
             // Initialize storage
-            const storageResult = await storage.initializeProjectStorage();
+            const storageResult = await this.storage.initializeProjectStorage();
             if (!storageResult.ok) {
                 throw new Error(`Storage initialization failed: ${storageResult.error.message}`);
             }
@@ -77,9 +95,9 @@ export class ProjectService implements IProjectService {
             }
 
             // Load current project
-            const currentIdResult = await storage.getCurrentProjectId();
+            const currentIdResult = await this.storage.getCurrentProjectId();
             if (currentIdResult.ok && currentIdResult.value) {
-                const currentProjectResult = await storage.getProject(currentIdResult.value);
+                const currentProjectResult = await this.storage.getProject(currentIdResult.value);
                 if (currentProjectResult.ok && currentProjectResult.value) {
                     this.currentProject = currentProjectResult.value;
                 }
@@ -102,20 +120,20 @@ export class ProjectService implements IProjectService {
 
         if (defaultProject) {
             this.currentProject = defaultProject;
-            await storage.setCurrentProjectId(defaultProject.id);
+            await this.storage.setCurrentProjectId(defaultProject.id);
         } else {
             // Create default project
-            const result = await storage.createDefaultProject();
+            const result = await this.storage.createDefaultProject();
             if (result.ok) {
                 this.currentProject = result.value;
                 this.projects.push(result.value);
-                await storage.setCurrentProjectId(result.value.id);
+                await this.storage.setCurrentProjectId(result.value.id);
             }
         }
     }
 
     async loadProjects(): Promise<Result<Project[], StorageError>> {
-        const result = await storage.getAllProjects();
+        const result = await this.storage.getAllProjects();
         if (result.ok) {
             this.projects = result.value;
             this.emit('projectsLoaded', this.projects);
@@ -133,7 +151,7 @@ export class ProjectService implements IProjectService {
     }
 
     async createProject(params: CreateProjectParams): Promise<Result<Project, StorageError>> {
-        const result = await storage.createProject(params);
+        const result = await this.storage.createProject(params);
         if (result.ok) {
             this.projects.push(result.value);
             this.emit('projectCreated', result.value);
@@ -146,7 +164,7 @@ export class ProjectService implements IProjectService {
         id: string,
         params: UpdateProjectParams
     ): Promise<Result<Project, StorageError>> {
-        const result = await storage.updateProject(id, params);
+        const result = await this.storage.updateProject(id, params);
         if (result.ok) {
             // Update in local array
             const index = this.projects.findIndex((p) => p.id === id);
@@ -166,7 +184,7 @@ export class ProjectService implements IProjectService {
     }
 
     async deleteProject(id: string): Promise<Result<void, StorageError>> {
-        const result = await storage.deleteProject(id);
+        const result = await this.storage.deleteProject(id);
         if (result.ok) {
             // Remove from local array
             this.projects = this.projects.filter((p) => p.id !== id);
@@ -184,7 +202,7 @@ export class ProjectService implements IProjectService {
                     await this.switchToProject(createResult.value.id);
                 } else {
                     this.currentProject = null;
-                    await storage.clearCurrentProjectId();
+                    await this.storage.clearCurrentProjectId();
                 }
             } else if (wasCurrentProject) {
                 // Switch to the first available project
@@ -209,7 +227,7 @@ export class ProjectService implements IProjectService {
         const previousProject = this.currentProject;
         this.currentProject = project;
 
-        const result = await storage.setCurrentProjectId(projectId);
+        const result = await this.storage.setCurrentProjectId(projectId);
         if (result.ok) {
             const context: ProjectSwitchContext = {
                 previousProject,
@@ -235,5 +253,5 @@ export class ProjectService implements IProjectService {
     }
 }
 
-// Export singleton instance
+// Export singleton instance with default storage
 export const projectService = new ProjectService();

@@ -3,6 +3,7 @@
  * Handles persistence to IndexedDB and provides reactive updates
  */
 
+import type { DataManager } from '../data';
 import { getDataManager } from '../data';
 import { DEFAULT_LABEL_DEFINITIONS, createLabelDefinition } from '../domain/labels';
 import type { LabelDefinition, TimeSeriesLabel } from '../domain/labels';
@@ -27,21 +28,27 @@ export class LabelService {
     private labelDefinitions: Map<string, LabelDefinition> = new Map();
     private timeSeriesLabels: Map<string, TimeSeriesLabel[]> = new Map(); // datasetId -> labels
     private listeners: Array<(defs: readonly LabelDefinition[]) => void> = [];
+    private readonly dataManager: DataManager;
 
-    constructor() {
-        this.initialize();
+    constructor(dataManager?: DataManager) {
+        this.dataManager = dataManager || getDataManager();
     }
 
     /**
-     * Initialize the service by loading existing data
+     * Initialize the service - should be called after construction
      */
-    private async initialize(): Promise<void> {
-        try {
-            await this.loadLabelDefinitions();
-            await this.ensureDefaultDefinitions();
-        } catch (error) {
-            console.error('Failed to initialize label service:', error);
-        }
+    async initialize(): Promise<void> {
+        await this.loadLabelDefinitions();
+        await this.ensureDefaultDefinitions();
+    }
+
+    /**
+     * Clean up resources and event listeners to prevent memory leaks
+     */
+    destroy(): void {
+        this.labelDefinitions.clear();
+        this.timeSeriesLabels.clear();
+        this.listeners.length = 0;
     }
 
     /**
@@ -214,20 +221,23 @@ export class LabelService {
      * Remove a label from all actual data sources (CSVTimeSeriesData instances)
      */
     private async removeLabelFromDataSources(labelId: string): Promise<void> {
-        try {
-            const dataManager = getDataManager();
-            const dataSources = await dataManager.getDataSources();
+        const dataSourcesResult = await this.dataManager.getDataSources();
 
+        if (dataSourcesResult.ok) {
             // Call removeLabel on each data source
-            for (const dataSource of dataSources) {
+            for (const dataSource of dataSourcesResult.value) {
                 if ('removeLabel' in dataSource && typeof dataSource.removeLabel === 'function') {
-                    dataSource.removeLabel(labelId);
+                    try {
+                        dataSource.removeLabel(labelId);
+                    } catch (_error) {
+                        // Silently handle individual data source errors
+                        // This is not critical as the label will be removed from storage anyway
+                    }
                 }
             }
-        } catch (_error) {
-            // Silently handle errors - data sources might not support removeLabel
-            // This is not critical as the label will be removed from storage anyway
         }
+        // If data sources couldn't be retrieved, continue anyway
+        // This is not critical as the label will be removed from storage
     }
 
     /**
@@ -314,15 +324,9 @@ export class LabelService {
     }
 }
 
-// Global instance
-let labelServiceInstance: LabelService | null = null;
-
-/**
- * Get the global label service instance
- */
+// Export for backward compatibility - use service registry instead
 export function getLabelService(): LabelService {
-    if (!labelServiceInstance) {
-        labelServiceInstance = new LabelService();
-    }
-    return labelServiceInstance;
+    const service = new LabelService();
+    void service.initialize();
+    return service;
 }

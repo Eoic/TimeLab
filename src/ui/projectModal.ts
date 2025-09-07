@@ -147,7 +147,7 @@ export function showCreateProjectModal(): Promise<boolean> {
             document.body.removeChild(modal);
         };
 
-        const handleSubmit = async (e: Event) => {
+        async function handleSubmitAsync(e: Event): Promise<void> {
             e.preventDefault();
 
             // Force validation on submit attempt (mark as touched if not already)
@@ -173,6 +173,10 @@ export function showCreateProjectModal(): Promise<boolean> {
                 nameError.innerHTML = `<span class="material-symbols-outlined">error</span>Failed to create project: ${error instanceof Error ? error.message : 'Unknown error'}`;
                 submitBtn.disabled = false;
             }
+        }
+
+        const handleSubmit = (e: Event) => {
+            void handleSubmitAsync(e);
         };
 
         const handleCancel = () => {
@@ -367,7 +371,8 @@ export function showEditProjectModal(project: Project): Promise<boolean> {
 
         // Handle form submission
         const form = modal.querySelector('#edit-project-form') as HTMLFormElement;
-        form.addEventListener('submit', async (e) => {
+
+        async function handleFormSubmit(e: Event): Promise<void> {
             e.preventDefault();
             touched = true;
 
@@ -412,6 +417,10 @@ export function showEditProjectModal(project: Project): Promise<boolean> {
                     Save changes
                 `;
             }
+        }
+
+        form.addEventListener('submit', (e) => {
+            void handleFormSubmit(e);
         });
 
         // Handle cancel

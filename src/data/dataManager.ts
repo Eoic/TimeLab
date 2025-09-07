@@ -3,7 +3,9 @@
  */
 
 import type { TimeSeriesData, DataManager } from '../charts/timeSeries';
-import type { TDataFile } from '../uploads';
+import type { Result } from '../shared/result';
+import { ok } from '../shared/result';
+import type { TDataFile } from './uploads';
 
 import { convertDataFilesToTimeSeries } from './csvProcessor';
 
@@ -13,14 +15,23 @@ import { convertDataFilesToTimeSeries } from './csvProcessor';
 export class UploadDataManager implements DataManager {
     private dataSources: ReadonlyArray<TimeSeriesData> = [];
     private callbacks = new Set<(sources: readonly TimeSeriesData[]) => void>();
+    private boundHandler = this.handleDataFilesChanged.bind(this);
 
     constructor() {
-        window.addEventListener('timelab:dataFilesChanged', this.handleDataFilesChanged.bind(this));
+        window.addEventListener('timelab:dataFilesChanged', this.boundHandler);
         this.loadInitialData();
     }
 
-    getDataSources(): Promise<readonly TimeSeriesData[]> {
-        return Promise.resolve([...this.dataSources]);
+    /**
+     * Clean up resources and event listeners to prevent memory leaks
+     */
+    destroy(): void {
+        window.removeEventListener('timelab:dataFilesChanged', this.boundHandler);
+        this.callbacks.clear();
+    }
+
+    getDataSources(): Promise<Result<readonly TimeSeriesData[]>> {
+        return Promise.resolve(ok([...this.dataSources]));
     }
 
     onDataChanged(callback: (sources: readonly TimeSeriesData[]) => void): void {

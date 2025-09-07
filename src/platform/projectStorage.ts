@@ -11,6 +11,23 @@ import type { Project, CreateProjectParams, UpdateProjectParams } from '../types
 const CURRENT_PROJECT_KEY = 'currentProjectId';
 
 /**
+ * Interface for project storage operations
+ * Allows dependency injection and easier testing
+ */
+export interface IProjectStorage {
+    initializeProjectStorage(): Promise<Result<void, StorageError>>;
+    getAllProjects(): Promise<Result<Project[], StorageError>>;
+    getProject(id: string): Promise<Result<Project | null, StorageError>>;
+    createProject(params: CreateProjectParams): Promise<Result<Project, StorageError>>;
+    updateProject(id: string, params: UpdateProjectParams): Promise<Result<Project, StorageError>>;
+    deleteProject(id: string): Promise<Result<void, StorageError>>;
+    getCurrentProjectId(): Promise<Result<string | null, StorageError>>;
+    setCurrentProjectId(projectId: string): Promise<Result<void, StorageError>>;
+    clearCurrentProjectId(): Promise<Result<void, StorageError>>;
+    createDefaultProject(): Promise<Result<Project, StorageError>>;
+}
+
+/**
  * Initialize project storage
  */
 export async function initializeProjectStorage(): Promise<Result<void, StorageError>> {

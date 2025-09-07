@@ -1,6 +1,6 @@
 // Project Toolbar - uses standard dropdown classes from dropdown.scss
-@use '../../_semantic' as *;
-@use '../../abstracts/theme-utils' as *;
+@use '../_semantic' as *;
+@use '../abstracts/theme-utils' as *;
 
 .project-toolbar-wrapper {
     display: flex;
