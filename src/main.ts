@@ -5,11 +5,12 @@
 import { initializeApp } from './app';
 import { initializeTimeSeriesChart } from './charts/timeSeries';
 import { getDataManager } from './data';
-import { setupDropdowns, setupLabelsEmptyStates } from './ui';
+import { setupDropdowns, setupLabelsEmptyStates, loadLabelDefinitions } from './ui';
 import { setupLabelManagement } from './ui/labelManagement';
 import { setupLabelModal, setupModalTriggers, loadHistoryEntries } from './ui/labelModal';
 import { setupLabelsPanel } from './ui/labelsPanel';
 import { initializeLoadingScreen, markLoadingStepComplete } from './ui/loadingScreen';
+import { initializeProjectToolbar } from './ui/projectToolbar';
 
 import { setupCheckboxEnterToggle } from '@/a11y/checkbox';
 import { defineDropdown } from '@/components/dropdown';
@@ -35,6 +36,14 @@ async function initializeApplication(): Promise<void> {
         defineDropdown();
         markLoadingStepComplete('app-initialized');
 
+        // Initialize project management toolbar
+        const projectToolbarContainer = document.getElementById('project-toolbar-container');
+        if (projectToolbarContainer) {
+            const projectToolbar = initializeProjectToolbar(projectToolbarContainer);
+            await projectToolbar.initialize();
+        }
+        markLoadingStepComplete('project-toolbar-initialized');
+
         // Initialize themes and settings first
         setupSettings();
         markLoadingStepComplete('themes-ready');
@@ -43,8 +52,13 @@ async function initializeApplication(): Promise<void> {
         const timeSeriesChart = initializeTimeSeriesChart();
         markLoadingStepComplete('chart-initialized');
 
-        // Setup advanced labels panel with highlighting (replaces simple version)
+        // Setup advanced labels panel with highlighting BEFORE loading definitions
+        // so it can receive the labelDefinitionsLoaded event
         setupLabelsPanel(timeSeriesChart);
+
+        // Load label definitions early to ensure they're available when labels are displayed
+        await loadLabelDefinitions();
+        markLoadingStepComplete('label-definitions-loaded');
 
         // Connect data manager to chart
         const dataManager = getDataManager();

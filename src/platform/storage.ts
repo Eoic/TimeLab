@@ -9,14 +9,15 @@ import { StorageError, ok, err } from '../shared';
 export type IDBRecord = Record<string, unknown> & { id: string };
 
 const DB_NAME = 'timelab';
-const DB_VERSION = 4; // Bump version to force upgrade and ensure time series labels store exists
+const DB_VERSION = 5; // Bump version to add projects store
 const STORE_FILES = 'files';
 const STORE_LABELS = 'labels'; // For label definitions
 const STORE_TIME_SERIES_LABELS = 'timeSeriesLabels'; // For actual time series labels
 const STORE_HISTORY = 'history';
+const STORE_PROJECTS = 'projects'; // For project management
 
 // Export store constants for use by other modules
-export { STORE_FILES, STORE_LABELS, STORE_TIME_SERIES_LABELS, STORE_HISTORY };
+export { STORE_FILES, STORE_LABELS, STORE_TIME_SERIES_LABELS, STORE_HISTORY, STORE_PROJECTS };
 
 function openDatabase(): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
@@ -42,6 +43,11 @@ function openDatabase(): Promise<IDBDatabase> {
             // Create history store if it doesn't exist
             if (!db.objectStoreNames.contains(STORE_HISTORY)) {
                 db.createObjectStore(STORE_HISTORY, { keyPath: 'id' });
+            }
+
+            // Create projects store if it doesn't exist
+            if (!db.objectStoreNames.contains(STORE_PROJECTS)) {
+                db.createObjectStore(STORE_PROJECTS, { keyPath: 'id' });
             }
         };
         req.onsuccess = (): void => {
@@ -72,6 +78,29 @@ export async function getAllRecords<T extends IDBRecord>(
         return ok(result);
     } catch (error) {
         return err(new StorageError('Failed to retrieve records', error));
+    }
+}
+
+export async function getRecord<T extends IDBRecord>(
+    id: string,
+    storeName: string = STORE_FILES
+): Promise<Result<T | null, StorageError>> {
+    try {
+        const db = await openDatabase();
+        const result = await new Promise<T | null>((resolve, reject) => {
+            const tx = db.transaction(storeName, 'readonly');
+            const store = tx.objectStore(storeName);
+            const req = store.get(id);
+            req.onsuccess = (): void => {
+                resolve(req.result ? (req.result as T) : null);
+            };
+            req.onerror = (): void => {
+                reject(req.error ?? new Error('Failed to get record'));
+            };
+        });
+        return ok(result);
+    } catch (error) {
+        return err(new StorageError('Failed to retrieve record', error));
     }
 }
 

@@ -3,7 +3,7 @@
  */
 
 export { focusFirst, openModal, closeModal, installModalFocusTrap } from './dom';
-export { setupDropdowns } from './dropdowns';
+export { setupDropdowns, loadLabelDefinitions } from './dropdowns';
 export {
     createEmptyState,
     updateEmptyState,

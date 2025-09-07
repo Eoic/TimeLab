@@ -16,7 +16,7 @@ let isLoaded = false;
 /**
  * Load label definitions from IndexedDB
  */
-async function loadLabelDefinitions(): Promise<void> {
+export async function loadLabelDefinitions(): Promise<void> {
     if (isLoaded) return;
 
     try {
@@ -32,6 +32,10 @@ async function loadLabelDefinitions(): Promise<void> {
             }
 
             updateActiveLabelDropdown();
+
+            // Dispatch an event that label definitions have been loaded
+            // This allows other components (like LabelsPanel) to refresh their display
+            window.dispatchEvent(new CustomEvent('timelab:labelDefinitionsLoaded'));
         } else {
             // eslint-disable-next-line no-console
             console.error('Failed to load label definitions:', result.error);
@@ -72,33 +76,25 @@ async function createDefaultDefinitions(): Promise<void> {
     }
 
     updateActiveLabelDropdown();
+
+    // Dispatch an event that label definitions have been created/loaded
+    window.dispatchEvent(new CustomEvent('timelab:labelDefinitionsLoaded'));
 }
 
 /**
- * Save a label definition to IndexedDB
+ * Save a specific label definition object to IndexedDB (preserves the UUID)
  */
-async function saveLabelDefinitionToDB(name: string, color: string): Promise<string> {
-    const id = uuid();
-    const labelDef: LabelDefinition = {
-        id,
-        name,
-        color,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-    };
-
+async function saveLabelDefinitionToDBWithId(labelDef: LabelDefinition): Promise<void> {
     try {
         const result = await saveLabel(labelDef);
         if (!result.ok) {
             // eslint-disable-next-line no-console
             console.error('Failed to save label definition:', result.error);
         }
-    } catch (error) {
+    } catch (error: unknown) {
         // eslint-disable-next-line no-console
         console.error('Error saving label definition:', error);
     }
-
-    return id;
 }
 
 export function updateActiveLabelDropdown(): void {
@@ -148,16 +144,42 @@ export function addLabelDefinition(name: string, color: string): void {
     // Add to memory
     labelDefinitions.push(labelDef);
 
-    // Save to database
-    void saveLabelDefinitionToDB(labelDef.name, labelDef.color);
+    // Save the SAME definition to database (not create a new one with different UUID)
+    void saveLabelDefinitionToDBWithId(labelDef);
 
     updateActiveLabelDropdown();
+
+    // Auto-select the newly created label definition as active
+    const activeLabelDropdown = document.querySelector<TLDropdown>('#active-label');
+    if (activeLabelDropdown) {
+        activeLabelDropdown.value = labelDef.id;
+    }
+
+    // Dispatch an event that label definitions have been updated
+    window.dispatchEvent(new CustomEvent('timelab:labelDefinitionsLoaded'));
 }
 
 /**
  * Get all label definitions
+ * Ensures definitions are loaded before returning
+ */
+export async function getLabelDefinitionsAsync(): Promise<LabelDefinition[]> {
+    if (!isLoaded) {
+        await loadLabelDefinitions();
+    }
+    return [...labelDefinitions]; // Return a copy to prevent direct mutation
+}
+
+/**
+ * Get all label definitions (synchronous version for backward compatibility)
+ * Will attempt to load if not loaded, but returns immediately
  */
 export function getLabelDefinitions(): LabelDefinition[] {
+    // If not loaded yet, try to load definitions synchronously if possible
+    if (!isLoaded) {
+        // Trigger async loading for next time, but for now return what we have
+        void loadLabelDefinitions();
+    }
     return [...labelDefinitions]; // Return a copy to prevent direct mutation
 }
 
@@ -179,6 +201,9 @@ export function updateLabelDefinition(index: number, name: string, color: string
         }
 
         updateActiveLabelDropdown();
+
+        // Dispatch an event that label definitions have been updated
+        window.dispatchEvent(new CustomEvent('timelab:labelDefinitionsLoaded'));
     }
 }
 
@@ -197,6 +222,9 @@ export function deleteLabelDefinition(index: number): void {
             void labelService.deleteLabelDefinition(definition.id);
 
             updateActiveLabelDropdown();
+
+            // Dispatch an event that label definitions have been updated
+            window.dispatchEvent(new CustomEvent('timelab:labelDefinitionsLoaded'));
         }
     }
 }
@@ -215,12 +243,6 @@ export function setupDropdowns(): void {
     const cfgZoom = document.querySelector<TLDropdown>('#cfg-zoom-preset');
 
     const setAxisOptions = (cols: string[] | null) => {
-        // eslint-disable-next-line no-console
-        console.log('setAxisOptions called with:', cols, 'Current values:', {
-            x: xAxisDropdown?.value,
-            y: yAxisDropdown?.value,
-        });
-
         if (!xAxisDropdown || !yAxisDropdown) {
             return;
         }
@@ -368,13 +390,6 @@ export function setupDropdowns(): void {
     xAxisDropdown?.addEventListener('change', (ev: Event) => {
         const ce = ev as CustomEvent<{ value?: unknown }>;
         const val = typeof ce.detail.value === 'string' ? ce.detail.value : '';
-        // eslint-disable-next-line no-console
-        console.log(
-            'X dropdown changed to:',
-            val,
-            'Y dropdown current value:',
-            yAxisDropdown?.value
-        );
         if (val) {
             (ev.currentTarget as HTMLElement).setAttribute('data-selected', val);
         }
@@ -382,8 +397,6 @@ export function setupDropdowns(): void {
     yAxisDropdown?.addEventListener('change', (ev: Event) => {
         const ce = ev as CustomEvent<{ value?: unknown }>;
         const val = typeof ce.detail.value === 'string' ? ce.detail.value : '';
-        // eslint-disable-next-line no-console
-        console.log('Y dropdown changed to:', val, 'Event triggered by:', ev);
         if (val) {
             (ev.currentTarget as HTMLElement).setAttribute('data-selected', val);
         }
@@ -398,11 +411,6 @@ export function setupDropdowns(): void {
     // Listen for direct column updates from the chart system
     window.addEventListener('timelab:columnsAvailable', (ev) => {
         const detail = (ev as CustomEvent<{ columns: string[] }>).detail;
-        // eslint-disable-next-line no-console
-        console.log(
-            'timelab:columnsAvailable event fired, calling setAxisOptions with:',
-            detail.columns
-        );
         setAxisOptions(detail.columns.length > 0 ? detail.columns : null);
     });
 

@@ -15,6 +15,23 @@ export interface ConfirmationOptions {
  */
 export function showConfirmation(options: ConfirmationOptions): Promise<boolean> {
     return new Promise((resolve) => {
+        // Close any open dropdowns before showing confirmation
+        const openDropdowns = document.querySelectorAll('.dropdown-menu');
+        openDropdowns.forEach((menu) => {
+            const menuElement = menu as HTMLElement;
+            // Check if dropdown is actually visible
+            if (menuElement.style.display === 'block' || menuElement.offsetParent !== null) {
+                const dropdown = menu.closest('.project-dropdown');
+                if (dropdown) {
+                    const button = dropdown.querySelector('.project-dropdown-btn');
+                    if (button) {
+                        button.classList.remove('active');
+                    }
+                }
+                menuElement.style.display = 'none';
+            }
+        });
+
         // Remember the element that had focus before opening the confirmation
         const previouslyFocusedElement = document.activeElement as HTMLElement | null;
 

@@ -15,11 +15,13 @@ class LoadingManager {
         completedSteps: new Set(),
         requiredSteps: [
             'app-initialized',
+            'project-toolbar-initialized',
             'ui-setup',
             'chart-initialized',
             'dropdowns-setup',
             'data-loaded',
             'themes-ready',
+            'label-definitions-loaded',
         ],
     };
 
@@ -63,7 +65,10 @@ class LoadingManager {
      * Update loading progress indicator
      */
     private updateProgress(): void {
-        const progress = (this.state.completedSteps.size / this.state.requiredSteps.length) * 100;
+        const progress = Math.min(
+            100,
+            (this.state.completedSteps.size / this.state.requiredSteps.length) * 100
+        );
         const percentageText = document.querySelector('.loading-percentage') as HTMLElement;
         const statusText = document.querySelector('.loading-status') as HTMLElement;
 
@@ -86,10 +91,14 @@ class LoadingManager {
         const statusMessages: Record<string, string> = {
             'app-initialized':
                 'Application initialized<span class="loading-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>',
+            'project-toolbar-initialized':
+                'Project toolbar setup<span class="loading-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>',
             'themes-ready':
                 'Themes loaded<span class="loading-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>',
             'chart-initialized':
                 'Chart initialized<span class="loading-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>',
+            'label-definitions-loaded':
+                'Label definitions loaded<span class="loading-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>',
             'data-loaded':
                 'Data loaded<span class="loading-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>',
             'dropdowns-setup':

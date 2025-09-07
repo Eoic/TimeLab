@@ -87,7 +87,7 @@ export function setupLabelsEmptyStates(): void {
     ).addTestLabel = () => {
         const labelsList = document.querySelector<HTMLUListElement>('.labels-list');
         if (!labelsList) return;
-        
+
         const testLabel = document.createElement('li');
         testLabel.className = 'label-item';
         testLabel.innerHTML = `

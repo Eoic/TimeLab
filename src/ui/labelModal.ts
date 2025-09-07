@@ -173,7 +173,7 @@ async function createLabel(labelData: LabelData): Promise<void> {
 /**
  * Add an entry to the history list
  */
-async function addHistoryEntry(action: string): Promise<void> {
+export async function addHistoryEntry(action: string): Promise<void> {
     const historyList = document.querySelector<HTMLUListElement>('.history-list');
     if (!historyList) {
         return;

@@ -68,6 +68,9 @@
 
             <div class="card toolbar">
                 <div class="left flex-wrap" role="group" aria-label="File actions">
+                    <!-- Project Management Toolbar -->
+                    <div id="project-toolbar-container" class="project-toolbar-wrapper"></div>
+
                     <button
                         class="btn-outline"
                         id="btn-upload-data"
@@ -400,7 +403,7 @@
             <div class="card labctrl" id="panel-labctrl">
                 <div class="card-title" role="heading" aria-level="2">
                     <span class="material-symbols-outlined" aria-hidden="true">label</span>
-                    <h4>Labels</h4>
+                    <h4>Labeling</h4>
                 </div>
 
                 <!-- Toolbar actions -->
@@ -465,7 +468,7 @@
                                     ></tl-dropdown>
                                     <button
                                         id="labels-sort-order"
-                                        class="btn-icon sort-order-btn"
+                                        class="btn-icon btn-outline sort-order-btn"
                                         aria-label="Sort ascending"
                                         title="Toggle sort order"
                                     >

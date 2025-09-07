@@ -40,8 +40,8 @@ export class CSVTimeSeriesData implements TimeSeriesData {
             this.labeled = false;
         }
 
-        // Load existing labels for this dataset
-        void this.loadLabelsFromStorage();
+        // Load existing labels for this dataset, but wait for label definitions to be available
+        this.waitForLabelDefinitionsAndLoadLabels();
     }
 
     getData(xColumn: string, yColumn: string): ReadonlyArray<readonly [number, number]> {
@@ -52,24 +52,11 @@ export class CSVTimeSeriesData implements TimeSeriesData {
         const xIndex = useXIndex ? -1 : this.columns.indexOf(xColumn);
         const yIndex = useYIndex ? -1 : this.columns.indexOf(yColumn);
 
-        console.log('getData called:', {
-            xColumn,
-            yColumn,
-            useXIndex,
-            useYIndex,
-            xIndex,
-            yIndex,
-            columns: this.columns,
-            firstRowSample: this.parsedData[0],
-        });
-
         // Check if non-index columns exist
         if (!useXIndex && xIndex === -1) {
-            console.log('X column not found:', xColumn);
             return [];
         }
         if (!useYIndex && yIndex === -1) {
-            console.log('Y column not found:', yColumn);
             return [];
         }
 
@@ -86,13 +73,6 @@ export class CSVTimeSeriesData implements TimeSeriesData {
         // Sort data by X values for proper line rendering and area filling
         // Only sort when not using index for X-axis (index is already sorted)
         const sortedResult = useXIndex ? result : result.slice().sort((a, b) => a[0] - b[0]);
-
-        console.log('getData result sample:', {
-            totalPoints: sortedResult.length,
-            firstFew: sortedResult.slice(0, 3),
-            lastFew: sortedResult.slice(-3),
-            wasSorted: !useXIndex,
-        });
 
         return sortedResult;
     }
@@ -181,22 +161,58 @@ export class CSVTimeSeriesData implements TimeSeriesData {
     }
 
     /**
+     * Wait for label definitions to be loaded, then load labels for this dataset
+     */
+    private waitForLabelDefinitionsAndLoadLabels(): void {
+        // Import the function dynamically to avoid circular dependencies
+        import('../ui/dropdowns')
+            .then(({ getLabelDefinitions }) => {
+                const currentDefinitions = getLabelDefinitions();
+
+                if (currentDefinitions.length > 0) {
+                    // Definitions are already loaded, proceed immediately
+                    void this.loadLabelsFromStorage();
+                } else {
+                    // Wait for label definitions to be loaded
+                    const handleDefinitionsLoaded = (): void => {
+                        window.removeEventListener(
+                            'timelab:labelDefinitionsLoaded',
+                            handleDefinitionsLoaded
+                        );
+                        void this.loadLabelsFromStorage();
+                    };
+                    window.addEventListener(
+                        'timelab:labelDefinitionsLoaded',
+                        handleDefinitionsLoaded
+                    );
+                }
+            })
+            .catch((error: unknown) => {
+                // eslint-disable-next-line no-console
+                console.error('Failed to import dropdowns module:', error);
+                // Fallback: just load labels anyway
+                void this.loadLabelsFromStorage();
+            });
+    }
+
+    /**
      * Load labels for this dataset from IndexedDB
      */
     private async loadLabelsFromStorage(): Promise<void> {
         try {
             // Get all stored time series labels
-            const result = await getAllTimeSeriesLabels<any>();
+            const result = await getAllTimeSeriesLabels();
             if (result.ok) {
                 // Filter labels for this dataset
-                const datasetLabels = result.value.filter(
-                    (label: any) => label.datasetId === this.id
-                ) as TimeSeriesLabel[];
+                const datasetLabels = (result.value as unknown as TimeSeriesLabel[]).filter(
+                    (label) => label.datasetId === this.id
+                );
                 this.labels = datasetLabels;
 
-                // Notify that labels have been loaded
+                // Only notify if we have labels and if label definitions are available
+                // This prevents showing labels with IDs instead of names during page reload
                 if (datasetLabels.length > 0) {
-                    this.notifyLabelsChanged();
+                    this.notifyLabelsChangedIfDefinitionsReady();
                 }
             }
         } catch (error) {
@@ -253,6 +269,42 @@ export class CSVTimeSeriesData implements TimeSeriesData {
             detail: { datasetId: this.id, labels: this.getLabels() },
         });
         window.dispatchEvent(event);
+    }
+
+    /**
+     * Notify labels changed only if label definitions are ready
+     * This prevents labels from showing IDs instead of names during page reload
+     */
+    private notifyLabelsChangedIfDefinitionsReady(): void {
+        // Import the function dynamically to avoid circular dependencies
+        import('../ui/dropdowns')
+            .then(({ getLabelDefinitions }) => {
+                const currentDefinitions = getLabelDefinitions();
+
+                if (currentDefinitions.length > 0) {
+                    // Definitions are ready, safe to notify
+                    this.notifyLabelsChanged();
+                } else {
+                    // Wait for label definitions to be loaded, then notify
+                    const handleDefinitionsLoaded = (): void => {
+                        window.removeEventListener(
+                            'timelab:labelDefinitionsLoaded',
+                            handleDefinitionsLoaded
+                        );
+                        this.notifyLabelsChanged();
+                    };
+                    window.addEventListener(
+                        'timelab:labelDefinitionsLoaded',
+                        handleDefinitionsLoaded
+                    );
+                }
+            })
+            .catch((error: unknown) => {
+                // eslint-disable-next-line no-console
+                console.error('Failed to import dropdowns module:', error);
+                // Fallback: notify anyway (better than no notification)
+                this.notifyLabelsChanged();
+            });
     }
 }
 

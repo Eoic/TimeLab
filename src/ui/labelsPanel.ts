@@ -16,6 +16,7 @@ import type { TimeSeriesLabel } from '../domain/labels';
 import { confirmDelete } from './confirmation';
 import { getLabelDefinitions } from './dropdowns';
 import { updateEmptyState } from './emptyStates';
+import { addHistoryEntry } from './labelModal';
 
 interface LabelPanelItem {
     element: HTMLElement;
@@ -102,6 +103,12 @@ export class LabelsPanel {
         window.addEventListener('timelab:timeSeriesLabelsChanged', () => {
             this.refreshLabels();
         });
+
+        // Listen for label definitions being loaded from storage
+        // This is crucial for fixing the reload issue where labels show IDs instead of names
+        window.addEventListener('timelab:labelDefinitionsLoaded', () => {
+            this.refreshLabels();
+        });
     }
 
     /**
@@ -129,7 +136,29 @@ export class LabelsPanel {
      */
     private handleLabelDrawn = (data: { label: TimeSeriesLabel }): void => {
         this.addLabelToPanel(data.label);
+
+        // Add history entry for label creation
+        this.addLabelCreationHistoryEntry(data.label);
     };
+
+    /**
+     * Add a history entry for label creation
+     */
+    private addLabelCreationHistoryEntry(label: TimeSeriesLabel): void {
+        // Get the label definition to show the name in the history
+        const labelDefinitions = getLabelDefinitions();
+        const labelDef = labelDefinitions.find((def) => def.id === label.labelDefId);
+        const labelName = labelDef?.name || this.getFallbackLabelName(label.labelDefId);
+
+        // Format time range for display
+        const timeRange = this.formatTimeRange(label.startTime, label.endTime);
+
+        // Create a meaningful history message
+        const action = `Applied "${labelName}" label to range ${timeRange}`;
+
+        // Add the history entry (use void to ignore promise)
+        void addHistoryEntry(action);
+    }
 
     /**
      * Handle series changes to refresh labels for new series
@@ -157,6 +186,8 @@ export class LabelsPanel {
 
         const labels = currentSource.getLabels();
         const sortedLabels = this.sortLabels([...labels]);
+
+        // Add labels back to the panel
         sortedLabels.forEach((label) => {
             this.addLabelToPanel(label);
         });
@@ -561,7 +592,19 @@ export class LabelsPanel {
             'default-negative': 'Negative',
             'default-neutral': 'Neutral',
         };
-        return fallbackNames[labelDefId] || labelDefId;
+
+        // Check if we have a predefined fallback
+        if (fallbackNames[labelDefId]) {
+            return fallbackNames[labelDefId];
+        }
+
+        // For UUIDs, show a user-friendly placeholder instead of the raw UUID
+        if (labelDefId.startsWith('def-') || labelDefId.includes('-')) {
+            return 'Loading...'; // More user-friendly than showing UUID
+        }
+
+        // For legacy format labels, show the ID
+        return labelDefId;
     }
 
     /**
@@ -573,7 +616,19 @@ export class LabelsPanel {
             'default-negative': '#dc3545',
             'default-neutral': '#6c757d',
         };
-        return fallbackColors[labelDefId] || '#007bff';
+
+        // Check if we have a predefined fallback
+        if (fallbackColors[labelDefId]) {
+            return fallbackColors[labelDefId];
+        }
+
+        // For UUIDs, use a muted color to indicate loading state
+        if (labelDefId.startsWith('def-') || labelDefId.includes('-')) {
+            return '#9ca3af'; // Gray color indicating loading/temporary state
+        }
+
+        // Default blue for other cases
+        return '#007bff';
     }
 }
 

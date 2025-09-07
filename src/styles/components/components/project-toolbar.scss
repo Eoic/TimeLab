@@ -1,0 +1,176 @@
+// Project Toolbar - uses standard dropdown classes from dropdown.scss
+@use '../../_semantic' as *;
+@use '../../abstracts/theme-utils' as *;
+
+.project-toolbar-wrapper {
+    display: flex;
+    align-items: center;
+    // margin-right: 0.75rem;
+    // padding-right: 0.75rem;
+    // border-right: 1px solid $color-border-primary;
+
+    // On narrow screens, remove margins and borders to use full width
+    @media (max-width: 768px) {
+        margin-right: 0;
+        padding-right: 0;
+        border-right: none;
+        width: 100%;
+        flex: 1; // Take available space
+    }
+}
+
+.project-toolbar {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+}
+
+.project-toolbar-content {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+    min-width: 0; // Allow text truncation
+
+    // On narrow screens, take full width
+    @media (max-width: 768px) {
+        width: 100%;
+        flex: 1; // Ensure it takes all available space
+    }
+}
+
+.project-dropdown {
+    position: relative;
+    flex-shrink: 0; // Prevent dropdown from shrinking
+
+    // On narrow screens, expand to full width
+    @media (max-width: 768px) {
+        flex: 1; // Take available space
+        flex-shrink: 1; // Allow shrinking if needed
+    }
+}
+
+.project-dropdown-btn {
+    // Apply button styles directly instead of @extend
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $spacing-xs;
+    // Match .btn-md padding for consistent height with other toolbar buttons
+    padding: calc(#{$spacing-xs} * 0.75) $spacing-sm;
+    border: 1px solid $color-border-primary;
+    border-radius: $border-radius;
+    background: transparent;
+    color: $color-text-primary;
+    font: inherit;
+    font-weight: $font-weight-medium;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 180px;
+    text-align: left;
+
+    // On narrow screens, expand to full width
+    @media (max-width: 768px) {
+        width: 100%;
+        min-width: auto;
+        justify-content: space-between;
+    }
+
+    // Match toolbar button height on narrow screens
+    @media (max-width: 690px) {
+        min-height: 44px;
+    }
+
+    &:hover {
+        background: $color-bg-secondary;
+        border-color: $color-border-secondary;
+    }
+
+    &:focus-visible {
+        @include focus-ring();
+        border-color: $color-border-focus;
+    }
+
+    &.active {
+        border-color: $color-border-focus;
+        background-color: $color-primary;
+        color: $color-primary-contrast;
+
+        .chevron {
+            color: $color-primary-contrast;
+            transform: rotate(180deg);
+        }
+    }
+
+    .project-name {
+        flex: 1;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-weight: 500;
+    }
+
+    .chevron {
+        transition: transform 0.2s ease;
+        font-size: 1.2rem;
+        color: $color-text-secondary;
+        flex-shrink: 0;
+    }
+}
+
+.project-name {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 500;
+
+    // Ensure project name is always visible, even on very narrow screens
+    @media (max-width: 480px) {
+        min-width: 80px; // Minimum readable width
+    }
+}
+
+// Style action buttons within dropdown options
+.dropdown-option {
+    .project-actions {
+        display: flex;
+        gap: 0.25rem;
+        margin-left: auto;
+        align-items: center;
+    }
+
+    .edit-btn,
+    .delete-btn {
+        color: $color-text-secondary;
+        font-size: 16px;
+        cursor: pointer;
+        padding: 0.25rem;
+        border-radius: $border-radius-sm;
+        transition: all 0.2s ease;
+
+        &:hover {
+            background: $color-bg-secondary;
+        }
+    }
+
+    .edit-btn:hover {
+        color: $color-primary;
+    }
+
+    .delete-btn:hover {
+        color: $color-error;
+    }
+}
+
+// Inline editing styles
+.inline-editor {
+    background: $color-bg-primary;
+    border: 1px solid $color-border-focus;
+    border-radius: $border-radius;
+    padding: 0.25rem 0.5rem;
+    font: inherit;
+    color: inherit;
+    width: 100%;
+}

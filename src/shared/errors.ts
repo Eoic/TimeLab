@@ -5,10 +5,7 @@
 export class TimeLabError extends Error {
     override name = 'TimeLabError';
 
-    constructor(
-        message: string,
-        cause?: unknown
-    ) {
+    constructor(message: string, cause?: unknown) {
         super(message);
         if (cause !== undefined) {
             this.cause = cause;

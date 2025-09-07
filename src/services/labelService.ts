@@ -3,9 +3,17 @@
  * Handles persistence to IndexedDB and provides reactive updates
  */
 
+import { getDataManager } from '../data';
 import { DEFAULT_LABEL_DEFINITIONS, createLabelDefinition } from '../domain/labels';
 import type { LabelDefinition, TimeSeriesLabel } from '../domain/labels';
-import { getAllRecords, saveRecord, deleteRecord, STORE_LABELS, getAllTimeSeriesLabels, deleteTimeSeriesLabel } from '../platform/storage';
+import {
+    getAllRecords,
+    saveRecord,
+    deleteRecord,
+    STORE_LABELS,
+    getAllTimeSeriesLabels,
+    deleteTimeSeriesLabel,
+} from '../platform/storage';
 import type { Result } from '../shared';
 import { StorageError, ok, err } from '../shared';
 import type { LabelDefinition as StoredLabelDefinition } from '../types/storage';
@@ -113,7 +121,7 @@ export class LabelService {
 
         const result = await this.saveLabelDefinition(updated);
         if (result.ok) {
-                        // Cascade the changes to related TimeSeriesLabels
+            // Cascade the changes to related TimeSeriesLabels
             await this.cascadeDefinitionUpdate();
             this.notifyListeners();
             return ok(updated);
@@ -127,7 +135,7 @@ export class LabelService {
     async deleteLabelDefinition(id: string): Promise<Result<void, StorageError>> {
         // First cascade deletion to all related TimeSeriesLabels
         await this.cascadeDefinitionDeletion(id);
-        
+
         const result = await deleteRecord(id, STORE_LABELS);
         if (result.ok) {
             this.labelDefinitions.delete(id);
@@ -149,28 +157,30 @@ export class LabelService {
         } catch (error) {
             console.error('Error during label definition cascade update:', error);
         }
-    }    /**
+    } /**
      * Cascade label definition deletion to all related TimeSeriesLabels
      */
     private async cascadeDefinitionDeletion(defId: string): Promise<void> {
         try {
             // Get all TimeSeriesLabels from storage that reference this definition
-            const allLabelsResult = await getAllTimeSeriesLabels<any>();
+            const allLabelsResult = await getAllTimeSeriesLabels();
             if (!allLabelsResult.ok) {
                 console.error('Failed to load labels for cascade deletion');
                 return;
             }
 
-            const labelsToDelete = allLabelsResult.value.filter(
-                (label: any) => label.labelDefId === defId
+            const labelsToDelete = (allLabelsResult.value as unknown as TimeSeriesLabel[]).filter(
+                (label) => label.labelDefId === defId
             );
 
             // Delete all related labels in parallel for better performance
-            const deletePromises = labelsToDelete.map(async (label: any) => {
+            const deletePromises = labelsToDelete.map(async (label) => {
                 try {
                     await deleteTimeSeriesLabel(label.id);
-                    // Also remove from in-memory storage
+                    // Also remove from in-memory storage in LabelService
                     this.removeLabelFromAllDatasets(label.id);
+                    // Remove from actual data sources (CSVTimeSeriesData instances)
+                    await this.removeLabelFromDataSources(label.id);
                 } catch (error) {
                     console.error('Failed to delete label during cascade:', error);
                 }
@@ -195,6 +205,26 @@ export class LabelService {
             if (index >= 0) {
                 labels.splice(index, 1);
             }
+        }
+    }
+
+    /**
+     * Remove a label from all actual data sources (CSVTimeSeriesData instances)
+     */
+    private async removeLabelFromDataSources(labelId: string): Promise<void> {
+        try {
+            const dataManager = getDataManager();
+            const dataSources = await dataManager.getDataSources();
+
+            // Call removeLabel on each data source
+            for (const dataSource of dataSources) {
+                if ('removeLabel' in dataSource && typeof dataSource.removeLabel === 'function') {
+                    dataSource.removeLabel(labelId);
+                }
+            }
+        } catch (_error) {
+            // Silently handle errors - data sources might not support removeLabel
+            // This is not critical as the label will be removed from storage anyway
         }
     }
 
