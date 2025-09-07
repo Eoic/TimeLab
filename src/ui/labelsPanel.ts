@@ -13,9 +13,9 @@
 import type { TimeSeriesChart } from '../charts/timeSeries';
 import type { TimeSeriesLabel } from '../domain/labels';
 
+import { confirmDelete } from './confirmation';
 import { getLabelDefinitions } from './dropdowns';
 import { updateEmptyState } from './emptyStates';
-import { confirmDelete } from './confirmation';
 
 interface LabelPanelItem {
     element: HTMLElement;
@@ -62,15 +62,15 @@ export class LabelsPanel {
             this.sortDropdown.options = [
                 { value: 'creation', label: 'Creation order' },
                 { value: 'visibility', label: 'Visibility' },
-                { value: 'range', label: 'Time range' }
+                { value: 'range', label: 'Time range' },
             ];
-            
+
             // Set default value
             this.sortDropdown.value = 'creation';
-            
+
             // Listen for changes
             this.sortDropdown.addEventListener('change', () => {
-                this.currentSortBy = this.sortDropdown?.value as SortBy || 'creation';
+                this.currentSortBy = (this.sortDropdown?.value as SortBy) || 'creation';
                 this.refreshLabels();
             });
         }
@@ -181,13 +181,19 @@ export class LabelsPanel {
 
         const isAscending = this.currentSortOrder === 'asc';
         const icon = this.sortOrderBtn.querySelector('.material-symbols-outlined');
-        
+
         if (icon) {
             icon.textContent = isAscending ? 'arrow_upward' : 'arrow_downward';
         }
-        
-        this.sortOrderBtn.setAttribute('aria-label', isAscending ? 'Sort ascending' : 'Sort descending');
-        this.sortOrderBtn.setAttribute('title', `Currently sorting ${isAscending ? 'ascending' : 'descending'}. Click to toggle.`);
+
+        this.sortOrderBtn.setAttribute(
+            'aria-label',
+            isAscending ? 'Sort ascending' : 'Sort descending'
+        );
+        this.sortOrderBtn.setAttribute(
+            'title',
+            `Currently sorting ${isAscending ? 'ascending' : 'descending'}. Click to toggle.`
+        );
     }
 
     /**
@@ -195,12 +201,12 @@ export class LabelsPanel {
      */
     private sortLabels(labels: TimeSeriesLabel[]): TimeSeriesLabel[] {
         let sortedLabels: TimeSeriesLabel[];
-        
+
         switch (this.currentSortBy) {
             case 'creation':
                 sortedLabels = labels.sort((a, b) => a.createdAt - b.createdAt);
                 break;
-            
+
             case 'visibility':
                 sortedLabels = labels.sort((a, b) => {
                     const aVisible = a.visible !== false;
@@ -213,7 +219,7 @@ export class LabelsPanel {
                     return bVisible ? 1 : -1;
                 });
                 break;
-            
+
             case 'range':
                 sortedLabels = labels.sort((a, b) => {
                     const startDiff = a.startTime - b.startTime;
@@ -222,7 +228,7 @@ export class LabelsPanel {
                     return a.endTime - b.endTime;
                 });
                 break;
-            
+
             default:
                 sortedLabels = labels;
         }
@@ -251,10 +257,10 @@ export class LabelsPanel {
      */
     private createLabelItem(label: TimeSeriesLabel): HTMLElement {
         const labelDefinitions = getLabelDefinitions();
-        
+
         // Try to find label definition by UUID first, then fall back to legacy index format
-        let labelDef = labelDefinitions.find(def => def.id === label.labelDefId);
-        
+        let labelDef = labelDefinitions.find((def) => def.id === label.labelDefId);
+
         if (!labelDef) {
             // Fallback for legacy format "label-{index}"
             const labelDefMatch = label.labelDefId.match(/^label-(\d+)$/);
@@ -335,7 +341,10 @@ export class LabelsPanel {
 
         // Click to focus
         item.addEventListener('click', (e) => {
-            if ((e.target as HTMLElement).closest('.delete') || (e.target as HTMLElement).closest('.visibility')) {
+            if (
+                (e.target as HTMLElement).closest('.delete') ||
+                (e.target as HTMLElement).closest('.visibility')
+            ) {
                 return; // Let action buttons handle their own clicks
             }
             this.focusLabelOnChart(label);
@@ -365,7 +374,7 @@ export class LabelsPanel {
      */
     private async deleteLabelWithConfirm(label: TimeSeriesLabel): Promise<void> {
         const labelDefinitions = getLabelDefinitions();
-        const labelDef = labelDefinitions.find(def => def.id === label.labelDefId);
+        const labelDef = labelDefinitions.find((def) => def.id === label.labelDefId);
         const labelName = labelDef?.name || this.getFallbackLabelName(label.labelDefId);
 
         // Use custom confirmation modal instead of browser confirm()
@@ -373,7 +382,7 @@ export class LabelsPanel {
         if (confirmed) {
             this.deleteLabel(label);
         }
-    }    /**
+    } /**
      * Delete a label
      */
     private deleteLabel(label: TimeSeriesLabel): void {
@@ -421,11 +430,11 @@ export class LabelsPanel {
             const currentSource = this.chart.getCurrentSource();
             if (currentSource) {
                 const updatedLabels = currentSource.getLabels();
-                const updatedLabel = updatedLabels.find(l => l.id === label.id);
+                const updatedLabel = updatedLabels.find((l) => l.id === label.id);
                 if (updatedLabel) {
                     // Update the stored label reference
                     labelItem.label = updatedLabel;
-                    
+
                     // Update the visual state of the existing element
                     this.updateLabelItemVisualState(labelItem.element, updatedLabel);
                 }
@@ -438,21 +447,21 @@ export class LabelsPanel {
      */
     private updateLabelItemVisualState(element: HTMLElement, label: TimeSeriesLabel): void {
         const isVisible = label.visible !== false;
-        
+
         // Update CSS class for hidden state
         if (isVisible) {
             element.classList.remove('hidden');
         } else {
             element.classList.add('hidden');
         }
-        
+
         // Update visibility button icon and title
         const visibilityBtn = element.querySelector('.visibility');
         const visibilityIcon = visibilityBtn?.querySelector('.material-symbols-outlined');
         if (visibilityIcon && visibilityBtn) {
             visibilityIcon.textContent = isVisible ? 'visibility' : 'visibility_off';
             const labelDefinitions = getLabelDefinitions();
-            const labelDef = labelDefinitions.find(def => def.id === label.labelDefId);
+            const labelDef = labelDefinitions.find((def) => def.id === label.labelDefId);
             const labelName = labelDef?.name || `Label ${label.labelDefId}`;
             const visibilityTitle = isVisible ? 'Hide label' : 'Show label';
             visibilityBtn.setAttribute('aria-label', `${visibilityTitle} ${labelName}`);

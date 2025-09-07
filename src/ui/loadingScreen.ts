@@ -25,7 +25,7 @@ class LoadingManager {
 
     private loadingElement: HTMLElement | null = null;
     private startTime = Date.now();
-    private minDisplayTime = 2500; // Minimum 2.5 seconds display time
+    private minDisplayTime = 500; // Minimum display time
 
     constructor() {
         this.loadingElement = document.getElementById('loading-screen');
@@ -64,16 +64,11 @@ class LoadingManager {
      */
     private updateProgress(): void {
         const progress = (this.state.completedSteps.size / this.state.requiredSteps.length) * 100;
-        const progressBar = document.querySelector('.loading-progress-bar') as HTMLElement;
-        const progressText = document.querySelector('.loading-progress-text') as HTMLElement;
+        const percentageText = document.querySelector('.loading-percentage') as HTMLElement;
         const statusText = document.querySelector('.loading-status') as HTMLElement;
 
-        if (progressBar) {
-            progressBar.style.setProperty('--progress', `${String(progress)}%`);
-        }
-
-        if (progressText) {
-            progressText.textContent = `${String(Math.round(progress))}%`;
+        if (percentageText) {
+            percentageText.textContent = `${String(Math.round(progress))}%`;
         }
 
         if (statusText) {
@@ -100,7 +95,7 @@ class LoadingManager {
             'dropdowns-setup':
                 'UI components ready<span class="loading-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>',
             'ui-setup':
-                'Finalizing setup<span class="loading-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>',
+                'Finalizing setup&nbsp;<span class="loading-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>',
         };
 
         if (completedSteps.length === 0) {
