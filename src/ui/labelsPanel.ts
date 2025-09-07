@@ -413,7 +413,9 @@ export class LabelsPanel {
         if (confirmed) {
             this.deleteLabel(label);
         }
-    } /**
+    }
+
+    /**
      * Delete a label
      */
     private deleteLabel(label: TimeSeriesLabel): void {
@@ -532,9 +534,6 @@ export class LabelsPanel {
     private focusLabelOnChart(label: TimeSeriesLabel): void {
         // For now, just highlight it
         this.highlightLabelOnChart(label.id);
-
-        // Future enhancement: could zoom chart to show the label range
-        // this.chart?.zoomToRange(label.startTime, label.endTime);
     }
 
     /**

@@ -125,6 +125,7 @@ export async function updateProject(
 
 /**
  * Delete a project and all its data
+ * Note: Project-scoped data deletion will be implemented when data scoping is added
  */
 export async function deleteProject(id: string): Promise<Result<void, StorageError>> {
     try {
@@ -135,9 +136,6 @@ export async function deleteProject(id: string): Promise<Result<void, StorageErr
         if (!result.ok) {
             return err(result.error);
         }
-
-        // TODO: Delete all project-scoped data (labels, time series, etc.)
-        // This will be implemented when we add project scoping to existing data
 
         return ok(undefined);
     } catch (error) {

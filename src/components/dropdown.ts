@@ -527,7 +527,8 @@ export class TLDropdown extends HTMLElement {
         // Only override the specific conflicting properties
         menu.style.setProperty('right', 'auto', 'important');
         menu.style.setProperty('bottom', 'auto', 'important');
-        // NOTE: Don't use any 'inset' shorthand properties as they can override left/top        // Add portal class to override CSS positioning constraints
+
+        // Add portal class to override CSS positioning constraints
         menu.classList.add('dropdown-menu--portaled');
 
         // Adjust internal list height to match available space inside menu

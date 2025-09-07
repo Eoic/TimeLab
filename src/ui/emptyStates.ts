@@ -77,49 +77,4 @@ export function setupLabelsEmptyStates(): void {
 
     // Initial update
     updateHistoryEmpty();
-
-    // Expose functions for testing (can be removed in production)
-    (
-        window as unknown as {
-            addTestLabel?: () => void;
-            addTestHistory?: () => void;
-        }
-    ).addTestLabel = () => {
-        const labelsList = document.querySelector<HTMLUListElement>('.labels-list');
-        if (!labelsList) return;
-
-        const testLabel = document.createElement('li');
-        testLabel.className = 'label-item';
-        testLabel.innerHTML = `
-            <span class="dot" style="--dot: #e74c3c"></span>
-            <div class="meta">
-                <div class="title">Test Label</div>
-                <div class="range text-sm text-muted">[100 – 250]</div>
-            </div>
-            <button class="btn-icon btn-ghost delete" aria-label="Delete label">
-                <span class="material-symbols-outlined">delete</span>
-            </button>
-        `;
-        labelsList.appendChild(testLabel);
-    };
-
-    (
-        window as unknown as {
-            addTestLabel?: () => void;
-            addTestHistory?: () => void;
-        }
-    ).addTestHistory = () => {
-        const testHistory = document.createElement('li');
-        testHistory.className = 'history-item';
-        testHistory.setAttribute('role', 'option');
-        testHistory.setAttribute('aria-selected', 'false');
-        testHistory.setAttribute('tabindex', '0');
-        testHistory.innerHTML = `
-            <div class="meta">
-                <div class="title">Added Test Label</div>
-                <div class="time text-sm text-muted">just now</div>
-            </div>
-        `;
-        historyList.appendChild(testHistory);
-    };
 }

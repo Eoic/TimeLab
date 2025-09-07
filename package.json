@@ -37,7 +37,6 @@
     "test:e2e": "cypress run",
     "test:e2e:open": "cypress open",
     "test:e2e:headless": "start-server-and-test dev http://localhost:3003 'cypress run'",
-    "test:dropdown": "node test-dropdown.mjs",
     "format": "prettier --write \"src/**/*.{ts,tsx,css,scss,md}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css,scss,md}\"",
     "ci": "npm run type-check && npm run lint && npm run test && npm run build",

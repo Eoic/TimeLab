@@ -13,6 +13,8 @@ import {
     STORE_LABELS,
     getAllTimeSeriesLabels,
     deleteTimeSeriesLabel,
+    saveTimeSeriesLabel,
+    type IDBRecord,
 } from '../platform/storage';
 import type { Result } from '../shared';
 import { StorageError, ok, err } from '../shared';
@@ -286,24 +288,27 @@ export class LabelService {
     /**
      * Add a label to a dataset
      */
-    addLabelToDataset(datasetId: string, label: TimeSeriesLabel): void {
+    async addLabelToDataset(datasetId: string, label: TimeSeriesLabel): Promise<void> {
         if (!this.timeSeriesLabels.has(datasetId)) {
             this.timeSeriesLabels.set(datasetId, []);
         }
-        this.timeSeriesLabels.get(datasetId)!.push(label);
-        // TODO: Persist to IndexedDB when we add a labels store
+        const labels = this.timeSeriesLabels.get(datasetId);
+        if (labels) {
+            labels.push(label);
+            await saveTimeSeriesLabel(label as unknown as IDBRecord);
+        }
     }
 
     /**
      * Remove a label from a dataset
      */
-    removeLabelFromDataset(datasetId: string, labelId: string): void {
+    async removeLabelFromDataset(datasetId: string, labelId: string): Promise<void> {
         const labels = this.timeSeriesLabels.get(datasetId);
         if (labels) {
             const index = labels.findIndex((l) => l.id === labelId);
             if (index >= 0) {
                 labels.splice(index, 1);
-                // TODO: Persist to IndexedDB
+                await deleteTimeSeriesLabel(labelId);
             }
         }
     }

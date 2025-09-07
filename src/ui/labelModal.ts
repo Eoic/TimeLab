@@ -76,9 +76,6 @@ export function setupLabelModal(): void {
             return false;
         }
 
-        // TODO: Check for duplicate names in label definitions registry
-        // For now, we'll just check that the name is not empty
-
         // Valid name
         nameError.innerHTML = '';
         nameInput.setAttribute('aria-invalid', 'false');
