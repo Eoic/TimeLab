@@ -47,7 +47,7 @@ describe('UUID Mismatch Bug Fix', () => {
         const customColor = '#e74c3c';
 
         // Capture what gets saved to the database
-        let savedDefinition: LabelDefinition | null = null;
+        let savedDefinition: LabelDefinition | undefined;
         mockSaveLabel.mockImplementation((def: LabelDefinition) => {
             savedDefinition = { ...def }; // Capture the saved definition
             return Promise.resolve(ok(undefined));
@@ -62,13 +62,14 @@ describe('UUID Mismatch Bug Fix', () => {
 
         const inMemoryDef = inMemoryDefinitions[0]!;
         console.log('In-memory definition ID:', inMemoryDef.id);
-        console.log('Saved definition ID:', savedDefinition?.id);
 
         // THE FIX: In-memory and saved definitions should have the SAME UUID
         expect(savedDefinition).toBeDefined();
-        expect(savedDefinition!.id).toBe(inMemoryDef.id); // This should pass now
-        expect(savedDefinition!.name).toBe(customName);
-        expect(savedDefinition!.color).toBe(customColor);
+        if (savedDefinition) {
+            expect(savedDefinition.id).toBe(inMemoryDef.id); // This should pass now
+            expect(savedDefinition.name).toBe(customName);
+            expect(savedDefinition.color).toBe(customColor);
+        }
 
         // === PHASE 2: User creates label using the definition ===
         const userLabel: TimeSeriesLabel = {

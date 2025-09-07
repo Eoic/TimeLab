@@ -1,5 +1,23 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
+// Mock TLDropdown interface for testing
+interface MockTLDropdown extends Element {
+    value: string;
+    options: unknown[];
+}
+
+// Helper function to get typed dropdown
+function getDropdown(): MockTLDropdown {
+    const dropdown = document.querySelector('#active-label') as MockTLDropdown;
+    if (!dropdown) {
+        throw new Error('Dropdown not found');
+    }
+    return dropdown;
+}
+
+import { ok } from '@/shared';
+import type { LabelDefinition } from '@/types/storage';
+
 // Mock storage
 const mockGetAllLabels = vi.fn();
 const mockSaveLabel = vi.fn();
@@ -8,9 +26,6 @@ vi.mock('@/platform/storage', () => ({
     getAllLabels: mockGetAllLabels,
     saveLabel: mockSaveLabel,
 }));
-
-import { ok } from '@/shared';
-import type { LabelDefinition } from '@/types/storage';
 
 describe('Auto-select New Label Definition', () => {
     beforeEach(() => {
@@ -24,20 +39,14 @@ describe('Auto-select New Label Definition', () => {
         `;
 
         // Mock the TLDropdown element
-        const dropdown = document.querySelector('#active-label');
-        if (dropdown) {
-            dropdown.options = [];
-            dropdown.value = '';
-            // Add setter to track value changes
-            let currentValue = '';
-            Object.defineProperty(dropdown, 'value', {
-                get: () => currentValue,
-                set: (value: string) => {
-                    currentValue = value;
-                },
-                configurable: true,
-            });
-        }
+        const dropdown = getDropdown();
+        // Mock properties for testing
+        dropdown.options = [];
+        Object.defineProperty(dropdown, 'value', {
+            value: '',
+            writable: true,
+            configurable: true,
+        });
 
         // Start with empty storage
         mockGetAllLabels.mockResolvedValue(ok([]));
@@ -51,7 +60,7 @@ describe('Auto-select New Label Definition', () => {
         const initialDefinitions = getLabelDefinitions();
         expect(initialDefinitions).toHaveLength(0);
 
-        const dropdown = document.querySelector('#active-label');
+        const dropdown = getDropdown();
         expect(dropdown.value).toBe('');
 
         // === PHASE 2: Create first label definition ===
@@ -131,7 +140,7 @@ describe('Auto-select New Label Definition', () => {
         // Load existing definitions
         await loadLabelDefinitions();
 
-        const dropdown = document.querySelector('#active-label');
+        const dropdown = getDropdown();
 
         // Manually set dropdown to existing value
         dropdown.value = 'existing-1';

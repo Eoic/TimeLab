@@ -1,5 +1,20 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
+// Mock TLDropdown interface for testing
+interface MockTLDropdown extends Element {
+    value: string;
+    options: unknown[];
+}
+
+// Helper function to get typed dropdown
+function getDropdown(): MockTLDropdown {
+    const dropdown = document.querySelector('#active-label') as MockTLDropdown;
+    if (!dropdown) {
+        throw new Error('Dropdown not found');
+    }
+    return dropdown;
+}
+
 // Mock storage
 const mockGetAllLabels = vi.fn();
 const mockSaveLabel = vi.fn();
@@ -21,27 +36,25 @@ describe('Auto-select Label Definition Integration', () => {
         `;
 
         // Mock TLDropdown behavior
-        const dropdown = document.querySelector('#active-label');
-        if (dropdown) {
-            let currentValue = '';
-            let currentOptions: any[] = [];
+        const dropdown = getDropdown();
+        let currentValue = '';
+        let currentOptions: unknown[] = [];
 
-            Object.defineProperty(dropdown, 'value', {
-                get: () => currentValue,
-                set: (value: string) => {
-                    currentValue = value;
-                },
-                configurable: true,
-            });
+        Object.defineProperty(dropdown, 'value', {
+            get: () => currentValue,
+            set: (value: string) => {
+                currentValue = value;
+            },
+            configurable: true,
+        });
 
-            Object.defineProperty(dropdown, 'options', {
-                get: () => currentOptions,
-                set: (options: any[]) => {
-                    currentOptions = options;
-                },
-                configurable: true,
-            });
-        }
+        Object.defineProperty(dropdown, 'options', {
+            get: () => currentOptions,
+            set: (options: unknown[]) => {
+                currentOptions = options;
+            },
+            configurable: true,
+        });
 
         // Start with empty storage
         mockGetAllLabels.mockResolvedValue(ok([]));
@@ -57,7 +70,7 @@ describe('Auto-select Label Definition Integration', () => {
         // 5. User can still manually change selection
 
         const { addLabelDefinition, getLabelDefinitions } = await import('@/ui/dropdowns');
-        const dropdown = document.querySelector('#active-label');
+        const dropdown = getDropdown();
 
         // === STEP 1: User creates first label definition ===
         console.log('Creating first label definition...');
@@ -98,12 +111,14 @@ describe('Auto-select Label Definition Integration', () => {
 
         // === STEP 4: Verify user can still manually change selection ===
         console.log('Manually changing selection...');
-        dropdown.value = firstDefs[0]?.id; // User manually selects first definition
-        expect(dropdown.value).toBe(firstDefs[0]?.id);
-        console.log('✅ Manual selection works:', dropdown.value);
+        const firstDefId = firstDefs[0]?.id;
+        if (firstDefId) {
+            dropdown.value = firstDefId; // User manually selects first definition
+            expect(dropdown.value).toBe(firstDefId);
+            console.log('✅ Manual selection works:', dropdown.value);
+        }
 
         // === STEP 5: Create one more to verify it still auto-selects ===
-        console.log('Creating fourth label definition after manual change...');
         addLabelDefinition('Pattern', '#ffff00');
 
         const fourthDefs = getLabelDefinitions();
@@ -112,8 +127,5 @@ describe('Auto-select Label Definition Integration', () => {
 
         // Fourth definition should be auto-selected, overriding manual selection
         expect(dropdown.value).toBe(fourthDefs[3]?.id);
-        console.log('✅ Fourth definition auto-selected, overriding manual selection');
-
-        console.log('🎉 Complete workflow test passed!');
     });
 });
