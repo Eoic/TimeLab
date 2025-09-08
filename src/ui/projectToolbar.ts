@@ -154,6 +154,7 @@ export class ProjectToolbar {
                         const button = this.projectDropdown.querySelector(
                             '.project-dropdown-btn'
                         ) as HTMLButtonElement;
+                        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- DOM queries can return null
                         if (menu && button) {
                             menu.style.display = 'none';
                             button.classList.remove('active');
@@ -205,6 +206,7 @@ export class ProjectToolbar {
         const button = this.projectDropdown.querySelector(
             '.project-dropdown-btn'
         ) as HTMLButtonElement;
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- DOM queries can return null
         if (menu && button) {
             menu.style.display = 'none';
             button.classList.remove('active');
@@ -235,6 +237,7 @@ export class ProjectToolbar {
         const button = this.projectDropdown.querySelector(
             '.project-dropdown-btn'
         ) as HTMLButtonElement;
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- DOM queries can return null
         if (menu && button) {
             menu.style.display = 'none';
             button.classList.remove('active');
@@ -250,6 +253,7 @@ export class ProjectToolbar {
         const button = this.projectDropdown.querySelector(
             '.project-dropdown-btn'
         ) as HTMLButtonElement;
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- DOM queries can return null
         if (menu && button) {
             menu.style.display = 'none';
             button.classList.remove('active');

@@ -72,10 +72,12 @@ class LoadingManager {
         const percentageText = document.querySelector('.loading-percentage') as HTMLElement;
         const statusText = document.querySelector('.loading-status') as HTMLElement;
 
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- DOM query can return null
         if (percentageText) {
             percentageText.textContent = `${String(Math.round(progress))}%`;
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- DOM query can return null
         if (statusText) {
             statusText.innerHTML = this.getStatusMessage();
         }
@@ -112,7 +114,7 @@ class LoadingManager {
         }
 
         return (
-            statusMessages[lastCompleted!] ||
+            (lastCompleted ? statusMessages[lastCompleted] : undefined) ||
             'Loading<span class="loading-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>'
         );
     }

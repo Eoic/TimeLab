@@ -15,27 +15,27 @@ const CURRENT_PROJECT_KEY = 'currentProjectId';
  * Allows dependency injection and easier testing
  */
 export interface IProjectStorage {
-    initializeProjectStorage(): Promise<Result<void, StorageError>>;
+    initializeProjectStorage(): Result<void, StorageError>;
     getAllProjects(): Promise<Result<Project[], StorageError>>;
     getProject(id: string): Promise<Result<Project | null, StorageError>>;
     createProject(params: CreateProjectParams): Promise<Result<Project, StorageError>>;
     updateProject(id: string, params: UpdateProjectParams): Promise<Result<Project, StorageError>>;
     deleteProject(id: string): Promise<Result<void, StorageError>>;
-    getCurrentProjectId(): Promise<Result<string | null, StorageError>>;
-    setCurrentProjectId(projectId: string): Promise<Result<void, StorageError>>;
-    clearCurrentProjectId(): Promise<Result<void, StorageError>>;
+    getCurrentProjectId(): Result<string | null, StorageError>;
+    setCurrentProjectId(projectId: string): Result<void, StorageError>;
+    clearCurrentProjectId(): Result<void, StorageError>;
     createDefaultProject(): Promise<Result<Project, StorageError>>;
 }
 
 /**
  * Initialize project storage
  */
-export async function initializeProjectStorage(): Promise<Result<void, StorageError>> {
+export function initializeProjectStorage(): Result<void, StorageError> {
     try {
         // Storage initialization happens in main storage module
         // This just validates that the project store exists
         return ok(undefined);
-    } catch (error) {
+    } catch (_error) {
         return err(new StorageError('Failed to initialize project storage'));
     }
 }
@@ -52,7 +52,7 @@ export async function getAllProjects(): Promise<Result<Project[], StorageError>>
             return ok(result.value);
         }
         return err(result.error);
-    } catch (error) {
+    } catch (_error) {
         return err(new StorageError('Failed to load projects'));
     }
 }
@@ -69,7 +69,7 @@ export async function getProject(id: string): Promise<Result<Project | null, Sto
             return ok(result.value);
         }
         return err(result.error);
-    } catch (error) {
+    } catch (_error) {
         return err(new StorageError('Failed to load project'));
     }
 }
@@ -97,7 +97,7 @@ export async function createProject(
             return ok(project);
         }
         return err(result.error);
-    } catch (error) {
+    } catch (_error) {
         return err(new StorageError('Failed to create project'));
     }
 }
@@ -135,7 +135,7 @@ export async function updateProject(
             return ok(updated);
         }
         return err(result.error);
-    } catch (error) {
+    } catch (_error) {
         return err(new StorageError('Failed to update project'));
     }
 }
@@ -155,7 +155,7 @@ export async function deleteProject(id: string): Promise<Result<void, StorageErr
         }
 
         return ok(undefined);
-    } catch (error) {
+    } catch (_error) {
         return err(new StorageError('Failed to delete project'));
     }
 }
@@ -163,11 +163,11 @@ export async function deleteProject(id: string): Promise<Result<void, StorageErr
 /**
  * Get the current active project ID
  */
-export async function getCurrentProjectId(): Promise<Result<string | null, StorageError>> {
+export function getCurrentProjectId(): Result<string | null, StorageError> {
     try {
         const stored = localStorage.getItem(CURRENT_PROJECT_KEY);
         return ok(stored);
-    } catch (error) {
+    } catch (_error) {
         return err(new StorageError('Failed to get current project ID'));
     }
 }
@@ -175,11 +175,11 @@ export async function getCurrentProjectId(): Promise<Result<string | null, Stora
 /**
  * Set the current active project ID
  */
-export async function setCurrentProjectId(projectId: string): Promise<Result<void, StorageError>> {
+export function setCurrentProjectId(projectId: string): Result<void, StorageError> {
     try {
         localStorage.setItem(CURRENT_PROJECT_KEY, projectId);
         return ok(undefined);
-    } catch (error) {
+    } catch (_error) {
         return err(new StorageError('Failed to set current project ID'));
     }
 }
@@ -187,11 +187,11 @@ export async function setCurrentProjectId(projectId: string): Promise<Result<voi
 /**
  * Clear the current project ID
  */
-export async function clearCurrentProjectId(): Promise<Result<void, StorageError>> {
+export function clearCurrentProjectId(): Result<void, StorageError> {
     try {
         localStorage.removeItem(CURRENT_PROJECT_KEY);
         return ok(undefined);
-    } catch (error) {
+    } catch (_error) {
         return err(new StorageError('Failed to clear current project ID'));
     }
 }

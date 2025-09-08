@@ -94,7 +94,7 @@ export interface IDataService {
  */
 export class DataService implements IDataService {
     private readonly dataManager: DataManager;
-    private readonly eventListeners = new Map<string, Array<(data: any) => void>>();
+    private readonly eventListeners = new Map<string, Array<(data: unknown) => void>>();
     private dataSourcesCache: readonly TimeSeriesData[] = [];
     private metadataCache = new Map<string, DataSourceMetadata>();
     private labelsCache = new LRUCache<string, readonly TimeSeriesLabel[]>(50);
@@ -137,7 +137,7 @@ export class DataService implements IDataService {
         this.metadataCache.clear();
 
         if ('destroy' in this.dataManager && typeof this.dataManager.destroy === 'function') {
-            this.dataManager.destroy();
+            (this.dataManager.destroy as () => void)();
         }
     }
 
@@ -170,9 +170,7 @@ export class DataService implements IDataService {
     /**
      * Add new data sources from uploaded files
      */
-    async addDataSource(
-        files: TDataFile[]
-    ): Promise<Result<readonly TimeSeriesData[], DataValidationError>> {
+    addDataSource(files: TDataFile[]): Result<readonly TimeSeriesData[], DataValidationError> {
         try {
             // Convert files to time series data
             const newDataSources = convertDataFilesToTimeSeries(files);
@@ -197,7 +195,7 @@ export class DataService implements IDataService {
     /**
      * Remove a data source by ID
      */
-    async removeDataSource(id: string): Promise<Result<void, DataValidationError>> {
+    removeDataSource(id: string): Result<void, DataValidationError> {
         try {
             // Remove from cache
             this.dataSourcesCache = this.dataSourcesCache.filter((source) => {
@@ -222,9 +220,7 @@ export class DataService implements IDataService {
     /**
      * Get metadata for a specific data source
      */
-    async getDataSourceMetadata(
-        id: string
-    ): Promise<Result<DataSourceMetadata | null, DataValidationError>> {
+    getDataSourceMetadata(id: string): Result<DataSourceMetadata | null, DataValidationError> {
         try {
             const metadata = this.metadataCache.get(id) || null;
             return ok(metadata);
@@ -376,7 +372,10 @@ export class DataService implements IDataService {
             this.eventListeners.set(event, []);
         }
 
-        this.eventListeners.get(event)!.push(listener);
+        const listeners = this.eventListeners.get(event);
+        if (listeners) {
+            listeners.push(listener);
+        }
 
         // Return unsubscribe function
         return () => {

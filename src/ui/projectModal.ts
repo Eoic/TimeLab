@@ -86,6 +86,7 @@ export function showCreateProjectModal(): Promise<boolean> {
         // Use requestAnimationFrame to ensure the modal is fully rendered
         requestAnimationFrame(() => {
             const nameInput = modal.querySelector('#project-name-input') as HTMLInputElement;
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- DOM query can return null
             if (nameInput) {
                 nameInput.focus();
             }
@@ -325,6 +326,7 @@ export function showEditProjectModal(project: Project): Promise<boolean> {
         // Use requestAnimationFrame to ensure the modal is fully rendered
         requestAnimationFrame(() => {
             const nameInput = modal.querySelector('#edit-project-name-input') as HTMLInputElement;
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- DOM query can return null
             if (nameInput) {
                 nameInput.focus();
                 // Select all text for easy editing

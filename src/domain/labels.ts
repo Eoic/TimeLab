@@ -125,12 +125,12 @@ export function createLabelDefinition(name: string, color: string): LabelDefinit
 export function hexToRgba(hex: string, alpha: number): string {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     if (!result || !result[1] || !result[2] || !result[3]) {
-        return `rgba(0, 0, 0, ${alpha})`;
+        return `rgba(0, 0, 0, ${String(alpha)})`;
     }
 
     const r = parseInt(result[1], 16);
     const g = parseInt(result[2], 16);
     const b = parseInt(result[3], 16);
 
-    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    return `rgba(${String(r)}, ${String(g)}, ${String(b)}, ${String(alpha)})`;
 }

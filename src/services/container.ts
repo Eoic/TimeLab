@@ -15,7 +15,7 @@ export interface IServiceContainer {
     dispose(): void;
 }
 
-export interface ServiceToken<T = any> {
+export interface ServiceToken<T = unknown> {
     readonly _type: T;
     readonly name: string;
 }
@@ -34,14 +34,14 @@ interface ServiceRegistration<T> {
  * Simple dependency injection container implementation
  */
 export class ServiceContainer implements IServiceContainer {
-    private readonly services = new Map<ServiceToken, ServiceRegistration<any>>();
+    private readonly services = new Map<ServiceToken<unknown>, ServiceRegistration<unknown>>();
 
     /**
      * Register a transient service (new instance each time)
      */
     register<T>(token: ServiceToken<T>, factory: ServiceFactory<T>): void {
-        this.services.set(token, {
-            factory,
+        this.services.set(token as ServiceToken<unknown>, {
+            factory: factory as () => unknown,
             singleton: false,
         });
     }
@@ -50,8 +50,8 @@ export class ServiceContainer implements IServiceContainer {
      * Register a singleton service (same instance always)
      */
     registerSingleton<T>(token: ServiceToken<T>, factory: ServiceFactory<T>): void {
-        this.services.set(token, {
-            factory,
+        this.services.set(token as ServiceToken<unknown>, {
+            factory: factory as () => unknown,
             singleton: true,
         });
     }
@@ -60,7 +60,9 @@ export class ServiceContainer implements IServiceContainer {
      * Get service instance by token
      */
     get<T>(token: ServiceToken<T>): T {
-        const registration = this.services.get(token);
+        const registration = this.services.get(token as ServiceToken<unknown>) as
+            | ServiceRegistration<T>
+            | undefined;
         if (!registration) {
             throw new Error(`Service not registered: ${token.name}`);
         }
@@ -69,17 +71,17 @@ export class ServiceContainer implements IServiceContainer {
             if (!registration.instance) {
                 registration.instance = registration.factory();
             }
-            return registration.instance;
+            return registration.instance as T;
         }
 
-        return registration.factory();
+        return registration.factory() as T;
     }
 
     /**
      * Check if service is registered
      */
     has<T>(token: ServiceToken<T>): boolean {
-        return this.services.has(token);
+        return this.services.has(token as ServiceToken<unknown>);
     }
 
     /**

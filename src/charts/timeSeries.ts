@@ -541,6 +541,7 @@ export class TimeSeriesChart {
         if (!this.chart) return;
 
         const chartContainer = this.chart.getDom();
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- getDom() can return null
         if (!chartContainer) return;
 
         // Create canvas overlay
@@ -566,6 +567,7 @@ export class TimeSeriesChart {
         if (!this.chart || !this.drawingCanvas) return;
 
         const chartContainer = this.chart.getDom();
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- getDom() can return null
         if (!chartContainer) return;
 
         const containerRect = chartContainer.getBoundingClientRect();
@@ -639,7 +641,7 @@ export class TimeSeriesChart {
         const extendedChart = this.chart as EChartsExtended;
         const dataPoint = extendedChart.convertFromPixel({ gridIndex: 0 }, pixelPoint);
 
-        if (dataPoint && dataPoint[0] !== null) {
+        if (dataPoint && typeof dataPoint[0] === 'number') {
             this.isDrawing = true;
             this.drawStartX = dataPoint[0];
             // Show initial canvas line at the start position
@@ -684,7 +686,7 @@ export class TimeSeriesChart {
         // Convert pixel position to data position and snap to nearest data point
         const extendedChart = this.chart as EChartsExtended;
         const dataPoint = extendedChart.convertFromPixel({ gridIndex: 0 }, [pixelX, chartArea.y]);
-        if (!dataPoint || dataPoint[0] === null) return;
+        if (!dataPoint || typeof dataPoint[0] !== 'number') return;
 
         // Convert snapped data position back to pixel for precise drawing
         const snappedPixel = extendedChart.convertToPixel({ gridIndex: 0 }, [dataPoint[0], 0]);
@@ -720,7 +722,7 @@ export class TimeSeriesChart {
 
         // Snap the current position to data points too
         const currentDataPoint = extendedChart.convertFromPixel({ gridIndex: 0 }, pixelPoint);
-        if (!currentDataPoint || currentDataPoint[0] === null) return;
+        if (!currentDataPoint || typeof currentDataPoint[0] !== 'number') return;
 
         const currentSnappedPixel = extendedChart.convertToPixel({ gridIndex: 0 }, [
             currentDataPoint[0],
@@ -823,7 +825,7 @@ export class TimeSeriesChart {
         const extendedChart = this.chart as EChartsExtended;
         const dataPoint = extendedChart.convertFromPixel({ gridIndex: 0 }, pixelPoint);
 
-        if (dataPoint && dataPoint[0] !== null) {
+        if (dataPoint && typeof dataPoint[0] === 'number') {
             const endX = dataPoint[0];
             this.finalizeLabelDrawing(this.drawStartX, endX);
         }
@@ -950,7 +952,7 @@ export class TimeSeriesChart {
 
         return {
             silent: true, // Don't intercept mouse events - allow drawing over labels
-            data: markAreaData as any, // ECharts markArea type is complex, using any for data compatibility
+            data: markAreaData as unknown, // ECharts markArea type is complex, using unknown for data compatibility
         };
     }
 
@@ -965,10 +967,10 @@ export class TimeSeriesChart {
         if (definition && definition.color && typeof definition.color === 'string') {
             // Convert hex to rgba with opacity
             const hex = definition.color.replace('#', '');
-            const r = parseInt(hex.substr(0, 2), 16);
-            const g = parseInt(hex.substr(2, 2), 16);
-            const b = parseInt(hex.substr(4, 2), 16);
-            return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+            const r = parseInt(hex.substring(0, 2), 16);
+            const g = parseInt(hex.substring(2, 4), 16);
+            const b = parseInt(hex.substring(4, 6), 16);
+            return `rgba(${String(r)}, ${String(g)}, ${String(b)}, ${String(opacity)})`;
         }
 
         // Fallback for legacy format "label-{index}" or hardcoded labels
@@ -979,10 +981,10 @@ export class TimeSeriesChart {
             if (definition && definition.color && typeof definition.color === 'string') {
                 // Convert hex to rgba with opacity
                 const hex = definition.color.replace('#', '');
-                const r = parseInt(hex.substr(0, 2), 16);
-                const g = parseInt(hex.substr(2, 2), 16);
-                const b = parseInt(hex.substr(4, 2), 16);
-                return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+                const r = parseInt(hex.substring(0, 2), 16);
+                const g = parseInt(hex.substring(2, 4), 16);
+                const b = parseInt(hex.substring(4, 6), 16);
+                return `rgba(${String(r)}, ${String(g)}, ${String(b)}, ${String(opacity)})`;
             }
         }
 
@@ -997,11 +999,11 @@ export class TimeSeriesChart {
 
         // Convert hex to rgba with opacity
         const hex = baseColor.replace('#', '');
-        const r = parseInt(hex.substr(0, 2), 16);
-        const g = parseInt(hex.substr(2, 2), 16);
-        const b = parseInt(hex.substr(4, 2), 16);
+        const r = parseInt(hex.substring(0, 2), 16);
+        const g = parseInt(hex.substring(2, 4), 16);
+        const b = parseInt(hex.substring(4, 6), 16);
 
-        return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+        return `rgba(${String(r)}, ${String(g)}, ${String(b)}, ${String(opacity)})`;
     }
 
     /**
@@ -1458,7 +1460,7 @@ function bindUIControls(chart: TimeSeriesChart): void {
 
         if (newState) {
             // Get selected label from active-label dropdown
-            const activeLabelDropdown = document.querySelector<any>('#active-label');
+            const activeLabelDropdown = document.querySelector<HTMLSelectElement>('#active-label');
             const selectedLabelValue = activeLabelDropdown?.value || null;
 
             if (!selectedLabelValue || selectedLabelValue === '') {

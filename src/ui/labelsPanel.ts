@@ -1,19 +1,13 @@
 /**
  * Labels panel UI management
- * Displays created time series labe        // Initialize sort order button
-        this.sortOrderBtn = panel.querySelector('.sort-order-btn');
-        if (this.sortOrderBtn) {
-            this.sortOrderBtn.addEventListener('click', () => {
-                this.toggleSortOrder();
-            });
-            this.updateSortOrderButton(); // Set initial state
-        } interaction capabilities
+ * Displays created time series labels with sorting and interaction capabilities
  */
 
 import type { TimeSeriesChart } from '../charts/timeSeries';
 import type { TimeSeriesLabel } from '../domain/labels';
 
 import { confirmDelete } from './confirmation';
+import type { TLDropdown } from './dropdown';
 import { getLabelDefinitions } from './dropdowns';
 import { updateEmptyState } from './emptyStates';
 import { addHistoryEntry } from './labelModal';
@@ -33,7 +27,7 @@ export class LabelsPanel {
     private currentHighlightedLabel: string | null = null;
     private currentSortBy: SortBy = 'creation';
     private currentSortOrder: SortOrder = 'asc';
-    private sortDropdown: any = null; // TLDropdown element
+    private sortDropdown: TLDropdown | null = null;
     private sortOrderBtn: HTMLButtonElement | null = null;
 
     constructor() {
@@ -47,7 +41,6 @@ export class LabelsPanel {
     private setupPanelContainer(): void {
         this.container = document.querySelector('.labels-list');
         if (!this.container) {
-            console.warn('Labels panel container (.labels-list) not found');
             return;
         }
 
@@ -70,8 +63,9 @@ export class LabelsPanel {
             this.sortDropdown.value = 'creation';
 
             // Listen for changes
+            const dropdown = this.sortDropdown;
             this.sortDropdown.addEventListener('change', () => {
-                this.currentSortBy = (this.sortDropdown?.value as SortBy) || 'creation';
+                this.currentSortBy = dropdown.value as SortBy;
                 this.refreshLabels();
             });
         }
@@ -82,6 +76,7 @@ export class LabelsPanel {
             this.sortOrderBtn.addEventListener('click', () => {
                 this.toggleSortOrder();
             });
+            this.updateSortOrderButton(); // Set initial state
         }
     }
 
@@ -413,7 +408,7 @@ export class LabelsPanel {
         });
 
         // Visibility toggle button
-        const visibilityBtn = item.querySelector('.visibility') as HTMLElement;
+        const visibilityBtn = item.querySelector('.visibility');
         if (visibilityBtn) {
             visibilityBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -422,11 +417,11 @@ export class LabelsPanel {
         }
 
         // Delete button
-        const deleteBtn = item.querySelector('.delete') as HTMLElement;
+        const deleteBtn = item.querySelector('.delete');
         if (deleteBtn) {
             deleteBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                this.deleteLabelWithConfirm(label);
+                void this.deleteLabelWithConfirm(label);
             });
         }
     }
@@ -469,8 +464,8 @@ export class LabelsPanel {
         this.clearChartHighlight();
 
         // Refresh chart display to show updated labels
-        const lastConfig = this.chart?.getLastConfig();
-        if (this.chart && lastConfig) {
+        const lastConfig = this.chart.getLastConfig();
+        if (lastConfig) {
             // Use the proper updateDisplay method instead of forcing option reset
             this.chart.updateDisplay(lastConfig);
         }
@@ -541,8 +536,8 @@ export class LabelsPanel {
 
         this.currentHighlightedLabel = labelId;
 
-        if (this.chart && 'highlightLabel' in this.chart) {
-            (this.chart as any).highlightLabel(labelId);
+        if (this.chart) {
+            this.chart.highlightLabel(labelId);
         }
     }
 
@@ -554,8 +549,8 @@ export class LabelsPanel {
 
         this.currentHighlightedLabel = null;
 
-        if (this.chart && 'clearLabelHighlight' in this.chart) {
-            (this.chart as any).clearLabelHighlight();
+        if (this.chart) {
+            this.chart.clearLabelHighlight();
         }
     }
 

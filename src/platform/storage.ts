@@ -114,7 +114,7 @@ export async function saveRecord(
         // Check if the store exists before attempting to use it
         if (!db.objectStoreNames.contains(storeName)) {
             const availableStores = Array.from(db.objectStoreNames).join(', ');
-            const errorMsg = `Object store '${storeName}' not found. Available stores: ${availableStores}. Database version: ${db.version}`;
+            const errorMsg = `Object store '${storeName}' not found. Available stores: ${availableStores}. Database version: ${String(db.version)}`;
             console.error('Storage Error:', errorMsg);
             return err(new StorageError(errorMsg));
         }
