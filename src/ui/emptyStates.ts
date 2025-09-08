@@ -10,6 +10,11 @@ export interface EmptyStateConfig {
 }
 
 /**
+ * Global observer for cleanup
+ */
+let historyObserver: MutationObserver | null = null;
+
+/**
  * Create an empty state element
  */
 export function createEmptyState(config: EmptyStateConfig): HTMLLIElement {
@@ -72,9 +77,24 @@ export function setupLabelsEmptyStates(): void {
     };
 
     // Set up observer for history list only
-    const historyObserver = new MutationObserver(updateHistoryEmpty);
+    // Clean up existing observer if any
+    if (historyObserver) {
+        historyObserver.disconnect();
+    }
+
+    historyObserver = new MutationObserver(updateHistoryEmpty);
     historyObserver.observe(historyList, { childList: true, subtree: true });
 
     // Initial update
     updateHistoryEmpty();
+}
+
+/**
+ * Clean up resources to prevent memory leaks
+ */
+export function destroyEmptyStates(): void {
+    if (historyObserver) {
+        historyObserver.disconnect();
+        historyObserver = null;
+    }
 }

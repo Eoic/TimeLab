@@ -1,3 +1,8 @@
+/**
+ * Global observer for cleanup
+ */
+let statsObserver: MutationObserver | null = null;
+
 export function setupStatsPanel(): void {
     const labelsList = document.querySelector<HTMLUListElement>('.labels-list');
     const totalEl = document.getElementById('stats-total');
@@ -93,10 +98,15 @@ export function setupStatsPanel(): void {
         }
     };
 
-    const observer = new MutationObserver(() => {
+    // Clean up existing observer if any
+    if (statsObserver) {
+        statsObserver.disconnect();
+    }
+
+    statsObserver = new MutationObserver(() => {
         update();
     });
-    observer.observe(labelsList, { childList: true, subtree: true });
+    statsObserver.observe(labelsList, { childList: true, subtree: true });
 
     labelsList.addEventListener('click', (ev: Event) => {
         const target = ev.target as HTMLElement | null;
@@ -114,4 +124,14 @@ export function setupStatsPanel(): void {
     });
 
     update();
+}
+
+/**
+ * Clean up resources to prevent memory leaks
+ */
+export function destroyStatsPanel(): void {
+    if (statsObserver) {
+        statsObserver.disconnect();
+        statsObserver = null;
+    }
 }

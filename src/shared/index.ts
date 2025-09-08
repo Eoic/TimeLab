@@ -105,6 +105,32 @@ export {
     createDecimal,
 } from './types';
 
+export {
+    // Type guards and safety utilities
+    isDefined,
+    isNonEmptyString,
+    isValidNumber,
+    isValidInteger,
+    isPositiveNumber,
+    isNonNegativeNumber,
+    isValidTimestamp,
+    hasRequiredKeys,
+    getProperty,
+    safeArrayAccess,
+    isArrayOf,
+    safeJsonParse,
+    isPlainObject,
+    assertType,
+    withDefault,
+    isHTMLElement,
+    isCanvasElement,
+    isEventLike,
+    isFunction,
+    hasDiscriminant,
+    toNumberSafe,
+    toStringSafe,
+} from './typeGuards';
+
 export { THEMES, THEME_METADATA, isValidTheme, getThemeDisplayName } from './themes';
 
 export type {

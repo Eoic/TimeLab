@@ -1,4 +1,10 @@
-import type { EChartOption, ECharts } from './echarts';
+import type { ECharts } from './echarts';
+import {
+    createThresholdMarkLine,
+    toSafeTooltipTrigger,
+    toSafeAxisType,
+    type SafeTooltipConfig,
+} from './types';
 
 import type { TLDropdown } from '@/ui/dropdown';
 
@@ -67,8 +73,8 @@ export function setupChartConfigControls(
         const yMin = !yAuto && elYMin?.value !== '' ? Number(elYMin?.value) : undefined;
         const yMax = !yAuto && elYMax?.value !== '' ? Number(elYMax?.value) : undefined;
 
-        const xAxis: EChartOption.XAxis = {
-            type: xType as EChartOption.XAxis['type'],
+        const xAxis = {
+            type: toSafeAxisType(xType),
             boundaryGap: xType === 'category',
         };
 
@@ -80,9 +86,11 @@ export function setupChartConfigControls(
             seriesData = data;
         }
 
-        const yAxis: EChartOption.YAxis = {
-            type: yType as EChartOption.YAxis['type'],
+        const yAxis = {
+            type: toSafeAxisType(yType),
             scale: yAuto,
+            ...(yMin !== undefined && { min: yMin }),
+            ...(yMax !== undefined && { max: yMax }),
         };
 
         if (yMin !== undefined) {
@@ -98,28 +106,23 @@ export function setupChartConfigControls(
         const axisLineStyle = showGrid ? {} : { show: false };
         const splitLine = { show: showGrid };
 
-        let markLine: EChartOption.SeriesLine['markLine'] | undefined;
+        let markLine: any;
         const thresholdEnabled = elThreshEnable?.checked ?? false;
         const thresholdVal =
             elThreshValue && elThreshValue.value !== '' ? Number(elThreshValue.value) : undefined;
 
         if (thresholdEnabled && thresholdVal !== undefined) {
-            markLine = {
-                data: [{ yAxis: thresholdVal }],
-                lineStyle: { type: 'dashed' },
-                symbol: 'none',
-            } as unknown as EChartOption.SeriesLine['markLine'];
+            markLine = createThresholdMarkLine(thresholdVal);
         }
 
         chart.setOption(
             {
-                tooltip:
-                    tooltipMode === 'none'
-                        ? { show: false }
-                        : {
-                              trigger: tooltipMode as EChartOption.Tooltip['trigger'],
-                              axisPointer: { type: 'cross', snap },
-                          },
+                tooltip: (tooltipMode === 'none'
+                    ? { show: false }
+                    : {
+                          trigger: toSafeTooltipTrigger(tooltipMode),
+                          axisPointer: { type: 'cross', snap },
+                      }) as SafeTooltipConfig,
                 xAxis: { ...xAxis, axisLine: axisLineStyle, splitLine },
                 yAxis: { ...yAxis, axisLine: axisLineStyle, splitLine },
                 series: [

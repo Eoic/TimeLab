@@ -19,6 +19,52 @@ import { UploadDataManager } from './dataManager';
 import type { TDataFile } from './uploads';
 
 /**
+ * Type guard to check if an object is a valid TimeSeriesLabel
+ */
+function isTimeSeriesLabel(obj: unknown): obj is TimeSeriesLabel {
+    return (
+        typeof obj === 'object' &&
+        obj !== null &&
+        typeof (obj as TimeSeriesLabel).id === 'string' &&
+        typeof (obj as TimeSeriesLabel).startTime === 'number' &&
+        typeof (obj as TimeSeriesLabel).endTime === 'number' &&
+        typeof (obj as TimeSeriesLabel).labelDefId === 'string' &&
+        typeof (obj as TimeSeriesLabel).datasetId === 'string' &&
+        typeof (obj as TimeSeriesLabel).createdAt === 'number' &&
+        typeof (obj as TimeSeriesLabel).updatedAt === 'number'
+    );
+}
+
+/**
+ * Safely convert IDBRecord array to TimeSeriesLabel array with validation
+ */
+function validateTimeSeriesLabels(records: IDBRecord[]): TimeSeriesLabel[] {
+    const validLabels: TimeSeriesLabel[] = [];
+    for (const record of records) {
+        if (isTimeSeriesLabel(record)) {
+            validLabels.push(record);
+        }
+    }
+    return validLabels;
+}
+
+/**
+ * Safely convert TimeSeriesLabel to IDBRecord
+ */
+function convertTimeSeriesLabelToRecord(label: TimeSeriesLabel): IDBRecord {
+    return {
+        id: label.id,
+        startTime: label.startTime,
+        endTime: label.endTime,
+        labelDefId: label.labelDefId,
+        datasetId: label.datasetId,
+        createdAt: label.createdAt,
+        updatedAt: label.updatedAt,
+        ...(label.visible !== undefined && { visible: label.visible }),
+    };
+}
+
+/**
  * Data source metadata for enhanced data management
  */
 export interface DataSourceMetadata {
@@ -253,11 +299,10 @@ export class DataService implements IDataService {
                 return ok(cached);
             }
 
-            const result = await getAllTimeSeriesLabels();
+            const result = await getAllTimeSeriesLabels<IDBRecord>();
             if (result.ok) {
-                const labels = (result.value as unknown as TimeSeriesLabel[]).filter(
-                    (label) => label.datasetId === dataSourceId
-                );
+                const validatedLabels = validateTimeSeriesLabels(result.value);
+                const labels = validatedLabels.filter((label) => label.datasetId === dataSourceId);
 
                 // Cache the result
                 this.labelsCache.set(dataSourceId, labels);
@@ -277,7 +322,7 @@ export class DataService implements IDataService {
         label: TimeSeriesLabel
     ): Promise<Result<void, DataValidationError>> {
         try {
-            const result = await saveTimeSeriesLabel(label as unknown as IDBRecord);
+            const result = await saveTimeSeriesLabel(convertTimeSeriesLabelToRecord(label));
             if (result.ok) {
                 // Invalidate cache for this data source
                 this.labelsCache.set(dataSourceId, []); // Clear cache entry
@@ -326,7 +371,7 @@ export class DataService implements IDataService {
     ): Promise<Result<TimeSeriesLabel, DataValidationError>> {
         try {
             // First, get the existing label
-            const allLabelsResult = await getAllTimeSeriesLabels();
+            const allLabelsResult = await getAllTimeSeriesLabels<IDBRecord>();
             if (!allLabelsResult.ok) {
                 return err(
                     new DataValidationError(
@@ -336,9 +381,8 @@ export class DataService implements IDataService {
                 );
             }
 
-            const existingLabel = (allLabelsResult.value as unknown as TimeSeriesLabel[]).find(
-                (label) => label.id === labelId
-            );
+            const validatedLabels = validateTimeSeriesLabels(allLabelsResult.value);
+            const existingLabel = validatedLabels.find((label) => label.id === labelId);
 
             if (!existingLabel) {
                 return err(new DataValidationError('Label not found'));
@@ -353,7 +397,9 @@ export class DataService implements IDataService {
             };
 
             // Save the updated label
-            const saveResult = await saveTimeSeriesLabel(updatedLabel as unknown as IDBRecord);
+            const saveResult = await saveTimeSeriesLabel(
+                convertTimeSeriesLabelToRecord(updatedLabel)
+            );
             if (saveResult.ok) {
                 this.emit('labelAdded', updatedLabel); // Using labelAdded for updates too
                 return ok(updatedLabel);

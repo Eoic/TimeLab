@@ -20,7 +20,7 @@ export interface IServiceContainer {
 }
 
 export interface ServiceToken<T = unknown> {
-    readonly _type: T;
+    readonly _type?: T; // Make _type optional since it's only for type inference
     readonly name: string;
 }
 
@@ -45,7 +45,7 @@ export class ServiceContainer implements IServiceContainer {
      */
     register<T>(token: ServiceToken<T>, factory: ServiceFactory<T>): void {
         this.services.set(token as ServiceToken, {
-            factory: factory as () => unknown,
+            factory: factory as ServiceFactory<unknown>,
             singleton: false,
         });
     }
@@ -55,7 +55,7 @@ export class ServiceContainer implements IServiceContainer {
      */
     registerSingleton<T>(token: ServiceToken<T>, factory: ServiceFactory<T>): void {
         this.services.set(token as ServiceToken, {
-            factory: factory as () => unknown,
+            factory: factory as ServiceFactory<unknown>,
             singleton: true,
         });
     }
@@ -64,21 +64,22 @@ export class ServiceContainer implements IServiceContainer {
      * Get service instance by token
      */
     get<T>(token: ServiceToken<T>): T {
-        const registration = this.services.get(token as ServiceToken) as
-            | ServiceRegistration<T>
-            | undefined;
+        const registration = this.services.get(token as ServiceToken);
         if (!registration) {
             throw new Error(`Service not registered: ${token.name}`);
         }
 
-        if (registration.singleton) {
-            if (!registration.instance) {
-                registration.instance = registration.factory();
+        // Type assertion is safe here because the token guarantees the type
+        const typedRegistration = registration as ServiceRegistration<T>;
+
+        if (typedRegistration.singleton) {
+            if (!typedRegistration.instance) {
+                typedRegistration.instance = typedRegistration.factory();
             }
-            return registration.instance;
+            return typedRegistration.instance;
         }
 
-        return registration.factory();
+        return typedRegistration.factory();
     }
 
     /**
@@ -112,12 +113,12 @@ export class ServiceContainer implements IServiceContainer {
     }
 }
 
-// Service tokens
+// Service tokens - using branded types for better type safety
 export const SERVICE_TOKENS = {
-    ProjectService: { name: 'ProjectService', _type: null as unknown as IProjectService },
-    LabelService: { name: 'LabelService', _type: null as unknown as LabelService },
-    DataManager: { name: 'DataManager', _type: null as unknown as DataManager },
-    DataService: { name: 'DataService', _type: null as unknown as IDataService },
+    ProjectService: { name: 'ProjectService' } as ServiceToken<IProjectService>,
+    LabelService: { name: 'LabelService' } as ServiceToken<LabelService>,
+    DataManager: { name: 'DataManager' } as ServiceToken<DataManager>,
+    DataService: { name: 'DataService' } as ServiceToken<IDataService>,
 } as const;
 
 // Global container instance

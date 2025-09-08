@@ -14,6 +14,11 @@ const labelDefinitions: LabelDefinition[] = [];
 let isLoaded = false;
 
 /**
+ * Global observer for cleanup
+ */
+let labelsObserver: MutationObserver | null = null;
+
+/**
  * Load label definitions from IndexedDB
  */
 export async function loadLabelDefinitions(): Promise<void> {
@@ -418,10 +423,25 @@ export function setupDropdowns(): void {
     const labelsList = document.querySelector<HTMLUListElement>('.labels-list');
 
     if (labelsList) {
-        const labelsObserver = new MutationObserver(() => {
+        // Clean up existing observer if any
+        if (labelsObserver) {
+            labelsObserver.disconnect();
+        }
+
+        labelsObserver = new MutationObserver(() => {
             updateActiveLabelDropdown();
         });
 
         labelsObserver.observe(labelsList, { childList: true, subtree: true });
+    }
+}
+
+/**
+ * Clean up resources to prevent memory leaks
+ */
+export function destroyDropdowns(): void {
+    if (labelsObserver) {
+        labelsObserver.disconnect();
+        labelsObserver = null;
     }
 }
