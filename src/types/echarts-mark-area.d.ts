@@ -13,7 +13,7 @@ export interface MarkAreaItemStyle {
 export interface MarkAreaLabel {
     show?: boolean;
     position?: string;
-    formatter?: string | ((params: any) => string);
+    formatter?: string | ((params: unknown) => string);
 }
 
 export interface MarkAreaDataPoint {
