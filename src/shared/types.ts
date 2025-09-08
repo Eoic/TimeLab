@@ -83,14 +83,18 @@ export type PartialExcept<T, K extends keyof T> = Partial<T> & Pick<T, K>;
 export type RequiredFields<T, K extends keyof T> = T & Required<Pick<T, K>>;
 
 // Extract function parameters as tuple
-export type Parameters<T extends (...args: any[]) => any> = T extends (...args: infer P) => any
+export type Parameters<T extends (...args: unknown[]) => unknown> = T extends (
+    ...args: infer P
+) => unknown
     ? P
     : never;
 
 // Extract function return type
-export type ReturnType<T extends (...args: any[]) => any> = T extends (...args: any[]) => infer R
+export type ReturnType<T extends (...args: unknown[]) => unknown> = T extends (
+    ...args: unknown[]
+) => infer R
     ? R
-    : any;
+    : unknown;
 
 // Create a type with all properties of T as readonly deeply
 export type DeepReadonly<T> = {
@@ -131,10 +135,12 @@ export type ArrayElement<ArrayType extends readonly unknown[]> =
 
 // Conditional type for optional vs required properties
 export type OptionalKeys<T> = {
+    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
     [K in keyof T]-?: {} extends Pick<T, K> ? K : never;
 }[keyof T];
 
 export type RequiredPropKeys<T> = {
+    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
     [K in keyof T]-?: {} extends Pick<T, K> ? never : K;
 }[keyof T];
 
@@ -149,7 +155,7 @@ export type WithRequired<T, K extends keyof T> = T & Required<Pick<T, K>>;
  */
 
 // Generic event emitter interface
-export interface EventEmitter<TEvents extends Record<string, any>> {
+export interface EventEmitter<TEvents extends Record<string, unknown>> {
     on<K extends keyof TEvents>(event: K, listener: (data: TEvents[K]) => void): () => void;
     off<K extends keyof TEvents>(event: K, listener: (data: TEvents[K]) => void): void;
     emit<K extends keyof TEvents>(event: K, data: TEvents[K]): void;
@@ -159,7 +165,7 @@ export interface EventEmitter<TEvents extends Record<string, any>> {
 export type EventListener<T> = (event: T) => void;
 
 // Event handler map type
-export type EventHandlerMap<TEvents extends Record<string, any>> = {
+export type EventHandlerMap<TEvents extends Record<string, unknown>> = {
     [K in keyof TEvents]?: Array<EventListener<TEvents[K]>>;
 };
 
@@ -211,7 +217,7 @@ export type ServiceInterface<T> = {
 
 // Extract service methods only
 export type ServiceMethods<T> = {
-    [K in keyof T]: T[K] extends (...args: any[]) => any ? T[K] : never;
+    [K in keyof T]: T[K] extends (...args: unknown[]) => unknown ? T[K] : never;
 };
 
 // Async version of service methods
@@ -243,7 +249,7 @@ export type Schema<T> = {
  */
 
 // Component props with children (generic version)
-export type PropsWithChildren<T = {}> = T & {
+export type PropsWithChildren<T = Record<string, never>> = T & {
     readonly children?: unknown; // Use unknown instead of React.ReactNode for framework agnostic
 };
 

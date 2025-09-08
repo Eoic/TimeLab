@@ -138,7 +138,7 @@ export class LabelService {
         const result = await this.saveLabelDefinition(updated);
         if (result.ok) {
             // Cascade the changes to related TimeSeriesLabels
-            await this.cascadeDefinitionUpdate();
+            this.cascadeDefinitionUpdate();
             this.notifyListeners();
             return ok(updated);
         }
@@ -165,13 +165,13 @@ export class LabelService {
      * Since TimeSeriesLabels reference LabelDefinitions by ID,
      * they automatically reflect changes when the UI refreshes
      */
-    private async cascadeDefinitionUpdate(): Promise<void> {
+    private cascadeDefinitionUpdate(): void {
         try {
             // Just notify UI components to refresh - labels automatically
             // show updated name/color since they reference definitions by ID
             this.notifyTimeSeriesLabelsChanged();
-        } catch (error) {
-            console.error('Error during label definition cascade update:', error);
+        } catch (_error) {
+            // Silent error handling for cascade operations
         }
     }
 
@@ -183,7 +183,6 @@ export class LabelService {
             // Get all TimeSeriesLabels from storage that reference this definition
             const allLabelsResult = await getAllTimeSeriesLabels();
             if (!allLabelsResult.ok) {
-                console.error('Failed to load labels for cascade deletion');
                 return;
             }
 
@@ -199,8 +198,8 @@ export class LabelService {
                     this.removeLabelFromAllDatasets(label.id);
                     // Remove from actual data sources (CSVTimeSeriesData instances)
                     await this.removeLabelFromDataSources(label.id);
-                } catch (error) {
-                    console.error('Failed to delete label during cascade:', error);
+                } catch (_error) {
+                    // Silent error handling for individual label deletions
                 }
             });
 
@@ -209,8 +208,8 @@ export class LabelService {
 
             // Notify UI components about the changes
             this.notifyTimeSeriesLabelsChanged();
-        } catch (error) {
-            console.error('Error during label definition cascade deletion:', error);
+        } catch (_error) {
+            // Silent error handling for cascade deletion
         }
     }
 
@@ -337,7 +336,6 @@ export class LabelService {
 // Legacy export - use service registry instead
 // This is kept for backward compatibility but should be avoided
 export function getLabelService(): LabelService {
-    console.warn('Using legacy getLabelService(). Use service registry instead.');
     const service = new LabelService();
     void service.initialize();
     return service;

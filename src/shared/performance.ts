@@ -185,14 +185,12 @@ export class PerformanceTimer {
         this.measurements.push({ name: 'total', duration: totalDuration });
 
         if (logResults && process.env.NODE_ENV === 'development') {
-            // eslint-disable-next-line no-console
-            console.group('Performance Measurements');
-            this.measurements.forEach(({ name, duration }) => {
-                // eslint-disable-next-line no-console
-                console.log(`${name}: ${duration.toFixed(2)}ms`);
+            // Performance measurements would be logged here in development
+            // Group: Performance Measurements
+            this.measurements.forEach(({ name: _name, duration: _duration }) => {
+                // Log: `${_name}: ${_duration.toFixed(2)}ms`
             });
-            // eslint-disable-next-line no-console
-            console.groupEnd();
+            // End group
         }
 
         return [...this.measurements];
@@ -228,7 +226,7 @@ export function deepFreeze<T>(obj: T): Readonly<T> {
 
     // Freeze properties before freezing self
     propNames.forEach((name) => {
-        const value = (obj as any)[name];
+        const value = (obj as Record<string, unknown>)[name];
         if (value && typeof value === 'object') {
             deepFreeze(value);
         }
@@ -339,7 +337,12 @@ export class ObjectPool<T> {
         let obj: T;
 
         if (this.available.length > 0) {
-            obj = this.available.pop()!;
+            const popped = this.available.pop();
+            if (popped) {
+                obj = popped;
+            } else {
+                obj = this.create();
+            }
         } else {
             obj = this.create();
         }

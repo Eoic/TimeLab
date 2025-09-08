@@ -1,5 +1,5 @@
 /**
- * Type extensions for ECharts that aren't in the main type definitions
+ * Type extensions for ECharts that aren't in the main type definitions.
  * This eliminates the need for 'any' casts when accessing ECharts internals
  */
 
@@ -70,7 +70,7 @@ export interface EChartsExtended extends ECharts {
  */
 export function isEChartsExtended(chart: ECharts): chart is EChartsExtended {
     return (
-        typeof (chart as any).getZr === 'function' &&
-        typeof (chart as any).convertFromPixel === 'function'
+        typeof (chart as { getZr?: unknown }).getZr === 'function' &&
+        typeof (chart as { convertFromPixel?: unknown }).convertFromPixel === 'function'
     );
 }

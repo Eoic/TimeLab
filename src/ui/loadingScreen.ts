@@ -32,14 +32,19 @@ class LoadingManager {
     constructor() {
         this.loadingElement = document.getElementById('loading-screen');
 
+        // Ensure initial progress display
+        this.updateProgress();
+
         // Auto-complete after a maximum timeout to prevent infinite loading
         setTimeout(() => {
             if (!this.state.isComplete) {
-                // eslint-disable-next-line no-console
-                console.warn('Loading timeout reached, forcing completion');
+                // Loading timeout reached, forcing completion for safety
                 this.completeLoading();
             }
         }, 10000); // 10 second timeout
+
+        // Ensure spinner is visible and animating
+        this.ensureSpinnerAnimation();
     }
 
     /**
@@ -49,9 +54,52 @@ class LoadingManager {
         this.state.completedSteps.add(step);
         this.updateProgress();
 
+        // Check if we should complete loading
         if (this.areAllStepsComplete()) {
-            this.completeLoading();
+            // Ensure progress shows 100% before completing
+            setTimeout(() => {
+                // Double-check progress is at 100%
+                this.ensureProgressAt100();
+                this.completeLoading();
+            }, 100); // Small delay to ensure UI updates are visible
         }
+    }
+
+    /**
+     * Ensure progress shows exactly 100% when all steps are complete
+     */
+    private ensureProgressAt100(): void {
+        const percentageText = document.querySelector('.loading-percentage');
+        if (percentageText && this.areAllStepsComplete()) {
+            percentageText.textContent = '100%';
+
+            // Force browser reflow to ensure update is visible
+            if (percentageText instanceof HTMLElement) {
+                void percentageText.offsetHeight;
+            }
+        }
+    }
+
+    /**
+     * Ensure spinner animation is working properly
+     */
+    private ensureSpinnerAnimation(): void {
+        // Use requestAnimationFrame to ensure DOM is ready
+        requestAnimationFrame(() => {
+            const spinner = document.querySelector('.loading-spinner');
+            if (spinner instanceof HTMLElement) {
+                // Force animation by resetting and re-applying
+                const animationName = 'spin 1s linear infinite';
+                spinner.style.animation = 'none';
+
+                requestAnimationFrame(() => {
+                    spinner.style.animation = animationName;
+                    // Ensure hardware acceleration
+                    spinner.style.transform = 'translateZ(0)';
+                    spinner.style.willChange = 'transform';
+                });
+            }
+        });
     }
 
     /**
@@ -69,17 +117,28 @@ class LoadingManager {
             100,
             (this.state.completedSteps.size / this.state.requiredSteps.length) * 100
         );
-        const percentageText = document.querySelector('.loading-percentage') as HTMLElement;
-        const statusText = document.querySelector('.loading-status') as HTMLElement;
 
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- DOM query can return null
+        // Use more robust DOM queries with error handling
+        const percentageText = document.querySelector('.loading-percentage');
+        const statusText = document.querySelector('.loading-status');
+
         if (percentageText) {
-            percentageText.textContent = `${String(Math.round(progress))}%`;
+            const roundedProgress = Math.round(progress);
+            percentageText.textContent = `${String(roundedProgress)}%`;
+
+            // Debug: loading progress tracking for development
+            if (process.env.NODE_ENV === 'development') {
+                // Progress tracking: roundedProgress% (completed/total steps)
+            }
         }
 
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- DOM query can return null
         if (statusText) {
             statusText.innerHTML = this.getStatusMessage();
+        }
+
+        // Force browser reflow to ensure updates are visible
+        if (percentageText && percentageText instanceof HTMLElement) {
+            void percentageText.offsetHeight; // Trigger reflow
         }
     }
 
@@ -151,7 +210,41 @@ class LoadingManager {
      * Force complete loading (for emergency use)
      */
     forceComplete(): void {
+        if (this.state.isComplete) return;
+
+        // Ensure progress shows 100% before forcing completion
+        const percentageText = document.querySelector('.loading-percentage');
+        if (percentageText) {
+            percentageText.textContent = '100%';
+        }
+
         this.completeLoading();
+    }
+
+    /**
+     * Get current loading state for debugging
+     */
+    getLoadingState(): {
+        isComplete: boolean;
+        completedSteps: string[];
+        remainingSteps: string[];
+        progress: number;
+    } {
+        const completedSteps = Array.from(this.state.completedSteps);
+        const remainingSteps = this.state.requiredSteps.filter(
+            (step) => !this.state.completedSteps.has(step)
+        );
+        const progress = Math.min(
+            100,
+            (this.state.completedSteps.size / this.state.requiredSteps.length) * 100
+        );
+
+        return {
+            isComplete: this.state.isComplete,
+            completedSteps,
+            remainingSteps,
+            progress: Math.round(progress),
+        };
     }
 }
 
@@ -186,6 +279,18 @@ export function forceCompleteLoading(): void {
     }
 }
 
+/**
+ * Get current loading state for debugging
+ */
+export function getLoadingState(): {
+    isComplete: boolean;
+    completedSteps: string[];
+    remainingSteps: string[];
+    progress: number;
+} | null {
+    return loadingManager ? loadingManager.getLoadingState() : null;
+}
+
 // Auto-initialize when module loads
 if (typeof window !== 'undefined' && document.readyState !== 'loading') {
     initializeLoadingScreen();
@@ -193,4 +298,45 @@ if (typeof window !== 'undefined' && document.readyState !== 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
         initializeLoadingScreen();
     });
+}
+
+// Add debug functions to window for manual testing
+if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+    interface LoadingDebug {
+        getState: typeof getLoadingState;
+        markStep: typeof markLoadingStepComplete;
+        forceComplete: typeof forceCompleteLoading;
+        testProgress: () => void;
+    }
+
+    (window as unknown as { loadingScreenDebug: LoadingDebug }).loadingScreenDebug = {
+        getState: getLoadingState,
+        markStep: markLoadingStepComplete,
+        forceComplete: forceCompleteLoading,
+        testProgress: () => {
+            const steps = [
+                'app-initialized',
+                'project-toolbar-initialized',
+                'ui-setup',
+                'chart-initialized',
+                'dropdowns-setup',
+                'data-loaded',
+                'themes-ready',
+                'label-definitions-loaded',
+            ];
+
+            let i = 0;
+            const interval = setInterval(() => {
+                if (i < steps.length) {
+                    const step = steps[i];
+                    if (step) {
+                        markLoadingStepComplete(step);
+                    }
+                    i++;
+                } else {
+                    clearInterval(interval);
+                }
+            }, 500);
+        },
+    };
 }

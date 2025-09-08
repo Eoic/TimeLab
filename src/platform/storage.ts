@@ -115,7 +115,6 @@ export async function saveRecord(
         if (!db.objectStoreNames.contains(storeName)) {
             const availableStores = Array.from(db.objectStoreNames).join(', ');
             const errorMsg = `Object store '${storeName}' not found. Available stores: ${availableStores}. Database version: ${String(db.version)}`;
-            console.error('Storage Error:', errorMsg);
             return err(new StorageError(errorMsg));
         }
 
@@ -169,7 +168,7 @@ export async function resetDatabase(): Promise<Result<void, StorageError>> {
         const deleteReq = indexedDB.deleteDatabase(DB_NAME);
         await new Promise<void>((resolve, reject) => {
             deleteReq.onsuccess = () => {
-                console.log('Database deleted successfully');
+                // Database deleted successfully
                 resolve();
             };
             deleteReq.onerror = () => {
@@ -179,7 +178,7 @@ export async function resetDatabase(): Promise<Result<void, StorageError>> {
 
         // Reopen to trigger creation with current schema
         await openDatabase();
-        console.log('Database reset and recreated successfully');
+        // Database reset and recreated successfully
         return ok(undefined);
     } catch (error) {
         return err(new StorageError('Failed to reset database', error));

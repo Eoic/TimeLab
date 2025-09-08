@@ -3,6 +3,7 @@
  * Handles dependency injection and service lifecycle
  */
 
+import type { DataManager } from '../charts/timeSeries';
 import { getDataManager } from '../data';
 import { createDataService, type IDataService } from '../data/dataService';
 import * as projectStorage from '../platform/projectStorage';
@@ -51,13 +52,13 @@ export function getProjectService(): ProjectService {
  */
 export function getLabelService(): LabelService {
     const container = getServiceContainer();
-    return container.get(SERVICE_TOKENS.LabelService) as LabelService;
+    return container.get(SERVICE_TOKENS.LabelService);
 }
 
 /**
  * Get data manager instance
  */
-export function getDataManagerService(): any {
+export function getDataManagerService(): DataManager {
     const container = getServiceContainer();
     return container.get(SERVICE_TOKENS.DataManager);
 }
@@ -67,7 +68,7 @@ export function getDataManagerService(): any {
  */
 export function getDataService(): IDataService {
     const container = getServiceContainer();
-    return container.get(SERVICE_TOKENS.DataService) as IDataService;
+    return container.get(SERVICE_TOKENS.DataService);
 }
 
 /**

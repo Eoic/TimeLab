@@ -36,7 +36,7 @@ export function isValidTheme(value: string): value is Theme {
 }
 
 // Get theme display name with proper typing
-export function getThemeDisplayName<T extends Theme>(theme: T): string {
+export function getThemeDisplayName(theme: Theme): string {
     const themeNames: Record<Theme, string> = {
         auto: 'Auto (System)',
         light: 'Light',
@@ -173,8 +173,8 @@ export type ThemeCSSVariableMap = Record<ThemeCustomProperty, string>;
 // Type-safe theme switcher interface
 export interface ThemeSwitcher {
     getCurrentTheme(): Theme;
-    switchToTheme<T extends Theme>(theme: T): Promise<void>;
-    getThemeConfig<T extends Theme>(theme: T): ValidThemeConfig<T> | null;
+    switchToTheme(theme: Theme): Promise<void>;
+    getThemeConfig(theme: Theme): ValidThemeConfig<Theme> | null;
     getSupportedThemes(): readonly Theme[];
 }
 

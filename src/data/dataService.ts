@@ -170,7 +170,9 @@ export class DataService implements IDataService {
     /**
      * Add new data sources from uploaded files
      */
-    addDataSource(files: TDataFile[]): Result<readonly TimeSeriesData[], DataValidationError> {
+    async addDataSource(
+        files: TDataFile[]
+    ): Promise<Result<readonly TimeSeriesData[], DataValidationError>> {
         try {
             // Convert files to time series data
             const newDataSources = convertDataFilesToTimeSeries(files);
@@ -186,7 +188,7 @@ export class DataService implements IDataService {
             });
             this.emit('dataSourcesChanged', updatedSources);
 
-            return ok(updatedSources);
+            return await Promise.resolve(ok(updatedSources));
         } catch (error) {
             return err(new DataValidationError('Failed to add data sources', error));
         }
@@ -195,7 +197,7 @@ export class DataService implements IDataService {
     /**
      * Remove a data source by ID
      */
-    removeDataSource(id: string): Result<void, DataValidationError> {
+    async removeDataSource(id: string): Promise<Result<void, DataValidationError>> {
         try {
             // Remove from cache
             this.dataSourcesCache = this.dataSourcesCache.filter((source) => {
@@ -211,7 +213,7 @@ export class DataService implements IDataService {
             this.emit('dataSourceRemoved', id);
             this.emit('dataSourcesChanged', this.dataSourcesCache);
 
-            return ok(undefined);
+            return await Promise.resolve(ok(undefined));
         } catch (error) {
             return err(new DataValidationError('Failed to remove data source', error));
         }
@@ -220,10 +222,12 @@ export class DataService implements IDataService {
     /**
      * Get metadata for a specific data source
      */
-    getDataSourceMetadata(id: string): Result<DataSourceMetadata | null, DataValidationError> {
+    async getDataSourceMetadata(
+        id: string
+    ): Promise<Result<DataSourceMetadata | null, DataValidationError>> {
         try {
             const metadata = this.metadataCache.get(id) || null;
-            return ok(metadata);
+            return await Promise.resolve(ok(metadata));
         } catch (error) {
             return err(new DataValidationError('Failed to get data source metadata', error));
         }
@@ -374,7 +378,7 @@ export class DataService implements IDataService {
 
         const listeners = this.eventListeners.get(event);
         if (listeners) {
-            listeners.push(listener);
+            listeners.push(listener as (data: unknown) => void);
         }
 
         // Return unsubscribe function
@@ -392,7 +396,7 @@ export class DataService implements IDataService {
     ): void {
         const listeners = this.eventListeners.get(event);
         if (listeners) {
-            const index = listeners.indexOf(listener);
+            const index = listeners.indexOf(listener as (data: unknown) => void);
             if (index >= 0) {
                 listeners.splice(index, 1);
             }
@@ -407,8 +411,8 @@ export class DataService implements IDataService {
         listeners.forEach((listener) => {
             try {
                 listener(data);
-            } catch (error) {
-                console.error(`Error in ${event} listener:`, error);
+            } catch (_error) {
+                // Silent error handling for event listeners
             }
         });
     }

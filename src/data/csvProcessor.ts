@@ -188,9 +188,8 @@ export class CSVTimeSeriesData implements TimeSeriesData {
                     );
                 }
             })
-            .catch((error: unknown) => {
-                // eslint-disable-next-line no-console
-                console.error('Failed to import dropdowns module:', error);
+            .catch((_error: unknown) => {
+                // Failed to import dropdowns module, falling back to basic label loading
                 // Fallback: just load labels anyway
                 void this.loadLabelsFromStorage();
             });
@@ -216,9 +215,8 @@ export class CSVTimeSeriesData implements TimeSeriesData {
                     this.notifyLabelsChangedIfDefinitionsReady();
                 }
             }
-        } catch (error) {
-            // eslint-disable-next-line no-console
-            console.warn('Failed to load labels from storage:', error);
+        } catch (_error) {
+            // Failed to load labels from storage, continuing without stored labels
         }
     }
 
@@ -240,12 +238,10 @@ export class CSVTimeSeriesData implements TimeSeriesData {
             };
             const result = await saveTimeSeriesLabel(labelRecord);
             if (!result.ok) {
-                // eslint-disable-next-line no-console
-                console.warn('Failed to save label to storage:', result.error);
+                // Failed to save label to storage, continuing without persistence
             }
-        } catch (error) {
-            // eslint-disable-next-line no-console
-            console.warn('Error saving label to storage:', error);
+        } catch (_error) {
+            // Error saving label to storage, continuing without persistence
         }
     }
 
@@ -256,12 +252,10 @@ export class CSVTimeSeriesData implements TimeSeriesData {
         try {
             const result = await deleteTimeSeriesLabel(labelId);
             if (!result.ok) {
-                // eslint-disable-next-line no-console
-                console.warn('Failed to remove label from storage:', result.error);
+                // Failed to remove label from storage, continuing anyway
             }
-        } catch (error) {
-            // eslint-disable-next-line no-console
-            console.warn('Error removing label from storage:', error);
+        } catch (_error) {
+            // Error removing label from storage, continuing anyway
         }
     }
 
@@ -300,9 +294,8 @@ export class CSVTimeSeriesData implements TimeSeriesData {
                     );
                 }
             })
-            .catch((error: unknown) => {
-                // eslint-disable-next-line no-console
-                console.error('Failed to import dropdowns module:', error);
+            .catch((_error: unknown) => {
+                // Failed to import dropdowns module, falling back to basic notification
                 // Fallback: notify anyway (better than no notification)
                 this.notifyLabelsChanged();
             });

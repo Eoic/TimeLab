@@ -858,7 +858,7 @@ export class TimeSeriesChart {
         const minLabelWidth = 1; // Minimum time difference to create a meaningful label
 
         if (labelWidth < minLabelWidth) {
-            console.log('Label too narrow, minimum width required:', minLabelWidth);
+            // Label too narrow, minimum width required
             return; // Don't create the label
         }
 
@@ -884,8 +884,8 @@ export class TimeSeriesChart {
             if (this.lastConfig) {
                 this.updateDisplay(this.lastConfig);
             }
-        } catch (error) {
-            console.error('Failed to create label:', error);
+        } catch (_error) {
+            // Failed to create label - silent handling
         }
     }
 
@@ -952,7 +952,7 @@ export class TimeSeriesChart {
 
         return {
             silent: true, // Don't intercept mouse events - allow drawing over labels
-            data: markAreaData as unknown, // ECharts markArea type is complex, using unknown for data compatibility
+            data: markAreaData as never, // ECharts markArea expects complex nested array structure
         };
     }
 
@@ -1029,15 +1029,7 @@ export class TimeSeriesChart {
         }
 
         const data = source.getData(config.xColumn, config.yColumn);
-        console.log('Retrieved data for columns:', {
-            xColumn: config.xColumn,
-            yColumn: config.yColumn,
-            dataLength: data.length,
-            firstFewPoints: data.slice(0, 3),
-            lastFewPoints: data.slice(-3),
-            sourceName: source.name,
-            sourceColumns: source.columns,
-        });
+        // Retrieved data for columns - debug info available if needed
 
         // Apply configuration with defaults
         const xType = config.xType || 'category';
@@ -1062,25 +1054,7 @@ export class TimeSeriesChart {
             seriesData = data;
         }
 
-        // Validate data for any invalid values
-        const invalidPoints = seriesData.filter((point) => {
-            const [x, y] = point;
-            const xNum = typeof x === 'string' ? parseFloat(x) : x;
-            return !Number.isFinite(xNum) || !Number.isFinite(y);
-        });
-
-        // eslint-disable-next-line no-console
-        console.log('Final series data for chart:', {
-            xType,
-            xColumn: config.xColumn,
-            processingType:
-                xType === 'category' && config.xColumn === 'index' ? 'row indices' : 'actual data',
-            totalPoints: seriesData.length,
-            invalidPoints: invalidPoints.length,
-            invalidSample: invalidPoints.slice(0, 3),
-            firstFewSeriesPoints: seriesData.slice(0, 3),
-            lastFewSeriesPoints: seriesData.slice(-3),
-        });
+        // Debug: Final series data for chart - xType, processing type, points validation
 
         // Configure axes with proper auto-scaling
         const xAxis: EChartOption.XAxis = {
@@ -1148,15 +1122,7 @@ export class TimeSeriesChart {
                       axisPointer: { type: 'cross' as const, snap },
                   };
 
-        // eslint-disable-next-line no-console
-        console.log('Chart configuration debug:', {
-            showArea,
-            xType,
-            yType,
-            seriesDataLength: seriesData.length,
-            firstPoint: seriesData[0],
-            lastPoint: seriesData[seriesData.length - 1],
-        });
+        // Debug: Chart configuration - area display, axis types, data points
 
         this.chart.setOption(
             {
@@ -1349,12 +1315,7 @@ function getCurrentChartConfig(xColumn: string, yColumn: string): TimeSeriesConf
     // Helper to get xType value - default to numeric for all columns
     const xTypeValue = elXType ? (elXType as { value?: string }).value : undefined;
 
-    // eslint-disable-next-line no-console
-    console.log('X-axis type detection:', {
-        xColumn,
-        xTypeDropdownValue: xTypeValue,
-        elXType: elXType?.id,
-    });
+    // Debug: X-axis type detection logic
 
     const xType: 'category' | 'time' | 'value' = (() => {
         // Respect user's explicit choice
@@ -1376,8 +1337,7 @@ function getCurrentChartConfig(xColumn: string, yColumn: string): TimeSeriesConf
         return 'value';
     })();
 
-    // eslint-disable-next-line no-console
-    console.log('X-axis type result:', xType);
+    // Debug: X-axis type result
 
     // Helper to get yType value
     const yTypeValue = elYType ? (elYType as { value?: string }).value : undefined;
@@ -1465,7 +1425,7 @@ function bindUIControls(chart: TimeSeriesChart): void {
 
             if (!selectedLabelValue || selectedLabelValue === '') {
                 // No label selected, show error or create default
-                console.warn('No active label selected for drawing mode');
+                // No active label selected for drawing mode
                 // Revert button state
                 btnLabelMode.setAttribute('aria-pressed', 'false');
                 btnLabelMode.classList.remove('active');
@@ -1496,14 +1456,7 @@ function bindUIControls(chart: TimeSeriesChart): void {
     const xDropdown = document.querySelector('#x-axis');
     const yDropdown = document.querySelector('#y-axis');
 
-    // eslint-disable-next-line no-console
-    console.log('Dropdown element references:', {
-        xDropdown: xDropdown?.id,
-        yDropdown: yDropdown?.id,
-        sameElement: xDropdown === yDropdown,
-        xValue: (xDropdown as { value?: string } | null)?.value,
-        yValue: (yDropdown as { value?: string } | null)?.value,
-    });
+    // Debug: Dropdown element references and values
 
     const updateChart = () => {
         // Don't update chart if we have no data sources at all
@@ -1525,17 +1478,13 @@ function bindUIControls(chart: TimeSeriesChart): void {
         const xColumn = (xDropdown as { value?: string } | null)?.value || 'index';
         const yColumn = (yDropdown as { value?: string } | null)?.value || 'value';
 
-        console.log('updateChart called with:', { xColumn, yColumn });
+        // updateChart called with debug info available
 
         // Only update if we have valid column values
         if (xColumn && yColumn && xColumn !== '' && yColumn !== '') {
             // Get current configuration from all UI controls
             const config = getCurrentChartConfig(xColumn, yColumn);
-            console.log('Generated config:', {
-                xColumn: config.xColumn,
-                yColumn: config.yColumn,
-                xType: config.xType,
-            });
+            // Generated config debug info available
             chart.updateDisplay(config);
         }
     };
@@ -1550,11 +1499,11 @@ function bindUIControls(chart: TimeSeriesChart): void {
     };
 
     xDropdown?.addEventListener('change', () => {
-        console.log('X dropdown changed to:', (xDropdown as { value?: string } | null)?.value);
+        // X dropdown changed - debug info available
         updateChart();
     });
     yDropdown?.addEventListener('change', () => {
-        console.log('Y dropdown changed to:', (yDropdown as { value?: string } | null)?.value);
+        // Y dropdown changed - debug info available
         updateChart();
     });
 

@@ -3,7 +3,11 @@
  * Provides singleton instances with proper lifecycle management
  */
 
+import type { DataManager } from '../charts/timeSeries';
+import type { IDataService } from '../data/dataService';
 import type { IProjectService } from '../types/project';
+
+import type { LabelService } from './labelService';
 
 // Service token types
 export interface IServiceContainer {
@@ -99,8 +103,8 @@ export class ServiceContainer implements IServiceContainer {
         for (const [, registration] of this.services.entries()) {
             if (registration.singleton && registration.instance) {
                 const instance = registration.instance;
-                if (typeof instance === 'object' && instance && 'destroy' in instance) {
-                    instance.destroy();
+                if (typeof instance === 'object' && 'destroy' in instance) {
+                    (instance.destroy as () => void)();
                 }
                 registration.instance = undefined;
             }
@@ -111,9 +115,9 @@ export class ServiceContainer implements IServiceContainer {
 // Service tokens
 export const SERVICE_TOKENS = {
     ProjectService: { name: 'ProjectService', _type: null as unknown as IProjectService },
-    LabelService: { name: 'LabelService', _type: null as unknown as any },
-    DataManager: { name: 'DataManager', _type: null as unknown as any },
-    DataService: { name: 'DataService', _type: null as unknown as any },
+    LabelService: { name: 'LabelService', _type: null as unknown as LabelService },
+    DataManager: { name: 'DataManager', _type: null as unknown as DataManager },
+    DataService: { name: 'DataService', _type: null as unknown as IDataService },
 } as const;
 
 // Global container instance

@@ -64,7 +64,7 @@ export class ProjectService implements IProjectService {
         if (!this.eventListeners[event]) {
             this.eventListeners[event] = [];
         }
-        this.eventListeners[event]!.push(listener);
+        this.eventListeners[event].push(listener);
     }
 
     off<K extends keyof ProjectServiceEvents>(
@@ -83,7 +83,7 @@ export class ProjectService implements IProjectService {
     async initialize(): Promise<void> {
         try {
             // Initialize storage
-            const storageResult = await this.storage.initializeProjectStorage();
+            const storageResult = this.storage.initializeProjectStorage();
             if (!storageResult.ok) {
                 throw new Error(`Storage initialization failed: ${storageResult.error.message}`);
             }
@@ -95,7 +95,7 @@ export class ProjectService implements IProjectService {
             }
 
             // Load current project
-            const currentIdResult = await this.storage.getCurrentProjectId();
+            const currentIdResult = this.storage.getCurrentProjectId();
             if (currentIdResult.ok && currentIdResult.value) {
                 const currentProjectResult = await this.storage.getProject(currentIdResult.value);
                 if (currentProjectResult.ok && currentProjectResult.value) {
@@ -120,14 +120,14 @@ export class ProjectService implements IProjectService {
 
         if (defaultProject) {
             this.currentProject = defaultProject;
-            await this.storage.setCurrentProjectId(defaultProject.id);
+            this.storage.setCurrentProjectId(defaultProject.id);
         } else {
             // Create default project
             const result = await this.storage.createDefaultProject();
             if (result.ok) {
                 this.currentProject = result.value;
                 this.projects.push(result.value);
-                await this.storage.setCurrentProjectId(result.value.id);
+                this.storage.setCurrentProjectId(result.value.id);
             }
         }
     }
@@ -202,7 +202,7 @@ export class ProjectService implements IProjectService {
                     await this.switchToProject(createResult.value.id);
                 } else {
                     this.currentProject = null;
-                    await this.storage.clearCurrentProjectId();
+                    this.storage.clearCurrentProjectId();
                 }
             } else if (wasCurrentProject) {
                 // Switch to the first available project
@@ -227,7 +227,7 @@ export class ProjectService implements IProjectService {
         const previousProject = this.currentProject;
         this.currentProject = project;
 
-        const result = await this.storage.setCurrentProjectId(projectId);
+        const result = this.storage.setCurrentProjectId(projectId);
         if (result.ok) {
             const context: ProjectSwitchContext = {
                 previousProject,
@@ -236,7 +236,7 @@ export class ProjectService implements IProjectService {
             };
 
             this.emit('projectSwitched', context);
-            return ok(context);
+            return Promise.resolve(ok(context));
         }
 
         // Revert on error

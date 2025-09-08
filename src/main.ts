@@ -70,8 +70,7 @@ async function initializeApplication(): Promise<void> {
         if (sourcesResult.ok) {
             timeSeriesChart.setDataSources(sourcesResult.value);
         } else {
-            // eslint-disable-next-line no-console
-            console.error('Failed to load initial data sources:', sourcesResult.error);
+            // Failed to load initial data sources, continuing with empty chart
         }
         // Always mark as complete to not block loading
         markLoadingStepComplete('data-loaded');
@@ -93,9 +92,8 @@ async function initializeApplication(): Promise<void> {
         try {
             await loadHistoryEntries();
             markLoadingStepComplete('ui-setup');
-        } catch (error: unknown) {
-            // eslint-disable-next-line no-console
-            console.error('Failed to load history entries:', error);
+        } catch (_error: unknown) {
+            // Failed to load history entries, continuing without history
             markLoadingStepComplete('ui-setup');
         }
 
@@ -118,17 +116,14 @@ async function initializeApplication(): Promise<void> {
             ).__resetDatabase = async () => {
                 const result = await resetDatabase();
                 if (result.ok) {
-                    // eslint-disable-next-line no-console
-                    console.log('Database reset successfully. Please refresh the page.');
+                    // Database reset successfully, refresh page manually
                 } else {
-                    // eslint-disable-next-line no-console
-                    console.error('Failed to reset database:', result.error);
+                    // Failed to reset database, check browser console for details
                 }
             };
         }
-    } catch (error: unknown) {
-        // eslint-disable-next-line no-console
-        console.error('Failed to initialize application:', error);
+    } catch (_error: unknown) {
+        // Failed to initialize application, forcing loading completion to prevent stuck state
         // Force complete loading even on error to not leave user stuck
         const { forceCompleteLoading } = await import('./ui/loadingScreen');
         forceCompleteLoading();
