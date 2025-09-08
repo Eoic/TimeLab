@@ -47,6 +47,31 @@ export function setupUploads(): void {
         exampleDataButton?.removeAttribute('disabled');
     });
 
+    window.addEventListener('timelab:labeledStateChanged', (event) => {
+        const detail = (event as CustomEvent<{ fileId: string; labeled: boolean }>).detail;
+
+        // Find the file in the dataFiles array
+        const file = dataFiles.find((f) => f.id === detail.fileId);
+        if (file) {
+            // Update the labeled state (already done in csvProcessor)
+            file.labeled = detail.labeled;
+
+            // Persist to IndexedDB
+            void (async () => {
+                try {
+                    const result = await saveRecord(file);
+                    if (!result.ok) {
+                        // eslint-disable-next-line no-console
+                        console.error('Failed to save labeled state:', result.error);
+                    }
+                } catch {
+                    // ignore persistence errors for UI responsiveness
+                }
+                notifyChange();
+            })();
+        }
+    });
+
     const notifyChange = () => {
         window.dispatchEvent(
             new CustomEvent<{ files: TDataFile[] }>('timelab:dataFilesChanged', {

@@ -1,16 +1,9 @@
-import { getLabelService } from '../services/labelService';
+import { getLabelService } from '../services/serviceRegistry';
 
 import type { TDataFile } from '@/data/uploads';
-import { DEFAULT_LABEL_DEFINITIONS } from '@/domain/labels';
-import { getAllLabels, saveLabel } from '@/platform';
-import { uuid } from '@/shared/misc';
-import type { LabelDefinition } from '@/types/storage';
+import type { LabelDefinition } from '@/domain/labels';
 import type { TLDropdown } from '@/ui/dropdown';
 
-/**
- * In-memory cache of label definitions
- */
-const labelDefinitions: LabelDefinition[] = [];
 let isLoaded = false;
 
 /**
@@ -19,88 +12,27 @@ let isLoaded = false;
 let labelsObserver: MutationObserver | null = null;
 
 /**
- * Load label definitions from IndexedDB
+ * Load label definitions using LabelService as single source of truth
  */
 export async function loadLabelDefinitions(): Promise<void> {
-    if (isLoaded) return;
-
     try {
-        const result = await getAllLabels<LabelDefinition>();
-        if (result.ok) {
-            // Clear current definitions and populate from storage
-            labelDefinitions.length = 0;
-            labelDefinitions.push(...result.value);
+        // Ensure LabelService is available (initialized by startServices)
+        getLabelService();
+        
+        // Always try to update the dropdown (in case DOM element wasn't ready before)
+        updateActiveLabelDropdown();
 
-            // If no definitions exist, create defaults
-            if (labelDefinitions.length === 0) {
-                await createDefaultDefinitions();
-            }
-
-            updateActiveLabelDropdown();
-
-            // Dispatch an event that label definitions have been loaded
-            // This allows other components (like LabelsPanel) to refresh their display
-            window.dispatchEvent(new CustomEvent('timelab:labelDefinitionsLoaded'));
-        } else {
-            // eslint-disable-next-line no-console
-            console.error('Failed to load label definitions:', result.error);
-        }
+        // Dispatch an event that label definitions have been loaded
+        // This allows other components (like LabelsPanel) to refresh their display
+        window.dispatchEvent(new CustomEvent('timelab:labelDefinitionsLoaded'));
     } catch (error) {
         // eslint-disable-next-line no-console
-        console.error('Error loading label definitions:', error);
+        console.error('Failed to load label definitions:', error);
     }
 
     isLoaded = true;
 }
 
-/**
- * Create default label definitions if none exist
- */
-async function createDefaultDefinitions(): Promise<void> {
-    for (const defaultDef of DEFAULT_LABEL_DEFINITIONS) {
-        const labelDef: LabelDefinition = {
-            id: defaultDef.id,
-            name: defaultDef.name,
-            color: defaultDef.color,
-            createdAt: Date.now(),
-            updatedAt: Date.now(),
-        };
-
-        try {
-            const result = await saveLabel(labelDef);
-            if (result.ok) {
-                labelDefinitions.push(labelDef);
-            } else {
-                // eslint-disable-next-line no-console
-                console.error('Failed to save default label definition:', result.error);
-            }
-        } catch (error) {
-            // eslint-disable-next-line no-console
-            console.error('Error saving default label definition:', error);
-        }
-    }
-
-    updateActiveLabelDropdown();
-
-    // Dispatch an event that label definitions have been created/loaded
-    window.dispatchEvent(new CustomEvent('timelab:labelDefinitionsLoaded'));
-}
-
-/**
- * Save a specific label definition object to IndexedDB (preserves the UUID)
- */
-async function saveLabelDefinitionToDBWithId(labelDef: LabelDefinition): Promise<void> {
-    try {
-        const result = await saveLabel(labelDef);
-        if (!result.ok) {
-            // eslint-disable-next-line no-console
-            console.error('Failed to save label definition:', result.error);
-        }
-    } catch (error: unknown) {
-        // eslint-disable-next-line no-console
-        console.error('Error saving label definition:', error);
-    }
-}
 
 export function updateActiveLabelDropdown(): void {
     const activeLabelDropdown = document.querySelector<TLDropdown>('#active-label');
@@ -109,15 +41,19 @@ export function updateActiveLabelDropdown(): void {
         return;
     }
 
-    if (labelDefinitions.length === 0) {
-        // No label definitions yet - show placeholder
+    const labelService = getLabelService();
+    const definitions = labelService.getLabelDefinitions();
+
+    if (definitions.length === 0) {
         activeLabelDropdown.options = [{ value: '', label: 'No labels created yet' }];
         activeLabelDropdown.value = '';
+        // Disable labeling when no labels are available
+        disableLabelingMode();
         return;
     }
 
     // Create options from label definitions using UUIDs as values
-    const options = labelDefinitions.map((def) => ({
+    const options = definitions.map((def) => ({
         value: def.id, // Use UUID instead of index
         label: def.name,
         color: def.color,
@@ -125,43 +61,41 @@ export function updateActiveLabelDropdown(): void {
 
     activeLabelDropdown.options = options;
 
-    // If no value is currently selected, select the first one
-    if (!activeLabelDropdown.value && options.length > 0 && options[0]) {
+    // Check if current selection still exists, if not select first available
+    const currentValue = activeLabelDropdown.value;
+    const isCurrentValueValid = options.some(opt => opt.value === currentValue);
+    
+    if (!isCurrentValueValid && options.length > 0 && options[0]) {
         activeLabelDropdown.value = options[0].value;
     }
+    
+    // Enable labeling since labels are available
+    enableLabelingMode();
 }
 
 /**
  * Add a new label definition to the registry
  */
-export function addLabelDefinition(name: string, color: string): void {
+export async function addLabelDefinition(name: string, color: string): Promise<void> {
     void loadLabelDefinitions(); // Ensure loaded
 
-    // Create the full label definition
-    const labelDef: LabelDefinition = {
-        id: uuid(),
-        name,
-        color,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-    };
+    const labelService = getLabelService();
+    const result = await labelService.createLabelDefinition(name, color);
 
-    // Add to memory
-    labelDefinitions.push(labelDef);
+    if (result.ok) {
+        updateActiveLabelDropdown();
 
-    // Save the SAME definition to database (not create a new one with different UUID)
-    void saveLabelDefinitionToDBWithId(labelDef);
+        // Auto-select the newly created label definition as active
+        const activeLabelDropdown = document.querySelector<TLDropdown>('#active-label');
+        if (activeLabelDropdown) {
+            activeLabelDropdown.value = result.value.id;
+        }
 
-    updateActiveLabelDropdown();
-
-    // Auto-select the newly created label definition as active
-    const activeLabelDropdown = document.querySelector<TLDropdown>('#active-label');
-    if (activeLabelDropdown) {
-        activeLabelDropdown.value = labelDef.id;
+        // Dispatch an event that label definitions have been updated
+        window.dispatchEvent(new CustomEvent('timelab:labelDefinitionsLoaded'));
+    } else {
+        console.error('Failed to create label definition:', result.error);
     }
-
-    // Dispatch an event that label definitions have been updated
-    window.dispatchEvent(new CustomEvent('timelab:labelDefinitionsLoaded'));
 }
 
 /**
@@ -172,7 +106,8 @@ export async function getLabelDefinitionsAsync(): Promise<LabelDefinition[]> {
     if (!isLoaded) {
         await loadLabelDefinitions();
     }
-    return [...labelDefinitions]; // Return a copy to prevent direct mutation
+    const labelService = getLabelService();
+    return [...labelService.getLabelDefinitions()]; // Return a copy to allow mutation
 }
 
 /**
@@ -185,53 +120,69 @@ export function getLabelDefinitions(): LabelDefinition[] {
         // Trigger async loading for next time, but for now return what we have
         void loadLabelDefinitions();
     }
-    return [...labelDefinitions]; // Return a copy to prevent direct mutation
+    const labelService = getLabelService();
+    const definitions = labelService.getLabelDefinitions();
+    return [...definitions]; // Return a copy to allow mutation
 }
 
 /**
  * Update an existing label definition
  */
-export function updateLabelDefinition(index: number, name: string, color: string): void {
-    if (index >= 0 && index < labelDefinitions.length) {
-        const existing = labelDefinitions[index];
+export async function updateLabelDefinition(
+    index: number,
+    name: string,
+    color: string
+): Promise<boolean> {
+    const labelService = getLabelService();
+    const definitions = labelService.getLabelDefinitions();
+    
+    if (index >= 0 && index < definitions.length) {
+        const existing = definitions[index];
         if (existing) {
-            // Update the existing definition in memory
-            existing.name = name;
-            existing.color = color;
-            existing.updatedAt = Date.now();
-
             // Use LabelService for cascading updates to related TimeSeriesLabels
-            const labelService = getLabelService();
-            void labelService.updateLabelDefinition(existing.id, { name, color });
+            const result = await labelService.updateLabelDefinition(existing.id, { name, color });
+
+            if (result.ok) {
+                updateActiveLabelDropdown();
+
+                // Dispatch an event that label definitions have been updated
+                window.dispatchEvent(new CustomEvent('timelab:labelDefinitionsLoaded'));
+                return true;
+            } else {
+                console.error('Failed to update label definition:', result.error);
+                return false;
+            }
         }
-
-        updateActiveLabelDropdown();
-
-        // Dispatch an event that label definitions have been updated
-        window.dispatchEvent(new CustomEvent('timelab:labelDefinitionsLoaded'));
     }
+    return false;
 }
 
 /**
  * Delete a label definition
  */
-export function deleteLabelDefinition(index: number): void {
-    if (index >= 0 && index < labelDefinitions.length) {
-        const definition = labelDefinitions[index];
+export async function deleteLabelDefinition(index: number): Promise<boolean> {
+    const labelService = getLabelService();
+    const definitions = labelService.getLabelDefinitions();
+    
+    if (index >= 0 && index < definitions.length) {
+        const definition = definitions[index];
         if (definition) {
-            // Remove from memory
-            labelDefinitions.splice(index, 1);
-
             // Use LabelService for cascading deletion of related TimeSeriesLabels
-            const labelService = getLabelService();
-            void labelService.deleteLabelDefinition(definition.id);
+            const result = await labelService.deleteLabelDefinition(definition.id);
 
-            updateActiveLabelDropdown();
+            if (result.ok) {
+                updateActiveLabelDropdown();
 
-            // Dispatch an event that label definitions have been updated
-            window.dispatchEvent(new CustomEvent('timelab:labelDefinitionsLoaded'));
+                // Dispatch an event that label definitions have been updated
+                window.dispatchEvent(new CustomEvent('timelab:labelDefinitionsLoaded'));
+                return true;
+            } else {
+                console.error('Failed to delete label definition:', result.error);
+                return false;
+            }
         }
     }
+    return false;
 }
 
 export function setupDropdowns(): void {
@@ -433,6 +384,47 @@ export function setupDropdowns(): void {
         });
 
         labelsObserver.observe(labelsList, { childList: true, subtree: true });
+    }
+}
+
+/**
+ * Disable labeling mode when no labels are available
+ */
+function disableLabelingMode(): void {
+    // Find and disable the "Toggle label drawing mode" button
+    const labelModeButton = document.querySelector<HTMLButtonElement>('#btn-label-mode');
+    if (labelModeButton) {
+        labelModeButton.disabled = true;
+        labelModeButton.title = 'Create label definitions first to enable labeling mode';
+        
+        // If currently in labeling mode, exit it
+        if (labelModeButton.classList.contains('active')) {
+            labelModeButton.click(); // This will exit labeling mode
+        }
+    }
+    
+    // Also disable the active label dropdown
+    const activeLabelDropdown = document.querySelector<TLDropdown>('#active-label');
+    if (activeLabelDropdown) {
+        activeLabelDropdown.setAttribute('disabled', 'true');
+    }
+}
+
+/**
+ * Enable labeling mode when labels are available
+ */
+function enableLabelingMode(): void {
+    // Find and enable the "Toggle label drawing mode" button
+    const labelModeButton = document.querySelector<HTMLButtonElement>('#btn-label-mode');
+    if (labelModeButton) {
+        labelModeButton.disabled = false;
+        labelModeButton.title = 'Toggle label drawing mode';
+    }
+    
+    // Enable the active label dropdown
+    const activeLabelDropdown = document.querySelector<TLDropdown>('#active-label');
+    if (activeLabelDropdown) {
+        activeLabelDropdown.removeAttribute('disabled');
     }
 }
 

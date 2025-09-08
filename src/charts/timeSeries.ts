@@ -389,6 +389,9 @@ export class TimeSeriesChart {
             this.emit('columns-available', { columns: [] });
         }
 
+        // Update UI handler with latest series info
+        this.updateUIFromSeriesChange();
+
         this.emit('series-changed', {
             currentIndex: this.currentIndex,
             total: this.dataSources.length,
@@ -525,6 +528,7 @@ export class TimeSeriesChart {
         if (source) {
             const newState = !source.isLabeled();
             source.setLabeled(newState);
+            this.uiHandler.updateLabeledButton(newState);
             this.emit('label-changed', { index: this.currentIndex, labeled: newState });
         }
     }

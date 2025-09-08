@@ -261,11 +261,17 @@ function saveChanges(item: HTMLElement, index: number): void {
         return;
     }
 
-    // Update the label definition
-    updateLabelDefinition(index, newName, newColor);
-
-    // Exit edit mode
-    exitEditMode(item, newName, newColor);
+    // Update the label definition (now async)
+    void (async () => {
+        const success = await updateLabelDefinition(index, newName, newColor);
+        if (success) {
+            // Exit edit mode only if the update succeeded
+            exitEditMode(item, newName, newColor);
+        } else {
+            alert('Failed to save label changes. Please try again.');
+            nameInput.focus();
+        }
+    })();
 }
 
 /**
@@ -327,11 +333,14 @@ async function deleteLabelDefinitionWithConfirm(
         return;
     }
 
-    // Delete the label definition
-    deleteLabelDefinition(index);
-
-    // Refresh the list
-    populateLabelManagementList();
+    // Delete the label definition (now async)
+    const success = await deleteLabelDefinition(index);
+    if (success) {
+        // Refresh the list only if deletion succeeded
+        populateLabelManagementList();
+    } else {
+        alert('Failed to delete label. Please try again.');
+    }
 }
 
 /**

@@ -2,7 +2,7 @@
  * Application entry point following the engineering guide structure
  */
 
-import { initializeApp } from './app';
+import { bootstrapApplication } from './app';
 import { initializeTimeSeriesChart } from './charts/timeSeries';
 import { getDataManager } from './data';
 import { setupDropdowns, setupLabelsEmptyStates, loadLabelDefinitions } from './ui';
@@ -30,8 +30,8 @@ async function initializeApplication(): Promise<void> {
     initializeLoadingScreen();
 
     try {
-        // Initialize app
-        initializeApp();
+        // Bootstrap app with services
+        await bootstrapApplication();
         defineDropdown();
         markLoadingStepComplete('app-initialized');
 

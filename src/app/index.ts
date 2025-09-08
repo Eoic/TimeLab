@@ -2,4 +2,4 @@
  * App layer barrel export
  */
 
-export { initializeApp } from './bootstrap';
+export { initializeApp, bootstrapApplication } from './bootstrap';

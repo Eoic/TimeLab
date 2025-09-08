@@ -153,8 +153,8 @@ export function setupLabelModal(): void {
  * Create a new label definition (for future use in labeling)
  */
 async function createLabel(labelData: LabelData): Promise<void> {
-    // Add the label definition to the registry
-    addLabelDefinition(labelData.name, labelData.color);
+    // Add the label definition to the registry (now async)
+    await addLabelDefinition(labelData.name, labelData.color);
 
     // Add history entry
     await addHistoryEntry(`Created label definition "${labelData.name}"`);
