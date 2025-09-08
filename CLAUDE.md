@@ -27,16 +27,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Architecture
 
 ### Project Structure
-TimeLab is a TypeScript time series data labeling tool with a modular architecture:
+TimeLab is a TypeScript time series data labeling tool with a clean, layered architecture:
 
 - **Entry Point**: `src/main.ts` orchestrates app initialization with loading screen integration
-- **App Layer**: `src/app/` contains bootstrap logic (`initializeApp` from `app/bootstrap.ts`)  
+- **App Layer**: `src/app/bootstrap.ts` provides service initialization and composition root
+- **Services Layer**: `src/services/` contains dependency injection container and service registry
+  - `container.ts` - Dependency injection container with lifecycle management
+  - `serviceRegistry.ts` - Service registration and factory functions
+  - `projectService.ts` - Project management with injected storage dependencies
+  - `labelService.ts` - Label management with cascade operations and cleanup
 - **Core Modules**:
   - `src/charts/` - Time series chart implementations (main feature)
-  - `src/data/` - Data management and persistence
+  - `src/data/` - Data management, processing, and centralized data service
   - `src/ui/` - UI components and interactions
   - `src/platform/` - Platform-specific functionality (storage, etc.)
-  - `src/domain/` - Business logic and domain models
+  - `src/domain/` - Pure business logic and domain models
+  - `src/shared/` - Utility types, performance optimizations, and common functionality
 
 ### Import Aliases
 Configured in `vite.config.ts` and `vitest.config.ts`:
@@ -49,6 +55,7 @@ Configured in `vite.config.ts` and `vitest.config.ts`:
 - `@styles` → `src/styles`
 - `@shared` → `src/shared`
 - `@workers` → `src/workers`
+- `@services` → `src/services`
 
 ### SCSS Theming System
 Critical dual-directory structure for styling:
@@ -113,10 +120,12 @@ In development mode, global functions are exposed:
 
 ### Architecture Patterns
 - **Domain-First Design**: Keep business logic in `src/domain/` with no external dependencies
+- **Dependency Injection**: Use service registry and container for loose coupling and testability
 - **Result Pattern**: Use `Result<T, E>` for predictable error handling instead of throwing exceptions
 - **Event-Driven Communication**: Use typed custom events for component communication
 - **Memory Management**: Always clean up event listeners and observers in destroy methods
-- **Type Safety**: Prefer compile-time safety over runtime checks, avoid `any` usage
+- **Type Safety**: Use branded types for IDs, utility types for common patterns
+- **Performance Optimization**: Leverage memoization, caching, and debouncing from `@shared/performance`
 
 ### Error Handling Standards
 - Use `Result<T, E>` pattern for async operations that can fail
@@ -128,10 +137,122 @@ In development mode, global functions are exposed:
 - Use `ResizeObserver` for responsive components with proper cleanup
 - Implement lazy loading for large datasets
 - Use defensive copying with `readonly` types for immutable data
-- Debounce user input events where appropriate
+- Leverage memoization with `memoize()` and `memoizeAsync()` from `@shared`
+- Use `debounce()` and `throttle()` for user input events
+- Apply `LRUCache` for expensive computations with size limits
 
 ### Testing Principles
 - Write integration tests for key workflows
 - Mock external dependencies properly 
-- Use dependency injection to improve testability
-- Avoid singleton patterns that make testing difficult
+- Use dependency injection container for testable service isolation
+- Leverage `resetServiceContainer()` for test cleanup
+- Use branded types and factory functions for type-safe test data
+
+## Service Architecture
+
+### Dependency Injection System
+TimeLab uses a sophisticated dependency injection system for loose coupling:
+
+```typescript
+import { getServiceContainer, SERVICE_TOKENS } from '@services/container';
+import { getProjectService, getLabelService, getDataService } from '@services/serviceRegistry';
+
+// Services are registered as singletons with dependency injection
+const projectService = getProjectService(); // Uses injected storage
+const labelService = getLabelService();     // Uses injected data manager  
+const dataService = getDataService();       // Centralized data operations
+```
+
+### Service Lifecycle
+1. **Initialization**: `startServices()` initializes all services in dependency order
+2. **Registration**: Services register with the container using tokens
+3. **Injection**: Dependencies are injected via constructor parameters
+4. **Cleanup**: `shutdownServices()` properly disposes resources
+
+### Adding New Services
+1. Create service interface and implementation
+2. Add service token to `SERVICE_TOKENS`
+3. Register in `serviceRegistry.ts` with dependencies
+4. Add getter function for easy access
+5. Include in startup/shutdown lifecycle
+
+## Type System Enhancements
+
+### Branded Types for ID Safety
+Use branded types to prevent ID mismatches:
+
+```typescript
+import { ProjectId, LabelDefinitionId, createProjectId } from '@shared';
+
+// Type-safe ID handling
+const projectId: ProjectId = createProjectId('proj_123');
+const labelId: LabelDefinitionId = createLabelDefinitionId('label_456');
+
+// Compiler prevents mixing different ID types
+function updateProject(id: ProjectId) { /* ... */ }
+updateProject(labelId); // ❌ TypeScript error
+```
+
+### Utility Types for Common Patterns
+Leverage utility types for cleaner code:
+
+```typescript
+import type { PartialExcept, WithRequired, DeepReadonly } from '@shared';
+
+// Require specific fields while making others optional
+type CreateProject = PartialExcept<Project, 'name' | 'isDefault'>;
+
+// Make certain fields required
+type ProjectWithMetadata = WithRequired<Project, 'createdAt' | 'updatedAt'>;
+
+// Deep immutability
+type ImmutableConfig = DeepReadonly<Configuration>;
+```
+
+### Performance Optimization Patterns
+
+#### Memoization for Expensive Operations
+```typescript
+import { memoize, memoizeAsync } from '@shared/performance';
+
+// Synchronous memoization
+const expensiveCalculation = memoize((data: number[]) => {
+    return data.reduce((sum, val) => sum + Math.sqrt(val), 0);
+}, { maxSize: 100, ttl: 5000 });
+
+// Async memoization with TTL
+const loadUserData = memoizeAsync(async (userId: string) => {
+    return await api.getUser(userId);
+}, { maxSize: 50, ttl: 30000 });
+```
+
+#### Event Handling with Debouncing
+```typescript
+import { debounce, throttle } from '@shared/performance';
+
+// Debounced search input
+const debouncedSearch = debounce((query: string) => {
+    performSearch(query);
+}, 300);
+
+// Throttled scroll handling
+const throttledScroll = throttle(() => {
+    updateScrollPosition();
+}, 16); // ~60fps
+```
+
+#### Caching with LRU
+```typescript
+import { LRUCache } from '@shared/performance';
+
+const chartDataCache = new LRUCache<string, ChartData>(100);
+
+function getChartData(sourceId: string): ChartData {
+    const cached = chartDataCache.get(sourceId);
+    if (cached) return cached;
+    
+    const data = computeChartData(sourceId);
+    chartDataCache.set(sourceId, data);
+    return data;
+}
+```

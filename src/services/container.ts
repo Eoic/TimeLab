@@ -111,6 +111,7 @@ export const SERVICE_TOKENS = {
     ProjectService: { name: 'ProjectService', _type: null as unknown as IProjectService },
     LabelService: { name: 'LabelService', _type: null as unknown as any },
     DataManager: { name: 'DataManager', _type: null as unknown as any },
+    DataService: { name: 'DataService', _type: null as unknown as any },
 } as const;
 
 // Global container instance

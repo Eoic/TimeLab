@@ -4,8 +4,9 @@
  */
 
 import { getServiceContainer, SERVICE_TOKENS } from './container';
-import { ProjectService } from './projectService';
+import { createProjectService, ProjectService } from './projectService';
 import { LabelService } from './labelService';
+import { createDataService, type IDataService } from '../data/dataService';
 import * as projectStorage from '../platform/projectStorage';
 import { getDataManager } from '../data';
 
@@ -16,25 +17,24 @@ export function initializeServices(): void {
     const container = getServiceContainer();
 
     // Register project service with injected storage dependency
-    container.registerSingleton(
-        SERVICE_TOKENS.ProjectService,
-        () => new ProjectService(projectStorage)
+    container.registerSingleton(SERVICE_TOKENS.ProjectService, () =>
+        createProjectService(projectStorage)
     );
 
     // Register label service as singleton with data manager dependency
-    container.registerSingleton(
-        SERVICE_TOKENS.LabelService,
-        () => {
-            const dataManager = getDataManager();
-            return new LabelService(dataManager);
-        }
-    );
+    container.registerSingleton(SERVICE_TOKENS.LabelService, () => {
+        const dataManager = getDataManager();
+        return new LabelService(dataManager);
+    });
 
     // Register data manager as singleton
-    container.registerSingleton(
-        SERVICE_TOKENS.DataManager,
-        () => getDataManager()
-    );
+    container.registerSingleton(SERVICE_TOKENS.DataManager, () => getDataManager());
+
+    // Register centralized data service
+    container.registerSingleton(SERVICE_TOKENS.DataService, () => {
+        const dataManager = getDataManager();
+        return createDataService(dataManager);
+    });
 }
 
 /**
@@ -62,18 +62,28 @@ export function getDataManagerService(): any {
 }
 
 /**
+ * Get centralized data service instance
+ */
+export function getDataService(): IDataService {
+    const container = getServiceContainer();
+    return container.get(SERVICE_TOKENS.DataService) as IDataService;
+}
+
+/**
  * Initialize and start all services
  */
 export async function startServices(): Promise<void> {
     initializeServices();
-    
+
     const projectService = getProjectService();
     const labelService = getLabelService();
+    const dataService = getDataService();
 
     // Initialize services in dependency order
     await projectService.initialize();
     await labelService.initialize();
-    
+    await dataService.initialize();
+
     // Services are now ready to use
 }
 

@@ -73,7 +73,7 @@ export class ProjectService implements IProjectService {
     ): void {
         const listeners = this.eventListeners[event];
         if (!listeners) return;
-        
+
         const index = listeners.indexOf(listener);
         if (index > -1) {
             listeners.splice(index, 1);
@@ -253,5 +253,11 @@ export class ProjectService implements IProjectService {
     }
 }
 
-// Export singleton instance with default storage
+// Legacy singleton export - use service registry instead
+// This is kept for backward compatibility but should be avoided
 export const projectService = new ProjectService();
+
+// Factory function for service registry
+export function createProjectService(storage?: IProjectStorage): ProjectService {
+    return new ProjectService(storage);
+}

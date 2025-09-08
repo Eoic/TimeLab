@@ -83,6 +83,13 @@ export class LabelService {
     }
 
     /**
+     * Alias for getLabelDefinitions() for backward compatibility
+     */
+    getAllLabelDefinitions(): readonly LabelDefinition[] {
+        return this.getLabelDefinitions();
+    }
+
+    /**
      * Get a specific label definition by ID
      */
     getLabelDefinition(id: string): LabelDefinition | undefined {
@@ -166,7 +173,9 @@ export class LabelService {
         } catch (error) {
             console.error('Error during label definition cascade update:', error);
         }
-    } /**
+    }
+
+    /**
      * Cascade label definition deletion to all related TimeSeriesLabels
      */
     private async cascadeDefinitionDeletion(defId: string): Promise<void> {
@@ -247,6 +256,7 @@ export class LabelService {
         // Dispatch a custom event that UI components can listen to
         window.dispatchEvent(new CustomEvent('timelab:timeSeriesLabelsChanged'));
     }
+
     private async saveLabelDefinition(
         definition: LabelDefinition
     ): Promise<Result<void, StorageError>> {
@@ -324,8 +334,10 @@ export class LabelService {
     }
 }
 
-// Export for backward compatibility - use service registry instead
+// Legacy export - use service registry instead
+// This is kept for backward compatibility but should be avoided
 export function getLabelService(): LabelService {
+    console.warn('Using legacy getLabelService(). Use service registry instead.');
     const service = new LabelService();
     void service.initialize();
     return service;

@@ -21,7 +21,7 @@ export type ThemeDataAttribute = `[data-theme="${Exclude<Theme, 'auto'>}"]`;
 // CSS variable theme prefix template literal type
 export type ThemeVariablePrefix = `--theme-${Theme}`;
 
-// Theme class name template literal type  
+// Theme class name template literal type
 export type ThemeClassName = `theme-${Theme}`;
 
 // Storage key template literal type
@@ -38,15 +38,15 @@ export function isValidTheme(value: string): value is Theme {
 // Get theme display name with proper typing
 export function getThemeDisplayName<T extends Theme>(theme: T): string {
     const themeNames: Record<Theme, string> = {
-        'auto': 'Auto (System)',
-        'light': 'Light',
-        'dark': 'Dark', 
-        'oled': 'OLED (Black)',
+        auto: 'Auto (System)',
+        light: 'Light',
+        dark: 'Dark',
+        oled: 'OLED (Black)',
         'high-contrast': 'High Contrast',
-        'sepia': 'Sepia',
-        'blue': 'Blue',
-        'green': 'Green',
-        'purple': 'Purple',
+        sepia: 'Sepia',
+        blue: 'Blue',
+        green: 'Green',
+        purple: 'Purple',
     };
     return themeNames[theme];
 }
@@ -58,9 +58,11 @@ export type AccessibilityTheme = Extract<Theme, 'high-contrast' | 'oled'>;
 export type ColorVariantTheme = Extract<Theme, 'sepia' | 'blue' | 'green' | 'purple'>;
 
 // Theme configuration interface with template literal keys
-export interface ThemeConfig {
-    readonly [K in ThemeStorageKey]?: string;
-}
+export type ThemeConfig = {
+    readonly [K in ThemeStorageKey]?: K extends `theme-${string}-config` ? string : never;
+} & {
+    readonly 'preferred-theme'?: Theme;
+};
 
 // Theme metadata interface
 export interface ThemeMetadata {
@@ -73,28 +75,28 @@ export interface ThemeMetadata {
 
 // Complete theme metadata mapping
 export const THEME_METADATA: Record<Theme, ThemeMetadata> = {
-    'auto': {
+    auto: {
         name: 'auto',
         displayName: 'Auto (System)',
         category: 'system',
         supportsDarkMode: true,
         cssVariablePrefix: '--theme-auto',
     },
-    'light': {
+    light: {
         name: 'light',
         displayName: 'Light',
         category: 'base',
         supportsDarkMode: false,
         cssVariablePrefix: '--theme-light',
     },
-    'dark': {
+    dark: {
         name: 'dark',
         displayName: 'Dark',
         category: 'base',
         supportsDarkMode: true,
         cssVariablePrefix: '--theme-dark',
     },
-    'oled': {
+    oled: {
         name: 'oled',
         displayName: 'OLED (Black)',
         category: 'accessibility',
@@ -108,28 +110,28 @@ export const THEME_METADATA: Record<Theme, ThemeMetadata> = {
         supportsDarkMode: true,
         cssVariablePrefix: '--theme-high-contrast',
     },
-    'sepia': {
+    sepia: {
         name: 'sepia',
         displayName: 'Sepia',
         category: 'color-variant',
         supportsDarkMode: false,
         cssVariablePrefix: '--theme-sepia',
     },
-    'blue': {
+    blue: {
         name: 'blue',
         displayName: 'Blue',
         category: 'color-variant',
         supportsDarkMode: true,
         cssVariablePrefix: '--theme-blue',
     },
-    'green': {
+    green: {
         name: 'green',
         displayName: 'Green',
         category: 'color-variant',
         supportsDarkMode: true,
         cssVariablePrefix: '--theme-green',
     },
-    'purple': {
+    purple: {
         name: 'purple',
         displayName: 'Purple',
         category: 'color-variant',
@@ -137,3 +139,61 @@ export const THEME_METADATA: Record<Theme, ThemeMetadata> = {
         cssVariablePrefix: '--theme-purple',
     },
 } as const;
+
+// Utility types for theme operations
+export type ThemeSelector = `[data-theme="${Theme}"]`;
+export type ThemeSelectorString<T extends Theme> = `[data-theme="${T}"]`;
+
+// CSS custom property names for themes
+export type ThemeCustomProperty =
+    | '--theme-primary-color'
+    | '--theme-secondary-color'
+    | '--theme-background-color'
+    | '--theme-text-color'
+    | '--theme-border-color';
+
+// Type-safe theme utility functions
+export type ThemeUtilityFunction<T extends Theme> = {
+    readonly theme: T;
+    readonly selector: ThemeSelectorString<T>;
+    readonly metadata: ThemeMetadata;
+    readonly cssVariablePrefix: ThemeVariablePrefix;
+};
+
+// Theme configuration validator type
+export type ValidThemeConfig<T extends Theme> = {
+    readonly theme: T;
+    readonly config: ThemeConfig;
+    readonly isValid: boolean;
+};
+
+// Theme CSS variable mapping type
+export type ThemeCSSVariableMap = Record<ThemeCustomProperty, string>;
+
+// Type-safe theme switcher interface
+export interface ThemeSwitcher {
+    getCurrentTheme(): Theme;
+    switchToTheme<T extends Theme>(theme: T): Promise<void>;
+    getThemeConfig<T extends Theme>(theme: T): ValidThemeConfig<T> | null;
+    getSupportedThemes(): readonly Theme[];
+}
+
+// Template literal type for CSS class combinations
+export type ThemeCSSClass<T extends Theme> =
+    | `theme-${T}`
+    | `theme-${T}--active`
+    | `theme-${T}--loading`;
+
+// Theme media query types
+export type ThemeMediaQuery =
+    | '(prefers-color-scheme: light)'
+    | '(prefers-color-scheme: dark)'
+    | '(prefers-contrast: high)'
+    | '(prefers-reduced-motion: reduce)';
+
+// Theme transition configuration
+export type ThemeTransitionConfig = {
+    readonly duration: `${number}ms`;
+    readonly easing: 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out';
+    readonly properties: readonly ThemeCustomProperty[];
+};

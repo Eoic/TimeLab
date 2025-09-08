@@ -49,7 +49,7 @@ describe('UI Components Integration Tests', () => {
 
     describe('Project Modal Integration', () => {
         it('should create and display project modal correctly', async () => {
-            const { openProjectModal } = await import('@/ui/projectModal');
+            const { showCreateProjectModal } = await import('@/ui/projectModal');
             
             // Mock successful project creation
             vi.doMock('@/services/projectService', () => ({
@@ -69,7 +69,7 @@ describe('UI Components Integration Tests', () => {
             }));
             
             // Open the modal
-            const modalPromise = openProjectModal();
+            const modalPromise = showCreateProjectModal();
             
             // Check modal was added to DOM
             const modal = document.querySelector('.modal');

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ok, err } from '@/shared/result';
-import type { Project, ProjectServiceEvents } from '@/types/project';
-import type { TDataFile } from '@/data/uploads';
+import type { Project } from '@/types/project';
+// import type { TDataFile } from '@/data/uploads'; // Unused import
 import type { TimeSeriesLabel, LabelDefinition } from '@/types/storage';
 
 // Mock all external dependencies
@@ -33,14 +33,14 @@ vi.mock('@/data', () => ({
     getDataManager: () => mockDataManager,
 }));
 
-// Mock chart system
-const mockChart = {
-    setDataSources: vi.fn(),
-    updateConfig: vi.fn(),
-    enableLabelMode: vi.fn(),
-    disableLabelMode: vi.fn(),
-    destroy: vi.fn(),
-};
+// Mock chart system (unused but kept for future chart integration tests)
+// const _mockChart = {
+//     setDataSources: vi.fn(),
+//     updateConfig: vi.fn(),
+//     enableLabelMode: vi.fn(),
+//     disableLabelMode: vi.fn(),
+//     destroy: vi.fn(),
+// };
 
 describe('Main Workflow Integration Tests', () => {
     beforeEach(() => {
@@ -92,7 +92,7 @@ describe('Main Workflow Integration Tests', () => {
             await service.initialize();
             const projects = service.getAllProjects();
             expect(projects).toHaveLength(1);
-            expect(projects[0].name).toBe('Test Project');
+            expect(projects[0]?.name).toBe('Test Project');
             
             service.destroy();
         });
@@ -142,21 +142,22 @@ describe('Main Workflow Integration Tests', () => {
 
     describe('Data Loading and Processing Workflow', () => {
         it('should load CSV data and convert to time series', async () => {
-            const mockDataFiles: TDataFile[] = [
-                {
-                    id: 'data-1',
-                    name: 'test-data.csv',
-                    size: 1024,
-                    type: 'text/csv',
-                    addedAt: Date.now(),
-                    visible: true,
-                    labeled: false,
-                    text: 'timestamp,value\n1234567890,100\n1234567891,101\n1234567892,102'
-                }
-            ];
+            // Mock data files (kept for reference, unused in current test implementation)
+            // const _mockDataFiles: TDataFile[] = [
+            //     {
+            //         id: 'data-1',
+            //         name: 'test-data.csv',
+            //         size: 1024,
+            //         type: 'text/csv',
+            //         addedAt: Date.now(),
+            //         visible: true,
+            //         labeled: false,
+            //         text: 'timestamp,value\n1234567890,100\n1234567891,101\n1234567892,102'
+            //     }
+            // ];
 
             // Mock the data conversion
-            const { convertDataFilesToTimeSeries } = await import('@/data/csvProcessor');
+            const { convertDataFilesToTimeSeries: _convertDataFilesToTimeSeries } = await import('@/data/csvProcessor');
             const mockTimeSeries = [{
                 id: 'data-1',
                 name: 'test-data.csv',
@@ -182,8 +183,8 @@ describe('Main Workflow Integration Tests', () => {
             
             if (dataResult.ok) {
                 expect(dataResult.value).toHaveLength(1);
-                expect(dataResult.value[0].name).toBe('test-data.csv');
-                expect(dataResult.value[0].columns).toEqual(['timestamp', 'value']);
+                expect(dataResult.value[0]?.name).toBe('test-data.csv');
+                expect(dataResult.value[0]?.columns).toEqual(['timestamp', 'value']);
             }
             
             dataManager.destroy();
@@ -198,6 +199,7 @@ describe('Main Workflow Integration Tests', () => {
                 name: 'Test Label',
                 color: '#ff0000',
                 createdAt: Date.now(),
+                updatedAt: Date.now(),
             };
             
             mockStorage.saveLabel.mockResolvedValue(ok(labelDef));
@@ -210,8 +212,8 @@ describe('Main Workflow Integration Tests', () => {
                 labelDefId: 'label-def-1',
                 startTime: 1234567890,
                 endTime: 1234567892,
-                visible: true,
                 createdAt: Date.now(),
+                updatedAt: Date.now(),
             };
             
             mockStorage.saveTimeSeriesLabel.mockResolvedValue(ok(timeSeriesLabel));
@@ -223,10 +225,10 @@ describe('Main Workflow Integration Tests', () => {
             await labelService.initialize();
             
             // Test label definition creation
-            const createDefResult = await labelService.createLabelDefinition({
-                name: 'Test Label',
-                color: '#ff0000',
-            });
+            const createDefResult = await labelService.createLabelDefinition(
+                'Test Label',
+                '#ff0000'
+            );
             
             expect(createDefResult.ok).toBe(true);
             if (createDefResult.ok) {
@@ -238,24 +240,29 @@ describe('Main Workflow Integration Tests', () => {
             }
             
             // Test time series label creation
-            const createLabelResult = await labelService.createTimeSeriesLabel({
+            await labelService.addLabelToDataset('data-1', {
+                id: 'ts-label-new',
                 datasetId: 'data-1',
                 labelDefId: 'label-def-1',
                 startTime: 1234567890,
                 endTime: 1234567892,
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
             });
             
-            expect(createLabelResult.ok).toBe(true);
-            if (createLabelResult.ok) {
-                expect(createLabelResult.value.datasetId).toBe('data-1');
-                expect(createLabelResult.value.labelDefId).toBe('label-def-1');
-                expect(mockStorage.saveTimeSeriesLabel).toHaveBeenCalledWith(expect.objectContaining({
-                    datasetId: 'data-1',
-                    labelDefId: 'label-def-1',
-                    startTime: 1234567890,
-                    endTime: 1234567892,
-                }));
+            const addedLabel = labelService.getLabelsForDataset('data-1');
+            expect(addedLabel).toHaveLength(1);
+            if (addedLabel.length > 0) {
+                expect(addedLabel[0]?.datasetId).toBe('data-1');
+                expect(addedLabel[0]?.labelDefId).toBe('label-def-1');
             }
+            
+            expect(mockStorage.saveTimeSeriesLabel).toHaveBeenCalledWith(expect.objectContaining({
+                datasetId: 'data-1',
+                labelDefId: 'label-def-1',
+                startTime: 1234567890,
+                endTime: 1234567892,
+            }));
             
             labelService.destroy();
         });

@@ -1,4 +1,4 @@
-import { THEMES, type Theme } from '@/themes';
+import { THEMES, type Theme } from '@shared/themes';
 
 export function setupSettings(): void {
     const settingsButton = document.getElementById('btn-settings');
