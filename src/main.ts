@@ -12,13 +12,13 @@ import { setupLabelsPanel } from './ui/labelsPanel';
 import { initializeLoadingScreen, markLoadingStepComplete } from './ui/loadingScreen';
 import { initializeProjectToolbar } from './ui/projectToolbar';
 
+import { setupUploads } from '@/data/uploads';
+import { setupSettings } from '@/settings';
 import { setupCheckboxEnterToggle } from '@/ui/checkboxAccessibility';
+import { setupCollapsiblePanels } from '@/ui/collapsiblePanels';
 import { defineDropdown } from '@/ui/dropdown';
 import { setupRangeProgress } from '@/ui/rangeInputs';
-import { setupCollapsiblePanels } from '@/ui/collapsiblePanels';
-import { setupSettings } from '@/settings';
 import { setupStatsPanel } from '@/ui/statsPanel';
-import { setupUploads } from '@/data/uploads';
 
 import './styles/main.scss';
 

@@ -5,17 +5,18 @@
 
 import type { TimeSeriesData, DataManager } from '../charts/timeSeries';
 import type { TimeSeriesLabel } from '../domain/labels';
-import type { Result } from '../shared/result';
-import { ok, err, DataValidationError, memoizeAsync, LRUCache } from '../shared';
-import { UploadDataManager } from './dataManager';
-import type { TDataFile } from './uploads';
-import { convertDataFilesToTimeSeries } from './csvProcessor';
 import {
     getAllTimeSeriesLabels,
     saveTimeSeriesLabel,
     deleteTimeSeriesLabel,
     type IDBRecord,
 } from '../platform/storage';
+import { ok, err, DataValidationError, memoizeAsync, LRUCache } from '../shared';
+import type { Result } from '../shared/result';
+
+import { convertDataFilesToTimeSeries } from './csvProcessor';
+import { UploadDataManager } from './dataManager';
+import type { TDataFile } from './uploads';
 
 /**
  * Data source metadata for enhanced data management

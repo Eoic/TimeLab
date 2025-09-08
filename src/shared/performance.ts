@@ -9,7 +9,7 @@ export class LRUCache<K, V> {
     private readonly maxSize: number;
     private readonly cache = new Map<K, V>();
 
-    constructor(maxSize: number = 100) {
+    constructor(maxSize = 100) {
         this.maxSize = maxSize;
     }
 
@@ -167,7 +167,7 @@ export function throttle<TArgs extends readonly unknown[]>(
  * Performance timing utility
  */
 export class PerformanceTimer {
-    private startTime: number = 0;
+    private startTime = 0;
     private measurements: Array<{ name: string; duration: number }> = [];
 
     start(): void {

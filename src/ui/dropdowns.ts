@@ -1,11 +1,11 @@
 import { getLabelService } from '../services/labelService';
 
-import type { TLDropdown } from '@/ui/dropdown';
+import type { TDataFile } from '@/data/uploads';
 import { DEFAULT_LABEL_DEFINITIONS } from '@/domain/labels';
 import { getAllLabels, saveLabel } from '@/platform';
 import { uuid } from '@/shared/misc';
 import type { LabelDefinition } from '@/types/storage';
-import type { TDataFile } from '@/data/uploads';
+import type { TLDropdown } from '@/ui/dropdown';
 
 /**
  * In-memory cache of label definitions

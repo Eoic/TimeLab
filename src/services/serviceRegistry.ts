@@ -3,12 +3,13 @@
  * Handles dependency injection and service lifecycle
  */
 
-import { getServiceContainer, SERVICE_TOKENS } from './container';
-import { createProjectService, ProjectService } from './projectService';
-import { LabelService } from './labelService';
+import { getDataManager } from '../data';
 import { createDataService, type IDataService } from '../data/dataService';
 import * as projectStorage from '../platform/projectStorage';
-import { getDataManager } from '../data';
+
+import { getServiceContainer, SERVICE_TOKENS } from './container';
+import { LabelService } from './labelService';
+import { createProjectService, ProjectService } from './projectService';
 
 /**
  * Initialize all application services with dependencies

@@ -34,7 +34,7 @@ interface ServiceRegistration<T> {
  * Simple dependency injection container implementation
  */
 export class ServiceContainer implements IServiceContainer {
-    private readonly services = new Map<ServiceToken<any>, ServiceRegistration<any>>();
+    private readonly services = new Map<ServiceToken, ServiceRegistration<any>>();
 
     /**
      * Register a transient service (new instance each time)
@@ -98,7 +98,7 @@ export class ServiceContainer implements IServiceContainer {
             if (registration.singleton && registration.instance) {
                 const instance = registration.instance;
                 if (typeof instance === 'object' && instance && 'destroy' in instance) {
-                    (instance as any).destroy();
+                    instance.destroy();
                 }
                 registration.instance = undefined;
             }

@@ -5,9 +5,9 @@
 import type { TimeSeriesData, DataManager } from '../charts/timeSeries';
 import type { Result } from '../shared/result';
 import { ok } from '../shared/result';
-import type { TDataFile } from './uploads';
 
 import { convertDataFilesToTimeSeries } from './csvProcessor';
+import type { TDataFile } from './uploads';
 
 /**
  * Implementation of DataManager that listens to uploaded data files
