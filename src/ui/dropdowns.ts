@@ -16,15 +16,26 @@ let labelsObserver: MutationObserver | null = null;
  */
 export async function loadLabelDefinitions(): Promise<void> {
     try {
-        // Ensure LabelService is available (initialized by startServices)
-        getLabelService();
+        // eslint-disable-next-line no-console
+        console.log('🏃 loadLabelDefinitions: Starting...');
         
+        // Ensure LabelService is available (initialized by startServices)
+        const labelService = getLabelService();
+        // eslint-disable-next-line no-console
+        console.log('  Got LabelService:', !!labelService);
+
         // Always try to update the dropdown (in case DOM element wasn't ready before)
         updateActiveLabelDropdown();
+        // eslint-disable-next-line no-console
+        console.log('  Updated active label dropdown');
 
         // Dispatch an event that label definitions have been loaded
         // This allows other components (like LabelsPanel) to refresh their display
+        // eslint-disable-next-line no-console
+        console.log('  Dispatching timelab:labelDefinitionsLoaded event...');
         window.dispatchEvent(new CustomEvent('timelab:labelDefinitionsLoaded'));
+        // eslint-disable-next-line no-console
+        console.log('  Event dispatched!');
     } catch (error) {
         // eslint-disable-next-line no-console
         console.error('Failed to load label definitions:', error);
@@ -32,7 +43,6 @@ export async function loadLabelDefinitions(): Promise<void> {
 
     isLoaded = true;
 }
-
 
 export function updateActiveLabelDropdown(): void {
     const activeLabelDropdown = document.querySelector<TLDropdown>('#active-label');
@@ -63,12 +73,19 @@ export function updateActiveLabelDropdown(): void {
 
     // Check if current selection still exists, if not select first available
     const currentValue = activeLabelDropdown.value;
-    const isCurrentValueValid = options.some(opt => opt.value === currentValue);
-    
+    const isCurrentValueValid = options.some((opt) => opt.value === currentValue);
+
     if (!isCurrentValueValid && options.length > 0 && options[0]) {
         activeLabelDropdown.value = options[0].value;
+
+        // Manually dispatch change event since programmatic value changes don't trigger it
+        activeLabelDropdown.dispatchEvent(
+            new CustomEvent('change', {
+                detail: { value: options[0].value },
+            })
+        );
     }
-    
+
     // Enable labeling since labels are available
     enableLabelingMode();
 }
@@ -89,6 +106,13 @@ export async function addLabelDefinition(name: string, color: string): Promise<v
         const activeLabelDropdown = document.querySelector<TLDropdown>('#active-label');
         if (activeLabelDropdown) {
             activeLabelDropdown.value = result.value.id;
+
+            // Manually dispatch change event since programmatic value changes don't trigger it
+            activeLabelDropdown.dispatchEvent(
+                new CustomEvent('change', {
+                    detail: { value: result.value.id },
+                })
+            );
         }
 
         // Dispatch an event that label definitions have been updated
@@ -135,7 +159,7 @@ export async function updateLabelDefinition(
 ): Promise<boolean> {
     const labelService = getLabelService();
     const definitions = labelService.getLabelDefinitions();
-    
+
     if (index >= 0 && index < definitions.length) {
         const existing = definitions[index];
         if (existing) {
@@ -163,7 +187,7 @@ export async function updateLabelDefinition(
 export async function deleteLabelDefinition(index: number): Promise<boolean> {
     const labelService = getLabelService();
     const definitions = labelService.getLabelDefinitions();
-    
+
     if (index >= 0 && index < definitions.length) {
         const definition = definitions[index];
         if (definition) {
@@ -393,16 +417,24 @@ export function setupDropdowns(): void {
 function disableLabelingMode(): void {
     // Find and disable the "Toggle label drawing mode" button
     const labelModeButton = document.querySelector<HTMLButtonElement>('#btn-label-mode');
+
     if (labelModeButton) {
         labelModeButton.disabled = true;
         labelModeButton.title = 'Create label definitions first to enable labeling mode';
-        
-        // If currently in labeling mode, exit it
+
+        // If currently in labeling mode, exit it properly
         if (labelModeButton.classList.contains('active')) {
-            labelModeButton.click(); // This will exit labeling mode
+            // Remove active state first
+            labelModeButton.classList.remove('active');
+            labelModeButton.setAttribute('aria-pressed', 'false');
+
+            // Dispatch label-mode-toggled event to properly exit labeling mode
+            // This ensures the chart and all components are properly notified
+            const customEvent = new CustomEvent('timelab:labelModeForceDisabled');
+            window.dispatchEvent(customEvent);
         }
     }
-    
+
     // Also disable the active label dropdown
     const activeLabelDropdown = document.querySelector<TLDropdown>('#active-label');
     if (activeLabelDropdown) {
@@ -416,13 +448,15 @@ function disableLabelingMode(): void {
 function enableLabelingMode(): void {
     // Find and enable the "Toggle label drawing mode" button
     const labelModeButton = document.querySelector<HTMLButtonElement>('#btn-label-mode');
+
     if (labelModeButton) {
         labelModeButton.disabled = false;
         labelModeButton.title = 'Toggle label drawing mode';
     }
-    
+
     // Enable the active label dropdown
     const activeLabelDropdown = document.querySelector<TLDropdown>('#active-label');
+
     if (activeLabelDropdown) {
         activeLabelDropdown.removeAttribute('disabled');
     }

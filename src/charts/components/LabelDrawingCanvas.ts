@@ -75,6 +75,7 @@ export class LabelDrawingCanvas {
             this.listeners.set(event, []);
         }
         const eventListeners = this.listeners.get(event);
+
         if (eventListeners) {
             eventListeners.push(listener as (event: unknown) => void);
         }
@@ -122,6 +123,9 @@ export class LabelDrawingCanvas {
             },
             axisPointer: {
                 show: false, // Disable axis pointer globally
+            },
+            series: {
+                silent: true,
             },
         });
 
@@ -215,13 +219,16 @@ export class LabelDrawingCanvas {
      * Setup event listeners for label drawing
      */
     private setupEventListeners(): void {
-        if (!this.chart) return;
+        if (!this.chart) {
+            return;
+        }
 
         // Listen to mouse events for drawing
         const extendedChart = this.chart as EChartsExtended;
         extendedChart.getZr().on('mousedown', this.handleMouseDown.bind(this));
         extendedChart.getZr().on('mousemove', this.handleMouseMove.bind(this));
         extendedChart.getZr().on('mouseup', this.handleMouseUp.bind(this));
+        extendedChart.getDom().addEventListener('pointerleave', this.handlePointerLeave.bind(this));
     }
 
     /**
@@ -248,7 +255,9 @@ export class LabelDrawingCanvas {
      * Handle mouse move for label drawing
      */
     private handleMouseMove(event: ZRenderMouseEvent): void {
-        if (!this.chart || !this.enabled) return;
+        if (!this.chart || !this.enabled) {
+            return;
+        }
 
         const pixelPoint: [number, number] = [event.offsetX, event.offsetY];
 
@@ -288,6 +297,10 @@ export class LabelDrawingCanvas {
         this.isDrawing = false;
         this.drawStartX = null;
         this.clearDrawingGraphics();
+    }
+
+    private handlePointerLeave(_event: PointerEvent): void {
+        this.hideCanvasPreviewLine();
     }
 
     /**
@@ -330,6 +343,16 @@ export class LabelDrawingCanvas {
         ctx.moveTo(snappedX, chartArea.y);
         ctx.lineTo(snappedX, chartArea.y + chartArea.height);
         ctx.stroke();
+    }
+
+    private hideCanvasPreviewLine(): void {
+        if (!this.drawingCanvas) return;
+
+        const ctx = this.drawingCanvas.getContext('2d');
+        if (!ctx) return;
+
+        // Clear canvas
+        ctx.clearRect(0, 0, this.drawingCanvas.width, this.drawingCanvas.height);
     }
 
     /**

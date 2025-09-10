@@ -84,6 +84,11 @@ export class TimeSeriesChart {
     private resizeObserver: ResizeObserver | null = null;
     private layoutChangeHandler: (() => void) | null = null;
 
+    // Event handlers for proper cleanup
+    private timeSeriesLabelsChangedHandler: (() => void) | null = null;
+    private labelDefinitionsLoadedHandler: (() => void) | null = null;
+    private labelModeForceDisabledHandler: (() => void) | null = null;
+
     // Composed components - each with a single responsibility
     private labelDrawingCanvas: LabelDrawingCanvas;
     private configManager: ChartConfigurationManager;
@@ -93,6 +98,7 @@ export class TimeSeriesChart {
     // Label mode state
     private labelMode = false;
     private currentLabelDefId: string | null = null;
+    private needsLabelRefresh = false;
 
     constructor(container: HTMLElement) {
         this.container = container;
@@ -153,13 +159,44 @@ export class TimeSeriesChart {
         this.setupResizeHandling();
 
         // Listen for time series label changes (from label definition updates/deletions)
-        window.addEventListener('timelab:timeSeriesLabelsChanged', () => {
+        this.timeSeriesLabelsChangedHandler = () => {
             // Refresh the chart to show updated/removed labels
             const lastConfig = this.configManager.getLastConfig();
             if (lastConfig) {
                 this.updateDisplay(lastConfig);
             }
-        });
+        };
+        window.addEventListener(
+            'timelab:timeSeriesLabelsChanged',
+            this.timeSeriesLabelsChangedHandler
+        );
+
+        // Listen for label definitions being loaded (fixes labels not showing on page load)
+        this.labelDefinitionsLoadedHandler = () => {
+            // Refresh the chart to show existing labels with proper definitions
+            const lastConfig = this.configManager.getLastConfig();
+            if (lastConfig) {
+                // Force a refresh by calling updateDisplay
+                this.updateDisplay(lastConfig);
+            } else {
+                // If no config yet, set flag for when config is available
+                this.needsLabelRefresh = true;
+            }
+        };
+        window.addEventListener(
+            'timelab:labelDefinitionsLoaded',
+            this.labelDefinitionsLoadedHandler
+        );
+
+        // Listen for forced label mode disable (when all label definitions are deleted)
+        this.labelModeForceDisabledHandler = () => {
+            // Force exit label mode when no label definitions remain
+            this.setLabelMode(false);
+        };
+        window.addEventListener(
+            'timelab:labelModeForceDisabled',
+            this.labelModeForceDisabledHandler
+        );
     }
 
     /**
@@ -556,6 +593,16 @@ export class TimeSeriesChart {
      */
     setCurrentLabelDefinition(labelDefId: string | null): void {
         this.currentLabelDefId = labelDefId;
+
+        // Update the drawing canvas with the new label definition if label mode is enabled
+        if (this.labelMode) {
+            const currentSource = this.getCurrentSource();
+            this.labelDrawingCanvas.configure({
+                enabled: this.labelMode,
+                currentLabelDefId: this.currentLabelDefId,
+                datasetId: currentSource?.id || '',
+            });
+        }
     }
 
     /**
@@ -643,6 +690,9 @@ export class TimeSeriesChart {
             source
         );
 
+        // Clear the label refresh flag after updating
+        this.needsLabelRefresh = false;
+
         this.updateEmptyState(false);
     }
 
@@ -695,6 +745,27 @@ export class TimeSeriesChart {
         if (this.layoutChangeHandler) {
             window.removeEventListener('timelab:layoutChanged', this.layoutChangeHandler);
             this.layoutChangeHandler = null;
+        }
+        if (this.timeSeriesLabelsChangedHandler) {
+            window.removeEventListener(
+                'timelab:timeSeriesLabelsChanged',
+                this.timeSeriesLabelsChangedHandler
+            );
+            this.timeSeriesLabelsChangedHandler = null;
+        }
+        if (this.labelDefinitionsLoadedHandler) {
+            window.removeEventListener(
+                'timelab:labelDefinitionsLoaded',
+                this.labelDefinitionsLoadedHandler
+            );
+            this.labelDefinitionsLoadedHandler = null;
+        }
+        if (this.labelModeForceDisabledHandler) {
+            window.removeEventListener(
+                'timelab:labelModeForceDisabled',
+                this.labelModeForceDisabledHandler
+            );
+            this.labelModeForceDisabledHandler = null;
         }
         if (this.chart) {
             this.chart.dispose();
