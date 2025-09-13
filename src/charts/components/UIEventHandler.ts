@@ -11,6 +11,7 @@ export interface UIEventHandlerEvents {
     'label-mode-toggled': { enabled: boolean; labelDefId?: string };
     'label-definition-changed': { labelDefId: string | null };
     'axis-changed': { xColumn: string; yColumn: string };
+    'snapping-toggled': { enabled: boolean };
 }
 
 /**
@@ -179,6 +180,47 @@ export class UIEventHandler {
             btnLabelMode.addEventListener('click', handler);
             this.cleanupFunctions.push(() => {
                 btnLabelMode.removeEventListener('click', handler);
+            });
+        }
+
+        // Snapping toggle
+        const btnSnapToggle = document.getElementById(
+            'btn-snap-toggle'
+        ) as HTMLButtonElement | null;
+        if (btnSnapToggle) {
+            const handler = () => {
+                const currentState = btnSnapToggle.getAttribute('aria-pressed') === 'true';
+                const newState = !currentState;
+
+                // Update button state
+                btnSnapToggle.setAttribute('aria-pressed', newState.toString());
+                btnSnapToggle.classList.toggle('active', newState);
+
+                // Update button icon to reflect state
+                const icon = btnSnapToggle.querySelector('.material-symbols-outlined');
+                if (icon) {
+                    icon.textContent = newState ? 'grid_on' : 'grid_off';
+                }
+
+                // Update title
+                btnSnapToggle.setAttribute(
+                    'title',
+                    newState
+                        ? 'Disable preview line snapping to data points'
+                        : 'Enable preview line snapping to data points'
+                );
+                btnSnapToggle.setAttribute(
+                    'aria-label',
+                    newState ? 'Disable snap to data points' : 'Enable snap to data points'
+                );
+
+                // Emit snapping state change
+                this.emit('snapping-toggled', { enabled: newState });
+            };
+
+            btnSnapToggle.addEventListener('click', handler);
+            this.cleanupFunctions.push(() => {
+                btnSnapToggle.removeEventListener('click', handler);
             });
         }
 
@@ -442,6 +484,35 @@ export class UIEventHandler {
             detail: { columns: Array.from(columns) },
         });
         window.dispatchEvent(event);
+    }
+
+    /**
+     * Initialize snap button state
+     */
+    initializeSnapButton(snapping: boolean): void {
+        const btnSnapToggle = document.getElementById(
+            'btn-snap-toggle'
+        ) as HTMLButtonElement | null;
+        if (!btnSnapToggle) return;
+
+        btnSnapToggle.setAttribute('aria-pressed', snapping.toString());
+        btnSnapToggle.classList.toggle('active', snapping);
+
+        const icon = btnSnapToggle.querySelector('.material-symbols-outlined');
+        if (icon) {
+            icon.textContent = snapping ? 'grid_on' : 'grid_off';
+        }
+
+        btnSnapToggle.setAttribute(
+            'title',
+            snapping
+                ? 'Disable preview line snapping to data points'
+                : 'Enable preview line snapping to data points'
+        );
+        btnSnapToggle.setAttribute(
+            'aria-label',
+            snapping ? 'Disable snap to data points' : 'Enable snap to data points'
+        );
     }
 
     /**

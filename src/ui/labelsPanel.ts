@@ -384,16 +384,19 @@ export class LabelsPanel {
             this.clearChartHighlight();
         });
 
-        // Touch support for mobile highlighting
-        item.addEventListener('touchstart', () => {
-            this.highlightLabelOnChart(label.id);
+        // Touch support for mobile highlighting - less aggressive since actions are always visible
+        item.addEventListener('touchstart', (e) => {
+            // Only highlight if not tapping on action buttons
+            if (!(e.target as HTMLElement).closest('.actions')) {
+                this.highlightLabelOnChart(label.id);
+            }
         });
 
         item.addEventListener('touchend', () => {
-            // Clear highlight after a short delay to allow tap interaction
+            // Clear highlight after a shorter delay since actions are visible
             setTimeout(() => {
                 this.clearChartHighlight();
-            }, 1000);
+            }, 500);
         });
 
         // Click to focus

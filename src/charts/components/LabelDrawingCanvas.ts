@@ -17,6 +17,7 @@ export interface LabelDrawingConfig {
     enabled: boolean;
     currentLabelDefId: string | null;
     datasetId: string;
+    snapping: boolean;
 }
 
 /**
@@ -34,6 +35,7 @@ export class LabelDrawingCanvas {
     private datasetId: string | null = null;
     private isDrawing = false;
     private drawStartX: number | null = null;
+    private snapping = true; // Default to enabled
 
     /**
      * Initialize the label drawing canvas
@@ -54,6 +56,7 @@ export class LabelDrawingCanvas {
         this.enabled = config.enabled;
         this.currentLabelDefId = config.currentLabelDefId;
         this.datasetId = config.datasetId;
+        this.snapping = config.snapping;
 
         if (!this.chart) return;
 
@@ -62,6 +65,72 @@ export class LabelDrawingCanvas {
         } else if (!config.enabled && wasEnabled) {
             this.disableDrawing();
         }
+    }
+
+    /**
+     * Update snapping mode for preview line
+     */
+    updateSnappingMode(enabled: boolean): void {
+        this.snapping = enabled;
+    }
+
+    /**
+     * Find the closest data point X coordinate to a given pixel X position
+     */
+    private findClosestDataPointX(pixelX: number): number | null {
+        if (!this.chart) return null;
+
+        const chartOption = this.chart.getOption();
+        const series = chartOption.series as Array<{ data: Array<[number, number]> }>;
+
+        if (series && series[0] && series[0].data && Array.isArray(series[0].data)) {
+            const seriesData = series[0].data;
+            const extendedChart = this.chart as EChartsExtended;
+
+            // Convert current pixel to approximate data coordinate
+            const chartArea = this.getChartPlottingArea();
+            if (!chartArea) return null;
+
+            const dataPoint = extendedChart.convertFromPixel({ gridIndex: 0 }, [
+                pixelX,
+                chartArea.y,
+            ]);
+
+            if (dataPoint && typeof dataPoint[0] === 'number') {
+                const targetX = dataPoint[0];
+
+                // Find the closest data point
+                let closestPoint = seriesData[0];
+                let minDistance = Math.abs((seriesData[0]?.[0] ?? 0) - targetX);
+
+                for (let i = 1; i < seriesData.length; i++) {
+                    const currentPoint = seriesData[i];
+                    if (currentPoint && typeof currentPoint[0] === 'number') {
+                        const distance = Math.abs(currentPoint[0] - targetX);
+                        if (distance < minDistance) {
+                            minDistance = distance;
+                            closestPoint = currentPoint;
+                        }
+                    }
+                }
+
+                return closestPoint?.[0] ?? null;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Fallback method to convert pixel to data coordinate
+     */
+    private fallbackConvertPixelToData(pixelPoint: [number, number]): number | null {
+        if (!this.chart) return null;
+
+        const extendedChart = this.chart as EChartsExtended;
+        const dataPoint = extendedChart.convertFromPixel({ gridIndex: 0 }, pixelPoint);
+
+        return dataPoint && typeof dataPoint[0] === 'number' ? dataPoint[0] : null;
     }
 
     /**
@@ -240,12 +309,22 @@ export class LabelDrawingCanvas {
         // Allow drawing anywhere in the chart area
         // The event comes from the zrender canvas, so we can proceed
         const pixelPoint: [number, number] = [event.offsetX, event.offsetY];
-        const extendedChart = this.chart as EChartsExtended;
-        const dataPoint = extendedChart.convertFromPixel({ gridIndex: 0 }, pixelPoint);
 
-        if (dataPoint && typeof dataPoint[0] === 'number') {
+        let startX: number | null;
+
+        if (this.snapping) {
+            // Apply snapping logic to find the closest data point
+            startX = this.findClosestDataPointX(pixelPoint[0]);
+            if (startX === null) {
+                startX = this.fallbackConvertPixelToData(pixelPoint);
+            }
+        } else {
+            startX = this.fallbackConvertPixelToData(pixelPoint);
+        }
+
+        if (typeof startX === 'number') {
             this.isDrawing = true;
-            this.drawStartX = dataPoint[0];
+            this.drawStartX = startX;
             // Show initial canvas line at the start position
             this.showCanvasPreviewLine(pixelPoint[0]);
         }
@@ -279,11 +358,20 @@ export class LabelDrawingCanvas {
         if (!this.chart || !this.enabled || !this.isDrawing || this.drawStartX === null) return;
 
         const pixelPoint: [number, number] = [event.offsetX, event.offsetY];
-        const extendedChart = this.chart as EChartsExtended;
-        const dataPoint = extendedChart.convertFromPixel({ gridIndex: 0 }, pixelPoint);
 
-        if (dataPoint && typeof dataPoint[0] === 'number') {
-            const endX = dataPoint[0];
+        let endX: number | null;
+
+        if (this.snapping) {
+            // Apply snapping logic to find the closest data point
+            endX = this.findClosestDataPointX(pixelPoint[0]);
+            if (endX === null) {
+                endX = this.fallbackConvertPixelToData(pixelPoint);
+            }
+        } else {
+            endX = this.fallbackConvertPixelToData(pixelPoint);
+        }
+
+        if (typeof endX === 'number') {
             this.finalizeLabelDrawing(this.drawStartX, endX);
         }
 
@@ -318,30 +406,79 @@ export class LabelDrawingCanvas {
         // Clear canvas
         ctx.clearRect(0, 0, this.drawingCanvas.width, this.drawingCanvas.height);
 
-        // Convert pixel position to data position and snap to nearest data point
-        const extendedChart = this.chart as EChartsExtended;
-        const dataPoint = extendedChart.convertFromPixel({ gridIndex: 0 }, [pixelX, chartArea.y]);
-        if (!dataPoint || typeof dataPoint[0] !== 'number') return;
+        let finalX = pixelX;
 
-        // Convert snapped data position back to pixel for precise drawing
-        const snappedPixel = extendedChart.convertToPixel({ gridIndex: 0 }, [dataPoint[0], 0]);
-        if (!snappedPixel || typeof snappedPixel[0] !== 'number') return;
+        if (this.snapping) {
+            // Get chart data to find nearest data point
+            const chartOption = this.chart.getOption();
+            const series = chartOption.series as Array<{ data: Array<[number, number]> }>;
 
-        const snappedX = snappedPixel[0];
+            if (series && series[0] && series[0].data && Array.isArray(series[0].data)) {
+                const seriesData = series[0].data;
+
+                // Convert current pixel to data coordinate to find nearest point
+                const extendedChart = this.chart as EChartsExtended;
+                const dataPoint = extendedChart.convertFromPixel({ gridIndex: 0 }, [
+                    pixelX,
+                    chartArea.y,
+                ]);
+
+                if (dataPoint && typeof dataPoint[0] === 'number') {
+                    const targetX = dataPoint[0];
+
+                    // Find the closest data point
+                    let closestPoint = seriesData[0];
+                    let minDistance = Math.abs((seriesData[0]?.[0] ?? 0) - targetX);
+
+                    for (let i = 1; i < seriesData.length; i++) {
+                        const currentPoint = seriesData[i];
+                        if (currentPoint && typeof currentPoint[0] === 'number') {
+                            const distance = Math.abs(currentPoint[0] - targetX);
+                            if (distance < minDistance) {
+                                minDistance = distance;
+                                closestPoint = currentPoint;
+                            }
+                        }
+                    }
+
+                    // Convert the closest data point back to pixel coordinates
+                    if (
+                        closestPoint &&
+                        typeof closestPoint[0] === 'number' &&
+                        typeof closestPoint[1] === 'number'
+                    ) {
+                        const snappedPixel = extendedChart.convertToPixel({ gridIndex: 0 }, [
+                            closestPoint[0],
+                            closestPoint[1],
+                        ]);
+
+                        if (snappedPixel && typeof snappedPixel[0] === 'number') {
+                            finalX = snappedPixel[0];
+                        }
+                    }
+                }
+            }
+        }
 
         // Get the color for the current label definition (solid, no transparency)
         const lineColor = this.currentLabelDefId
             ? this.getLabelColor(this.currentLabelDefId, 1.0)
             : '#007bff';
 
-        // Draw solid vertical line at snapped position
+        // Draw vertical line at final position (snapped or exact mouse position)
         ctx.strokeStyle = lineColor;
         ctx.lineWidth = 2;
-        ctx.setLineDash([]); // Solid line, no dashes
+
+        // Use different line style to indicate snapping state
+        if (this.snapping) {
+            ctx.setLineDash([]); // Solid line for snapped
+        } else {
+            ctx.setLineDash([4, 4]); // Dashed line for non-snapped
+        }
 
         ctx.beginPath();
-        ctx.moveTo(snappedX, chartArea.y);
-        ctx.lineTo(snappedX, chartArea.y + chartArea.height);
+        ctx.moveTo(finalX, chartArea.y);
+        ctx.lineTo(finalX, chartArea.y + chartArea.height);
         ctx.stroke();
     }
 
@@ -365,25 +502,63 @@ export class LabelDrawingCanvas {
         const extendedChart = this.chart as EChartsExtended;
         const startPixel = extendedChart.convertToPixel({ gridIndex: 0 }, [this.drawStartX, 0]);
 
-        // Snap the current position to data points too
-        const currentDataPoint = extendedChart.convertFromPixel({ gridIndex: 0 }, pixelPoint);
-        if (!currentDataPoint || typeof currentDataPoint[0] !== 'number') return;
+        let currentX = pixelPoint[0];
 
-        const currentSnappedPixel = extendedChart.convertToPixel({ gridIndex: 0 }, [
-            currentDataPoint[0],
-            0,
-        ]);
+        if (this.snapping) {
+            // Get chart data to find nearest data point for current position
+            const chartOption = this.chart.getOption();
+            const series = chartOption.series as Array<{ data: Array<[number, number]> }>;
+
+            if (series && series[0] && series[0].data && Array.isArray(series[0].data)) {
+                const seriesData = series[0].data;
+
+                // Convert current pixel to data coordinate to find nearest point
+                const currentDataPoint = extendedChart.convertFromPixel(
+                    { gridIndex: 0 },
+                    pixelPoint
+                );
+
+                if (currentDataPoint && typeof currentDataPoint[0] === 'number') {
+                    const targetX = currentDataPoint[0];
+
+                    // Find the closest data point
+                    let closestPoint = seriesData[0];
+                    let minDistance = Math.abs((seriesData[0]?.[0] ?? 0) - targetX);
+
+                    for (let i = 1; i < seriesData.length; i++) {
+                        const currentPoint = seriesData[i];
+                        if (currentPoint && typeof currentPoint[0] === 'number') {
+                            const distance = Math.abs(currentPoint[0] - targetX);
+                            if (distance < minDistance) {
+                                minDistance = distance;
+                                closestPoint = currentPoint;
+                            }
+                        }
+                    }
+
+                    // Convert the closest data point back to pixel coordinates
+                    if (
+                        closestPoint &&
+                        typeof closestPoint[0] === 'number' &&
+                        typeof closestPoint[1] === 'number'
+                    ) {
+                        const snappedPixel = extendedChart.convertToPixel({ gridIndex: 0 }, [
+                            closestPoint[0],
+                            closestPoint[1],
+                        ]);
+
+                        if (snappedPixel && typeof snappedPixel[0] === 'number') {
+                            currentX = snappedPixel[0];
+                        }
+                    }
+                }
+            }
+        }
 
         // Get the actual chart plotting area (where data is displayed)
         const chartArea = this.getChartPlottingArea();
 
-        if (
-            !startPixel ||
-            !currentSnappedPixel ||
-            !chartArea ||
-            typeof startPixel[0] !== 'number' ||
-            typeof currentSnappedPixel[0] !== 'number'
-        ) {
+        if (!startPixel || !chartArea || typeof startPixel[0] !== 'number') {
             return;
         }
 
@@ -394,7 +569,6 @@ export class LabelDrawingCanvas {
         ctx.clearRect(0, 0, this.drawingCanvas.width, this.drawingCanvas.height);
 
         const startX = startPixel[0];
-        const currentX = currentSnappedPixel[0];
         const x = Math.min(startX, currentX);
         const width = Math.abs(currentX - startX);
 
@@ -410,6 +584,13 @@ export class LabelDrawingCanvas {
         ctx.fillStyle = labelColor;
         ctx.strokeStyle = strokeColor;
         ctx.lineWidth = 2;
+
+        // Use different line style to indicate snapping state
+        if (this.snapping) {
+            ctx.setLineDash([]); // Solid line for snapped
+        } else {
+            ctx.setLineDash([4, 4]); // Dashed line for non-snapped
+        }
 
         ctx.fillRect(x, chartArea.y, width, chartArea.height);
         ctx.strokeRect(x, chartArea.y, width, chartArea.height);

@@ -98,7 +98,7 @@ export class TimeSeriesChart {
     // Label mode state
     private labelMode = false;
     private currentLabelDefId: string | null = null;
-    private needsLabelRefresh = false;
+    private snapping = true; // Default to enabled
 
     constructor(container: HTMLElement) {
         this.container = container;
@@ -178,10 +178,8 @@ export class TimeSeriesChart {
             if (lastConfig) {
                 // Force a refresh by calling updateDisplay
                 this.updateDisplay(lastConfig);
-            } else {
-                // If no config yet, set flag for when config is available
-                this.needsLabelRefresh = true;
             }
+            // Note: If no config yet, labels will be shown when config becomes available
         };
         window.addEventListener(
             'timelab:labelDefinitionsLoaded',
@@ -206,6 +204,9 @@ export class TimeSeriesChart {
         this.labelDrawingCanvas.initialize(chartInstance);
         this.renderer.initialize(chartInstance);
         this.uiHandler.initialize(this);
+
+        // Initialize snap button state to match default
+        this.uiHandler.initializeSnapButton(this.snapping);
     }
 
     /**
@@ -268,6 +269,11 @@ export class TimeSeriesChart {
         this.uiHandler.on('axis-changed', (event) => {
             const config = this.configManager.getCurrentConfig(event.xColumn, event.yColumn);
             this.updateDisplay(config);
+        });
+
+        this.uiHandler.on('snapping-toggled', (event) => {
+            this.snapping = event.enabled;
+            this.labelDrawingCanvas.updateSnappingMode(event.enabled);
         });
     }
 
@@ -583,6 +589,7 @@ export class TimeSeriesChart {
             enabled,
             currentLabelDefId: this.currentLabelDefId,
             datasetId: currentSource?.id || '',
+            snapping: this.snapping,
         });
 
         this.emit('label-mode-changed', { enabled });
@@ -601,6 +608,7 @@ export class TimeSeriesChart {
                 enabled: this.labelMode,
                 currentLabelDefId: this.currentLabelDefId,
                 datasetId: currentSource?.id || '',
+                snapping: this.snapping,
             });
         }
     }
@@ -689,9 +697,6 @@ export class TimeSeriesChart {
             seriesConfig,
             source
         );
-
-        // Clear the label refresh flag after updating
-        this.needsLabelRefresh = false;
 
         this.updateEmptyState(false);
     }

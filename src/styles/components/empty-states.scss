@@ -18,13 +18,14 @@
 }
 
 .empty-state .empty-icon {
-    font-size: 2.5rem;
+    font-size: 4rem;
     opacity: 0.4;
-    margin-bottom: $spacing-sm;
+    margin-bottom: $spacing-xs;
     display: block;
 }
 
 .empty-state .empty-title {
+    font-size: $font-size-lg;
     font-weight: $font-weight-medium;
     margin-bottom: $spacing-xs;
     color: $color-text-secondary;
@@ -48,11 +49,6 @@
 .stats-empty {
     margin: 0;
     border-radius: $border-radius;
-}
-
-.stats-empty .empty-icon {
-    font-size: 2rem;
-    margin-bottom: $spacing-xs; /* Reduce spacing between icon and text */
 }
 
 /* Chart empty state (already defined in chart component but ensure consistency) */

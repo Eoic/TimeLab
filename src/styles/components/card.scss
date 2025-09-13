@@ -299,6 +299,38 @@
     font-size: 18px;
 }
 
+/* Mobile-friendly: Show actions persistently on touch devices and small screens */
+@media (max-width: 768px), (hover: none) {
+    .card.labctrl .label-item .actions,
+    .card.labctrl .label-item .delete {
+        opacity: 1;
+    }
+
+    .card.labctrl .label-item {
+        /* Adjust padding for mobile to accommodate larger touch targets */
+        padding: $spacing-xs calc($spacing-sm * 0.75);
+    }
+
+    /* Increase touch targets for better mobile UX */
+    .card.labctrl .label-item .actions .btn-icon {
+        padding: $spacing-xs;
+        min-width: 44px; /* Recommended minimum touch target size */
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .card.labctrl .label-item .delete.btn-icon {
+        padding: $spacing-xs;
+        min-width: 44px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
+
 /* Statistics panel styling */
 .card.stats {
     display: flex;
@@ -393,6 +425,16 @@
 .card.labctrl .label-item:hover .delete,
 .card.labctrl .label-item:focus-within .delete {
     opacity: 1;
+}
+
+/* Desktop-only hover effects (avoid conflicts with mobile persistent display) */
+@media (hover: hover) and (min-width: 769px) {
+    .card.labctrl .label-item:hover .actions,
+    .card.labctrl .label-item:focus-within .actions,
+    .card.labctrl .label-item:hover .delete,
+    .card.labctrl .label-item:focus-within .delete {
+        opacity: 1;
+    }
 }
 
 /* Hidden label styling */
